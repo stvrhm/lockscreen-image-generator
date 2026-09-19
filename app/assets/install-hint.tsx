@@ -1,5 +1,6 @@
 import { clientEntry, css, on, type Handle } from 'remix/ui'
 
+import { flow, repel } from '../ui/cube/index.ts'
 import { strings } from '../strings.ts'
 
 const DISMISS_KEY = 'tdl:install-hint-dismissed'
@@ -66,19 +67,15 @@ function shouldShow(): boolean {
   return true
 }
 
-const cardStyle = css({
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'flex-start',
-  gap: '12px',
-  padding: '16px',
-  background: 'linear-gradient(135deg, rgba(94, 184, 255, 0.1), var(--surface) 48%)',
-  border: '1px solid rgba(94, 184, 255, 0.3)',
-  borderRadius: 'var(--radius)',
-  '@media (max-width: 520px)': {
-    flexWrap: 'wrap',
-  },
-})
+const cardStyle = [
+  repel({ gutter: '12px', alignment: 'flex-start' }),
+  css({
+    padding: '16px',
+    background: 'linear-gradient(135deg, rgba(94, 184, 255, 0.1), var(--surface) 48%)',
+    border: '1px solid rgba(94, 184, 255, 0.3)',
+    borderRadius: 'var(--radius)',
+  }),
+]
 
 const installIconStyle = css({
   display: 'grid',
@@ -94,27 +91,20 @@ const installIconStyle = css({
   fontWeight: 400,
 })
 
-const textStyle = css({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '6px',
-})
+const textStyle = flow({ flowSpace: '6px' })
 
 const titleStyle = css({
-  margin: 0,
   fontSize: '15px',
   fontWeight: 600,
 })
 
 const bodyStyle = css({
-  margin: 0,
   fontSize: '14px',
   color: 'var(--text-muted)',
   lineHeight: 1.45,
 })
 
 const stepsStyle = css({
-  margin: 0,
   color: 'var(--accent)',
   fontSize: '13px',
   fontWeight: 600,
@@ -123,7 +113,6 @@ const stepsStyle = css({
 
 const dismissStyle = css({
   alignSelf: 'flex-start',
-  marginLeft: 'auto',
   appearance: 'none',
   border: 0,
   borderRadius: '8px',
@@ -132,7 +121,4 @@ const dismissStyle = css({
   cursor: 'pointer',
   background: 'var(--accent)',
   color: '#0b1220',
-  '@media (max-width: 520px)': {
-    marginLeft: '42px',
-  },
 })

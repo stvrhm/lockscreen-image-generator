@@ -7,6 +7,9 @@ import {
   type MixInput,
 } from 'remix/ui'
 
+import { cluster, flow, grid, region, sidebar, switcher, wrapper } from '../ui/cube/index.ts'
+import { theme } from '../ui/theme.ts'
+
 import {
   blankDevice,
   deleteDevice,
@@ -498,7 +501,10 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle) {
 
         <ol mix={onboardingStepsStyle} aria-label="How it works">
           {strings.start.steps.map((step, index) => (
-            <li key={step.title} mix={onboardingStepStyle}>
+            <li
+              key={step.title}
+              mix={[sidebar({ gutter: theme.space.md, direction: 'stack-to-row' }), onboardingStepStyle]}
+            >
               <span mix={stepNumberStyle}>{index + 1}</span>
               <span mix={stepTextStyle}>
                 <strong>{step.title}</strong>
@@ -588,26 +594,23 @@ function MarkdownSpan(handle: Handle<{ segment: MarkdownSegment }>) {
   }
 }
 
-const pageStyle = css({
-  width: '100%',
-  maxWidth: '52rem',
-  margin: '0 auto',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '20px',
-})
+const pageStyle = [
+  wrapper({ gutter: theme.space.lg, maxWidth: '52rem' }),
+  region(theme.space.lg),
+  flow({ flowSpace: theme.space.xl }),
+]
 
-const loadingStyle = css({
-  width: '100%',
-  maxWidth: '52rem',
+const loadingStyle = [
+  wrapper({ gutter: theme.space.lg, maxWidth: '52rem' }),
+  css({
   minHeight: 'min(70dvh, 32rem)',
-  margin: '0 auto',
   display: 'grid',
   placeItems: 'center',
   alignContent: 'center',
   gap: '16px',
   textAlign: 'center',
-})
+  }),
+]
 
 const loadingMarkStyle = css({
   width: '34px',
@@ -623,26 +626,16 @@ const loadingMarkStyle = css({
   },
 })
 
-const loadingCopyStyle = css({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '6px',
-})
+const loadingCopyStyle = flow({ flowSpace: theme.space.xs })
 
 const loadingTitleStyle = css({
-  margin: 0,
   fontSize: '18px',
   fontWeight: 700,
 })
 
-const startHeaderStyle = css({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '10px',
-})
+const startHeaderStyle = flow({ flowSpace: theme.space.sm })
 
 const eyebrowStyle = css({
-  margin: 0,
   fontSize: '12px',
   fontWeight: 700,
   letterSpacing: '0.12em',
@@ -651,69 +644,46 @@ const eyebrowStyle = css({
 })
 
 const titleStyle = css({
-  margin: 0,
   fontSize: 'clamp(28px, 7vw, 40px)',
   fontFamily: 'var(--font-display)',
   letterSpacing: '-0.02em',
 })
 
 const headingStyle = css({
-  margin: 0,
   fontSize: '20px',
   fontWeight: 600,
 })
 
 const mutedStyle = css({
-  margin: 0,
   color: 'var(--text-muted)',
   fontSize: '14px',
 })
 
 const hintStyle = css({
-  margin: 0,
   color: 'var(--text-muted)',
   fontSize: '13px',
 })
 
 const statusStyle = css({
-  margin: 0,
   color: 'var(--accent)',
   fontSize: '14px',
   fontWeight: 600,
 })
 
-const startActionsStyle = css({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '12px',
-})
+const startActionsStyle = switcher({ gutter: theme.space.md, targetWidth: '32rem' })
 
-const onboardingStepsStyle = css({
-  listStyle: 'none',
-  margin: '4px 0 8px',
-  padding: 0,
-  display: 'grid',
-  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-  gap: '10px',
-  '@media (max-width: 560px)': {
-    gridTemplateColumns: '1fr',
-  },
-})
+const onboardingStepsStyle = [
+  grid({ gutter: theme.space.sm, minItemSize: '14rem' }),
+  css({ listStyle: 'none', padding: 0 }),
+]
 
 const onboardingStepStyle = css({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '10px',
   minHeight: '126px',
   padding: '14px',
   background: 'rgba(26, 29, 34, 0.72)',
   border: '1px solid var(--border)',
   borderRadius: 'var(--radius)',
-  '@media (max-width: 560px)': {
-    minHeight: 'auto',
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
+  '@media (max-width: 560px)': { minHeight: 'auto' },
 })
 
 const stepNumberStyle = css({
@@ -728,13 +698,10 @@ const stepNumberStyle = css({
   fontWeight: 800,
 })
 
-const stepTextStyle = css({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '5px',
-  fontSize: '14px',
-  lineHeight: 1.35,
-})
+const stepTextStyle = [
+  flow({ flowSpace: theme.space.xs }),
+  css({ display: 'flex', flexDirection: 'column', fontSize: '14px', lineHeight: 1.35 }),
+]
 
 const startButtonStyle = css({
   width: '100%',
@@ -742,32 +709,16 @@ const startButtonStyle = css({
   justifyContent: 'center',
 })
 
-const headerRowStyle = css({
-  display: 'flex',
-  alignItems: 'center',
-  gap: '12px',
-})
+const headerRowStyle = cluster({ gutter: theme.space.md })
 
-const editorLayoutStyle = css({
-  display: 'flex',
-  gap: '28px',
-  alignItems: 'flex-start',
-  flexWrap: 'wrap',
-})
+const editorLayoutStyle = sidebar({ gutter: theme.space.xxl, sidebarWidth: 'min(24rem, 100%)' })
 
-const formStyle = css({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '18px',
-  flex: '1 1 280px',
-  minWidth: '260px',
-})
+const formStyle = [flow({ flowSpace: theme.space.lg }), css({ minWidth: '260px' })]
 
-const fieldStyle = css({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '6px',
-})
+const fieldStyle = [
+  flow({ flowSpace: theme.space.xs }),
+  css({ display: 'flex', flexDirection: 'column' }),
+]
 
 const fieldLabelStyle = css({
   fontSize: '13px',
@@ -787,11 +738,7 @@ const textareaStyle = css({
   minHeight: '140px',
 })
 
-const actionsRowStyle = css({
-  display: 'flex',
-  gap: '10px',
-  flexWrap: 'wrap',
-})
+const actionsRowStyle = cluster({ gutter: theme.space.sm })
 
 const primaryButtonStyle = css({
   appearance: 'none',
@@ -909,14 +856,7 @@ const inlineFieldStyle = css({
   flex: '1 1 120px',
 })
 
-const listStyle = css({
-  listStyle: 'none',
-  margin: 0,
-  padding: 0,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '12px',
-})
+const listStyle = [flow({ flowSpace: theme.space.md }), css({ listStyle: 'none', padding: 0 })]
 
 const listItemStyle = css({
   display: 'flex',
@@ -928,22 +868,19 @@ const listItemStyle = css({
   borderRadius: 'var(--radius)',
 })
 
-const listMainStyle = css({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '4px',
-})
+const listMainStyle = flow({ flowSpace: theme.space.xs })
 
-const previewColumnStyle = css({
+const previewColumnStyle = [
+  css({
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
   gap: '12px',
   flex: '0 0 auto',
-})
+  }),
+]
 
 const previewLabelStyle = css({
-  margin: 0,
   fontSize: '12px',
   fontWeight: 700,
   textTransform: 'uppercase',
