@@ -589,8 +589,8 @@ function MarkdownSpan(handle: Handle<{ segment: MarkdownSegment }>) {
 
 const pageStyle = [
   wrapper({ gutter: theme.space.lg, maxWidth: '68rem' }),
-  region(theme.space.xxl),
-  flow({ flowSpace: '32px' }),
+  region(theme.space.lg),
+  flow({ flowSpace: '24px' }),
 ]
 
 const loadingStyle = [
@@ -626,10 +626,7 @@ const loadingTitleStyle = css({
   fontWeight: 700,
 })
 
-const startHeaderStyle = [
-  flow({ flowSpace: theme.space.sm }),
-  css({ maxWidth: '42rem' }),
-]
+const startHeaderStyle = [flow({ flowSpace: theme.space.sm }), css({ maxWidth: '42rem' })]
 
 const eyebrowStyle = css({
   fontSize: '12px',
@@ -713,18 +710,32 @@ const startButtonStyle = css({
 
 const headerRowStyle = [
   cluster({ gutter: theme.space.md }),
-  css({ alignItems: 'baseline', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '18px' }),
+  css({
+    alignItems: 'baseline',
+    borderBottom: '1px solid var(--border-subtle)',
+    paddingBottom: '12px',
+  }),
 ]
 
-const editorLayoutStyle = sidebar({ gutter: 'clamp(28px, 5vw, 72px)', sidebarWidth: 'min(34rem, 100%)' })
+const editorLayoutStyle = sidebar({
+  gutter: 'clamp(20px, 3vw, 40px)',
+  sidebarWidth: 'min(34rem, 100%)',
+})
 
 const formStyle = [
-  flow({ flowSpace: theme.space.xl }),
-  css({ minWidth: '260px', padding: 'clamp(18px, 3vw, 28px)', background: 'rgba(17, 17, 19, 0.76)', border: '1px solid var(--border-subtle)', borderRadius: '16px', boxShadow: 'var(--shadow-soft)' }),
+  flow({ flowSpace: theme.space.lg }),
+  css({
+    minWidth: '260px',
+    padding: 'clamp(16px, 2.5vw, 24px)',
+    background: 'rgba(17, 17, 19, 0.76)',
+    border: '1px solid var(--border-subtle)',
+    borderRadius: '16px',
+    boxShadow: 'var(--shadow-soft)',
+  }),
 ]
 
 const fieldStyle = [
-  flow({ flowSpace: theme.space.sm }),
+  flow({ flowSpace: theme.space.xs }),
   css({ display: 'flex', flexDirection: 'column' }),
 ]
 
@@ -741,12 +752,15 @@ const inputStyle = css({
   background: 'rgba(10, 10, 11, 0.72)',
   color: 'var(--text)',
   transition: 'border-color 140ms ease, box-shadow 140ms ease',
-  ':focus': { borderColor: 'var(--accent-strong)', boxShadow: '0 0 0 3px rgba(56, 189, 248, 0.14)' },
+  ':focus': {
+    borderColor: 'var(--accent-strong)',
+    boxShadow: '0 0 0 3px rgba(56, 189, 248, 0.14)',
+  },
 })
 
 const textareaStyle = css({
   resize: 'vertical',
-  minHeight: '140px',
+  minHeight: '120px',
 })
 
 const actionsRowStyle = cluster({ gutter: theme.space.sm })
