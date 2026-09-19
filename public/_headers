@@ -4,3 +4,11 @@
 /manifest.webmanifest
   Content-Type: application/manifest+json
   Cache-Control: no-cache
+
+# `remix/assets` preserves source extensions in browser module URLs. Netlify
+# otherwise serves TypeScript source files as non-JavaScript MIME types.
+/assets/app/*.ts
+  Content-Type: application/javascript; charset=utf-8
+
+/assets/app/*.tsx
+  Content-Type: application/javascript; charset=utf-8
