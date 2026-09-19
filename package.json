@@ -6,6 +6,9 @@
     "dev": "NODE_ENV=development node --watch --import remix/node-tsx server.ts",
     "hmr": "NODE_ENV=development node hmr.ts",
     "start": "NODE_ENV=production node --import remix/node-tsx server.ts",
+    "icons": "node scripts/generate-icons.mjs",
+    "build": "node scripts/generate-icons.mjs && NODE_ENV=production node --import remix/node-tsx scripts/build.tsx",
+    "preview": "node scripts/preview.mjs",
     "test": "NODE_ENV=test node --import remix/node-tsx --test",
     "typecheck": "tsc --noEmit"
   },

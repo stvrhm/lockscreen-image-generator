@@ -1,4 +1,6 @@
 node_modules/
 db/*.sqlite
 tmp/
+dist/
 .DS_Store
+.netlify/

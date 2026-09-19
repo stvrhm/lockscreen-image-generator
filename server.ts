@@ -32,10 +32,7 @@ server.listen(port, () => {
 let shuttingDown = false
 
 function shutdown() {
-  if (shuttingDown) {
-    return
-  }
-
+  if (shuttingDown) return
   shuttingDown = true
   server.close(() => process.exit(0))
   server.closeAllConnections()

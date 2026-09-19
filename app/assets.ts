@@ -6,13 +6,20 @@ const nodeEnv = process.env.NODE_ENV ?? 'development'
 const isDevelopment = nodeEnv === 'development'
 const isHmr = Boolean(isDevelopment && process.env.REMIX_NODE_HMR)
 
-export const assets = createAssetServer({
+export const assetServer = createAssetServer({
   basePath: '/assets',
   rootDir,
-
-  allowFiles: ['app/routes.ts', 'app/**/public/**'],
+  // Client SPA: browser modules may import shared app code. Keep server-only
+  // files out via denyFiles.
+  allowFiles: ['app/**', 'node_modules/**'],
   allowPackages: ['remix'],
-  denyFiles: ['app/**/*.test.*'],
+  denyFiles: [
+    'app/**/*.server.*',
+    'app/**/*.test.*',
+    'app/router.ts',
+    'app/actions/**',
+    'app/middleware/**',
+  ],
   sourceMaps: isDevelopment ? 'external' : undefined,
   minify: !isDevelopment,
   watch: isDevelopment,
@@ -22,9 +29,14 @@ export const assets = createAssetServer({
         moduleImporter: 'remix/multiple-import-maps-polyfill',
       }
     : undefined,
-  scripts: { loaders: isHmr ? [uiHmr()] : undefined },
+  scripts: {
+    define: {
+      'process.env.NODE_ENV': JSON.stringify(nodeEnv),
+    },
+    loaders: isHmr ? [uiHmr()] : undefined,
+  },
 })
 
-const entry = 'app/actions/public/entry.ts'
+const entry = 'app/assets/entry.ts'
 
-export const scriptEntry = await assets.getScriptEntry(entry)
+export const scriptEntry = await assetServer.getScriptEntry(entry)

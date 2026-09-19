@@ -1,6 +1,4 @@
 // Minimal inline markdown: bold, italic, bold+italic, code, strikethrough.
-// No nesting beyond bold+italic, no block-level syntax — just enough to
-// style a short lock-screen note.
 export interface MarkdownSegment {
   text: string
   bold?: boolean

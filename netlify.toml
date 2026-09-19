@@ -1,0 +1,4 @@
+# Deploy the prebuilt static bundle:
+#   npm run build && netlify deploy --prod --dir=dist
+[build]
+  publish = "dist"

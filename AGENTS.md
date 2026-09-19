@@ -1,6 +1,7 @@
 # Test Device Lockscreens Agent Guide
 
-This app was scaffolded with `remix new`. Use these conventions when continuing to build it out.
+This app was scaffolded with `remix new` and rebuilt as a local-first PWA.
+Use these conventions when continuing to build it out.
 
 ## Commands
 
@@ -8,7 +9,9 @@ This app was scaffolded with `remix new`. Use these conventions when continuing 
 npm i
 npm run dev
 npm run hmr
-npm run start
+npm run build
+npm run preview
+npm start
 npm test
 npm run typecheck
 ```
@@ -17,26 +20,29 @@ npm run typecheck
 
 Refer to ./.agents/skills/remix/SKILL.md
 
+Domain language: `CONTEXT.md`. ADRs: `docs/adr/`.
+
 ## Starter Layout
 
-- `app/actions/controller.tsx` owns the top-level route actions
-- `app/actions/home-page.tsx` and `app/actions/document.tsx` render the route-owned starter UI
-- `app/actions/public/` contains the browser runtime entry and interactive prompt button
-- `app/routes.ts` defines the shared route contract used by server and browser modules for type-safe hrefs
-- `app/router.ts` wires routes to route handlers and installs the standard Remix UI renderer used by actions
-- `app/assets.ts` owns the server-side asset pipeline used by the asset route and render middleware
-- Root `public/` contains static files served unchanged from the app root
+- `app/actions/controller.tsx` owns the top-level route actions (assets + home shell)
+- `app/ui/app-shell.tsx` / `app/ui/document.tsx` render the PWA document and shell
+- `app/assets/` contains the browser entry, install hint, and main client app
+- `app/data/` owns IndexedDB Devices, Host metrics, Shortcuts, Wallpaper export
+- `app/routes.ts` defines the shared route contract (assets + home only)
+- `app/router.ts` wires routes and the custom render middleware
+- `app/assets.ts` owns the server-side asset pipeline
+- Root `public/` contains static files (manifest, icons, Netlify headers)
+- `scripts/build.tsx` emits the static `dist/` PWA with service worker
 
 ## Route Ownership
 
 - Start from `app/routes.ts` and map each route to the narrowest owner on disk.
 - Put top-level route actions in `app/actions/controller.tsx`.
-- Add `app/actions/<route-key>/controller.tsx` for nested route maps that need their own actions or middleware.
-- Keep route-owned page modules next to the route that owns them.
+- Client navigation (New / Continue / Browse / Edit) lives in `app/assets/app.tsx`.
 - Move shared UI to `app/ui/`, not `app/actions/`.
 
 ## Build-Out Notes
 
-- This starter intentionally begins small; add directories like `app/data/` and `test/` only when you need them.
 - Prefer putting code in the narrowest owner before introducing shared modules.
 - Avoid generic dumping-ground directories like `app/lib/` or `app/components/`.
+- Devices are Host-local (IndexedDB). Do not reintroduce a shared server Device store without an ADR.
