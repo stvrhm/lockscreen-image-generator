@@ -25,8 +25,12 @@ The free-form Markdown body that appears on the wallpaper. Inserted shortcuts be
 _Avoid_: Description, content blocks, text modules (as the stored shape)
 
 **Shortcut**:
-A hardcoded boilerplate chip that inserts a text snippet into Notes. Optionally filtered by inferred (or overridden) platform; not derived from screen size; not user-editable for now.
+An optional composer action that inserts a labeled Markdown snapshot into Notes. Shortcuts may use measured Host details or best-effort detected OS metadata; they are not live-linked fields and are not user-editable for now.
 _Avoid_: Tag (unless UI chrome), suggestion, template (unless we later mean a full Notes preset)
+
+**Detected OS**:
+The operating-system name and version inferred from the Host browser when the browser exposes useful information. It is a best-effort hint, not verified device identity; unavailable values are omitted.
+_Avoid_: Verified OS, device model, raw user agent
 
 **Export size**:
 The pixel dimensions of the wallpaper file. Either automatic (from Host CSS size × device pixel ratio) or a user-chosen custom size.

@@ -16,7 +16,7 @@ import {
   type ExportSizeMode,
   type Platform,
 } from '../data/devices.ts'
-import { inferPlatform, measureHostExportSize } from '../data/host.ts'
+import { hostDetails, inferPlatform, measureHostExportSize } from '../data/host.ts'
 import { parseMarkdownLines, type MarkdownSegment } from '../data/markdown.ts'
 import { shortcutsFor } from '../data/shortcuts.ts'
 import { downloadWallpaper, shareWallpaper } from '../data/wallpaper.ts'
@@ -138,6 +138,25 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle<AppP
     let prefix = notes && !notes.endsWith('\n') && notes.length > 0 ? '\n' : ''
     draft = { ...draft, notes: notes + prefix + snippet }
     handle.update()
+  }
+
+  function applyFormatting(marker: string) {
+    if (!draft || !notesRef) return
+    let el = notesRef
+    let start = el.selectionStart
+    let end = el.selectionEnd
+    let notes = draft.notes
+    let selected = notes.slice(start, end)
+    let replacement = selected ? `${marker}${selected}${marker}` : `${marker}${marker}`
+    draft = { ...draft, notes: notes.slice(0, start) + replacement + notes.slice(end) }
+    handle.update()
+    handle.queueTask(() => {
+      if (!notesRef) return
+      notesRef.focus()
+      let nextStart = selected ? start + replacement.length : start + marker.length
+      let nextEnd = selected ? nextStart : nextStart + marker.length
+      notesRef.setSelectionRange(nextStart, nextEnd)
+    })
   }
 
   async function onSave() {
@@ -273,7 +292,13 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle<AppP
       let device = draft
       let size = resolvedSize(device)
       let previewText = device.notes.trim() || device.label.trim() || 'Notes preview'
-      let shortcuts = shortcutsFor(device.platform)
+      let host = hostDetails()
+      let shortcuts = shortcutsFor({
+        width: size.width,
+        height: size.height,
+        pixelRatio: host.pixelRatio,
+        detectedOS: host.detectedOS,
+      })
 
       return (
         <div mix={pageStyle}>
@@ -340,18 +365,42 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle<AppP
               <label mix={fieldStyle}>
                 <span mix={fieldLabelStyle}>{strings.editor.notes}</span>
                 <span mix={hintStyle}>{strings.editor.notesHint}</span>
-                <textarea
-                  rows={7}
-                  value={device.notes}
-                  mix={[
-                    inputStyle,
-                    textareaStyle,
-                    ref((node) => {
-                      notesRef = node as HTMLTextAreaElement | null
-                    }),
-                    on('input', (event) => patchDraft({ notes: event.currentTarget.value })),
-                  ]}
-                />
+                <div mix={composerStyle}>
+                  <div mix={toolbarStyle} role="toolbar" aria-label={strings.editor.formatting}>
+                    <FormatButton
+                      label={strings.editor.bold}
+                      symbol="B"
+                      onSelect={() => applyFormatting('**')}
+                    />
+                    <FormatButton
+                      label={strings.editor.italic}
+                      symbol="I"
+                      onSelect={() => applyFormatting('*')}
+                    />
+                    <FormatButton
+                      label={strings.editor.strike}
+                      symbol="S"
+                      onSelect={() => applyFormatting('~~')}
+                    />
+                    <FormatButton
+                      label={strings.editor.code}
+                      symbol="<>"
+                      onSelect={() => applyFormatting('`')}
+                    />
+                  </div>
+                  <textarea
+                    rows={7}
+                    value={device.notes}
+                    aria-label={strings.editor.notes}
+                    mix={[
+                      textareaStyle,
+                      ref((node) => {
+                        notesRef = node as HTMLTextAreaElement | null
+                      }),
+                      on('input', (event) => patchDraft({ notes: event.currentTarget.value })),
+                    ]}
+                  />
+                </div>
               </label>
 
               <div mix={fieldStyle}>
@@ -549,6 +598,22 @@ function SegmentButton(handle: Handle<{ active: boolean; label: string; onSelect
         mix={[segmentButtonStyle, active ? segmentActiveStyle : null, on('click', onSelect)]}
       >
         {label}
+      </button>
+    )
+  }
+}
+
+function FormatButton(handle: Handle<{ label: string; symbol: string; onSelect: () => void }>) {
+  return () => {
+    let { label, symbol, onSelect } = handle.props
+    return (
+      <button
+        type="button"
+        aria-label={label}
+        title={label}
+        mix={[formatButtonStyle, on('click', onSelect)]}
+      >
+        {symbol}
       </button>
     )
   }
@@ -765,6 +830,50 @@ const inputStyle = css({
 const textareaStyle = css({
   resize: 'vertical',
   minHeight: '120px',
+  width: '100%',
+  padding: '12px 13px',
+  border: 0,
+  borderTop: '1px solid var(--border)',
+  borderRadius: 0,
+  background: 'transparent',
+  color: 'var(--text)',
+  lineHeight: 1.55,
+  outline: 'none',
+})
+
+const composerStyle = css({
+  overflow: 'hidden',
+  border: '1px solid var(--border)',
+  borderRadius: '12px',
+  background: 'rgba(10, 10, 11, 0.72)',
+  ':focus-within': {
+    borderColor: 'var(--accent-strong)',
+    boxShadow: '0 0 0 3px rgba(56, 189, 248, 0.14)',
+  },
+})
+
+const toolbarStyle = [
+  cluster({ gutter: '2px', alignment: 'center' }),
+  css({ padding: '6px', background: 'rgba(255, 255, 255, 0.035)' }),
+]
+
+const formatButtonStyle = css({
+  appearance: 'none',
+  width: '30px',
+  height: '28px',
+  display: 'inline-grid',
+  placeItems: 'center',
+  border: 0,
+  borderRadius: '6px',
+  background: 'transparent',
+  color: 'var(--text-muted)',
+  fontWeight: 700,
+  cursor: 'pointer',
+  ':hover': { background: 'var(--surface-2)', color: 'var(--text)' },
+  ':focus-visible': {
+    outline: '2px solid var(--accent)',
+    outlineOffset: '1px',
+  },
 })
 
 const actionsRowStyle = cluster({ gutter: theme.space.sm })
@@ -831,11 +940,7 @@ const dangerButtonStyle = css({
   color: 'var(--danger)',
 })
 
-const chipRowStyle = css({
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: '8px',
-})
+const chipRowStyle = cluster({ gutter: '8px' })
 
 const chipStyle = css({
   appearance: 'none',
@@ -875,20 +980,18 @@ const segmentActiveStyle = css({
   boxShadow: 'inset 0 0 0 1px var(--border)',
 })
 
-const sizeInputsStyle = css({
-  display: 'flex',
-  gap: '12px',
-  flexWrap: 'wrap',
-})
+const sizeInputsStyle = cluster({ gutter: '12px', alignment: 'stretch' })
 
-const inlineFieldStyle = css({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '4px',
-  fontSize: '12px',
-  color: 'var(--text-muted)',
-  flex: '1 1 120px',
-})
+const inlineFieldStyle = [
+  flow({ flowSpace: '4px' }),
+  css({
+    display: 'flex',
+    flexDirection: 'column',
+    fontSize: '12px',
+    color: 'var(--text-muted)',
+    flex: '1 1 120px',
+  }),
+]
 
 const listStyle = [flow({ flowSpace: theme.space.md }), css({ listStyle: 'none', padding: 0 })]
 
