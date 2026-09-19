@@ -31,9 +31,11 @@ export const InstallHint = clientEntry(
 
       return (
         <aside mix={cardStyle} aria-label={strings.install.title}>
+          <div mix={installIconStyle} aria-hidden="true">＋</div>
           <div mix={textStyle}>
             <p mix={titleStyle}>{strings.install.title}</p>
             <p mix={bodyStyle}>{strings.install.body}</p>
+            <p mix={stepsStyle}>{strings.install.steps}</p>
           </div>
           <button type="button" mix={[dismissStyle, on('click', dismiss)]}>
             {strings.install.dismiss}
@@ -66,12 +68,30 @@ function shouldShow(): boolean {
 
 const cardStyle = css({
   display: 'flex',
-  flexDirection: 'column',
+  flexDirection: 'row',
+  alignItems: 'flex-start',
   gap: '12px',
   padding: '16px',
-  background: 'var(--surface)',
-  border: '1px solid var(--border)',
+  background: 'linear-gradient(135deg, rgba(94, 184, 255, 0.1), var(--surface) 48%)',
+  border: '1px solid rgba(94, 184, 255, 0.3)',
   borderRadius: 'var(--radius)',
+  '@media (max-width: 520px)': {
+    flexWrap: 'wrap',
+  },
+})
+
+const installIconStyle = css({
+  display: 'grid',
+  placeItems: 'center',
+  flex: '0 0 auto',
+  width: '30px',
+  height: '30px',
+  borderRadius: '9px',
+  background: 'rgba(94, 184, 255, 0.16)',
+  color: 'var(--accent)',
+  fontSize: '22px',
+  lineHeight: 1,
+  fontWeight: 400,
 })
 
 const textStyle = css({
@@ -93,8 +113,17 @@ const bodyStyle = css({
   lineHeight: 1.45,
 })
 
+const stepsStyle = css({
+  margin: 0,
+  color: 'var(--accent)',
+  fontSize: '13px',
+  fontWeight: 600,
+  lineHeight: 1.4,
+})
+
 const dismissStyle = css({
   alignSelf: 'flex-start',
+  marginLeft: 'auto',
   appearance: 'none',
   border: 0,
   borderRadius: '8px',
@@ -103,4 +132,7 @@ const dismissStyle = css({
   cursor: 'pointer',
   background: 'var(--accent)',
   color: '#0b1220',
+  '@media (max-width: 520px)': {
+    marginLeft: '42px',
+  },
 })

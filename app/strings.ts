@@ -4,13 +4,23 @@ export const strings = {
   appShortName: 'Lockscreens',
   appTagline: 'Label this phone’s lockscreen',
 
+  loading: {
+    title: 'Preparing Lockscreens',
+    body: 'Opening your local workspace…',
+  },
+
   start: {
-    title: 'Device lockscreens',
-    subtitle: 'Everything stays on this phone.',
-    new: 'New',
-    continue: 'Continue',
-    browse: 'Browse',
-    continueHint: 'Resume the last draft on this phone',
+    title: 'Make a lockscreen that identifies this Host',
+    subtitle: 'Create a Wallpaper, download it, and set it from Photos. Everything stays on this Host.',
+    new: 'Create a lockscreen',
+    continue: 'Continue your Draft',
+    browse: 'Browse saved Devices',
+    continueHint: 'Your last Draft is saved on this Host.',
+    steps: [
+      { title: 'Add a Label', body: 'Give this Host a name people can recognize.' },
+      { title: 'Add Notes', body: 'Write the details that should appear on the Wallpaper.' },
+      { title: 'Download', body: 'Save it, then choose Use as Wallpaper in Photos.' },
+    ],
   },
 
   browse: {
@@ -53,9 +63,10 @@ export const strings = {
   },
 
   install: {
-    title: 'Add to Home Screen',
+    title: 'Keep Lockscreens on this Host',
     body:
-      'Tap Share, then “Add to Home Screen”. The installed app works offline and keeps drafts more reliably.',
-    dismiss: 'Got it',
+      'Add the app to your Home Screen for quick access, offline use, and more reliable Drafts.',
+    steps: 'Tap Share, then “Add to Home Screen”.',
+    dismiss: 'Maybe later',
   },
 } as const

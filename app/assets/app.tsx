@@ -207,7 +207,15 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle) {
 
   return () => {
     if (!ready) {
-      return <div mix={pageStyle}>Loading…</div>
+      return (
+        <div mix={loadingStyle} role="status" aria-live="polite">
+          <div mix={loadingMarkStyle} aria-hidden="true" />
+          <div mix={loadingCopyStyle}>
+            <p mix={loadingTitleStyle}>{strings.loading.title}</p>
+            <p mix={mutedStyle}>{strings.loading.body}</p>
+          </div>
+        </div>
+      )
     }
 
     if (loadError) {
@@ -287,6 +295,7 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle) {
                 <input
                   type="text"
                   value={device.label}
+                  autoFocus={editingNew}
                   autoComplete="off"
                   mix={[
                     inputStyle,
@@ -487,6 +496,18 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle) {
           <p mix={mutedStyle}>{strings.start.subtitle}</p>
         </header>
 
+        <ol mix={onboardingStepsStyle} aria-label="How it works">
+          {strings.start.steps.map((step, index) => (
+            <li key={step.title} mix={onboardingStepStyle}>
+              <span mix={stepNumberStyle}>{index + 1}</span>
+              <span mix={stepTextStyle}>
+                <strong>{step.title}</strong>
+                <span mix={hintStyle}>{step.body}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
+
         <div mix={startActionsStyle}>
           <button type="button" mix={[primaryButtonStyle, startButtonStyle, on('click', () => void openNew())]}>
             {strings.start.new}
@@ -576,10 +597,48 @@ const pageStyle = css({
   gap: '20px',
 })
 
+const loadingStyle = css({
+  width: '100%',
+  maxWidth: '52rem',
+  minHeight: 'min(70dvh, 32rem)',
+  margin: '0 auto',
+  display: 'grid',
+  placeItems: 'center',
+  alignContent: 'center',
+  gap: '16px',
+  textAlign: 'center',
+})
+
+const loadingMarkStyle = css({
+  width: '34px',
+  height: '34px',
+  borderRadius: '50%',
+  border: '3px solid rgba(94, 184, 255, 0.2)',
+  borderTopColor: 'var(--accent)',
+  animation: 'loading-spin 0.85s linear infinite',
+  '@media (prefers-reduced-motion: reduce)': {
+    animation: 'none',
+    background: 'var(--accent)',
+    borderColor: 'var(--accent)',
+  },
+})
+
+const loadingCopyStyle = css({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '6px',
+})
+
+const loadingTitleStyle = css({
+  margin: 0,
+  fontSize: '18px',
+  fontWeight: 700,
+})
+
 const startHeaderStyle = css({
   display: 'flex',
   flexDirection: 'column',
-  gap: '8px',
+  gap: '10px',
 })
 
 const eyebrowStyle = css({
@@ -627,6 +686,54 @@ const startActionsStyle = css({
   display: 'flex',
   flexDirection: 'column',
   gap: '12px',
+})
+
+const onboardingStepsStyle = css({
+  listStyle: 'none',
+  margin: '4px 0 8px',
+  padding: 0,
+  display: 'grid',
+  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+  gap: '10px',
+  '@media (max-width: 560px)': {
+    gridTemplateColumns: '1fr',
+  },
+})
+
+const onboardingStepStyle = css({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '10px',
+  minHeight: '126px',
+  padding: '14px',
+  background: 'rgba(26, 29, 34, 0.72)',
+  border: '1px solid var(--border)',
+  borderRadius: 'var(--radius)',
+  '@media (max-width: 560px)': {
+    minHeight: 'auto',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+})
+
+const stepNumberStyle = css({
+  display: 'grid',
+  placeItems: 'center',
+  width: '26px',
+  height: '26px',
+  borderRadius: '50%',
+  background: 'rgba(94, 184, 255, 0.16)',
+  color: 'var(--accent)',
+  fontSize: '13px',
+  fontWeight: 800,
+})
+
+const stepTextStyle = css({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '5px',
+  fontSize: '14px',
+  lineHeight: 1.35,
 })
 
 const startButtonStyle = css({

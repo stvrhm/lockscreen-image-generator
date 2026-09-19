@@ -35,4 +35,8 @@ export const baseCss = `
   }
 
   a { color: inherit; }
+
+  @keyframes loading-spin {
+    to { transform: rotate(360deg); }
+  }
 `
