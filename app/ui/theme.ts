@@ -129,7 +129,7 @@ export const baseCss = `${generatedThemeCss}
   tr + tr :is(th, td) { border-block-start: var(--stroke); }
   caption { caption-side: bottom; margin-block-start: var(--space-sm); }
 
-  a { color: currentColor; text-underline-offset: 0.2lh; }
+  a:not([class]) { color: currentColor; text-underline-offset: 0.2lh; }
   a:hover { color: var(--accent); text-underline-offset: 0.1lh; }
   :is(h1, h2, h3, h4) a:not([class]) { text-decoration-thickness: 0.2ex; text-underline-offset: 0.2ex; }
   :is(h1, h2, h3, h4) a { text-underline-offset: 0.3ex; }

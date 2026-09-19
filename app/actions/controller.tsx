@@ -12,7 +12,19 @@ export default createController(routes, {
       )
     },
     home(context) {
-      return context.render(<AppShell />)
+      return context.render(<AppShell route="start" />)
+    },
+    newDevice(context) {
+      return context.render(<AppShell route="new" />)
+    },
+    continueDevice(context) {
+      return context.render(<AppShell route="continue" />)
+    },
+    browseDevices(context) {
+      return context.render(<AppShell route="browse" />)
+    },
+    editDevice(context) {
+      return context.render(<AppShell route="edit" deviceId={context.params.id} />)
     },
   },
 })

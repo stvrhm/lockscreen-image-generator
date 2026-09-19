@@ -7,6 +7,7 @@ import {
   blankDevice,
   deleteDevice,
   duplicateDevice,
+  findDevice,
   getLastDraft,
   listDevices,
   saveDevice,
@@ -20,12 +21,33 @@ import { parseMarkdownLines, type MarkdownSegment } from '../data/markdown.ts'
 import { shortcutsFor } from '../data/shortcuts.ts'
 import { downloadWallpaper, shareWallpaper } from '../data/wallpaper.ts'
 import { strings } from '../strings.ts'
+import { routes } from '../routes.ts'
+import type { AppRoute } from '../ui/app-shell.tsx'
 
-type View = 'start' | 'browse' | 'edit'
+interface AppProps extends Record<string, string | undefined> {
+  route: string
+  deviceId?: string
+}
 
-export const App = clientEntry(import.meta.url, function App(handle: Handle) {
+function routeForLocation(fallback: AppRoute): AppRoute {
+  if (typeof window === 'undefined') return fallback
+  let path = window.location.pathname
+  if (path === routes.newDevice.href()) return 'new'
+  if (path === routes.continueDevice.href()) return 'continue'
+  if (path === routes.browseDevices.href()) return 'browse'
+  if (/^\/devices\/[^/]+\/edit$/.test(path)) return 'edit'
+  return 'start'
+}
+
+function deviceIdForLocation(): string | undefined {
+  if (typeof window === 'undefined') return undefined
+  let match = window.location.pathname.match(/^\/devices\/([^/]+)\/edit$/)
+  return match?.[1]
+}
+
+export const App = clientEntry(import.meta.url, function App(handle: Handle<AppProps>) {
+  let props = handle.props
   let ready = false
-  let view: View = 'start'
   let devices: Device[] = []
   let draft: Device | null = null
   let hasDraft = false
@@ -35,20 +57,37 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle) {
   let editingNew = false
   let notesRef: HTMLTextAreaElement | null = null
 
-  handle.queueTask(() => {
-    // Render the start screen immediately. IndexedDB can be slow or unavailable
-    // in private browsing, and it must not leave the whole app on Loading….
-    ready = true
+  handle.queueTask(async () => {
+    try {
+      let route = routeForLocation(props.route as AppRoute)
+      if (route === 'new') {
+        let size = hostSize()
+        draft = blankDevice(inferPlatform(), size.width, size.height)
+        editingNew = true
+      } else if (route === 'continue') {
+        draft = (await getLastDraft()) ?? null
+        if (!draft) {
+          window.location.replace(routes.home.href())
+          return
+        }
+        editingNew = false
+      } else if (route === 'edit') {
+        let deviceId = props.deviceId ?? deviceIdForLocation()
+        draft = deviceId ? ((await findDevice(deviceId)) ?? null) : null
+        if (!draft) {
+          window.location.replace(routes.browseDevices.href())
+          return
+        }
+        editingNew = false
+      } else {
+        await refresh()
+      }
+      ready = true
+    } catch (error) {
+      console.error('Failed to load local Devices', error)
+      loadError = 'Local storage is unavailable. Reload the app or disable private browsing.'
+    }
     handle.update()
-
-    void refresh()
-      .catch((error) => {
-        console.error('Failed to load local Devices', error)
-        loadError = 'Local storage is unavailable. Reload the app or disable private browsing.'
-      })
-      .finally(() => {
-        handle.update()
-      })
   })
 
   async function refresh() {
@@ -70,51 +109,6 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle) {
       }
     }
     return hostSize()
-  }
-
-  async function openNew() {
-    let size = hostSize()
-    let platform = inferPlatform()
-    draft = blankDevice(platform, size.width, size.height)
-    platformOverride = false
-    editingNew = true
-    statusMessage = ''
-    view = 'edit'
-    handle.update()
-  }
-
-  async function openContinue() {
-    let last = await getLastDraft()
-    if (!last) return
-    draft = last
-    platformOverride = false
-    editingNew = false
-    statusMessage = ''
-    view = 'edit'
-    handle.update()
-  }
-
-  async function openBrowse() {
-    devices = await listDevices()
-    view = 'browse'
-    statusMessage = ''
-    handle.update()
-  }
-
-  function openEdit(device: Device) {
-    draft = { ...device }
-    platformOverride = false
-    editingNew = false
-    statusMessage = ''
-    view = 'edit'
-    handle.update()
-  }
-
-  async function goStart() {
-    await refresh()
-    view = 'start'
-    statusMessage = ''
-    handle.update()
   }
 
   function patchDraft(patch: Partial<Device>) {
@@ -153,8 +147,13 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle) {
       handle.update()
       return
     }
+    let wasNew = editingNew
     draft = await saveDevice({ ...draft, label: draft.label.trim() })
     editingNew = false
+    if (wasNew) {
+      window.location.assign(routes.editDevice.href({ id: draft.id }))
+      return
+    }
     statusMessage = strings.editor.saved
     await refresh()
     handle.update()
@@ -190,8 +189,7 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle) {
 
   async function onDuplicate(device: Device) {
     let copy = await duplicateDevice(device)
-    await refresh()
-    openEdit(copy)
+    window.location.assign(routes.editDevice.href({ id: copy.id }))
   }
 
   async function onDelete(device: Device) {
@@ -202,6 +200,8 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle) {
   }
 
   return () => {
+    let route = routeForLocation(props.route as AppRoute)
+
     if (!ready) {
       return (
         <div mix={loadingStyle} role="status" aria-live="polite">
@@ -218,13 +218,13 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle) {
       return <div mix={pageStyle}>{loadError}</div>
     }
 
-    if (view === 'browse') {
+    if (route === 'browse') {
       return (
         <div mix={pageStyle}>
           <header mix={headerRowStyle}>
-            <button type="button" mix={[ghostButtonStyle, on('click', () => void goStart())]}>
+            <a href={routes.home.href()} data-rmx-document mix={ghostButtonStyle}>
               {strings.browse.back}
-            </button>
+            </a>
             <h1 mix={headingStyle}>{strings.browse.title}</h1>
           </header>
           {devices.length === 0 ? (
@@ -241,12 +241,13 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle) {
                     </span>
                   </div>
                   <div mix={actionsRowStyle}>
-                    <button
-                      type="button"
-                      mix={[secondaryButtonStyle, on('click', () => openEdit(device))]}
+                    <a
+                      href={routes.editDevice.href({ id: device.id })}
+                      data-rmx-document
+                      mix={secondaryButtonStyle}
                     >
                       {strings.browse.edit}
-                    </button>
+                    </a>
                     <button
                       type="button"
                       mix={[secondaryButtonStyle, on('click', () => void onDuplicate(device))]}
@@ -268,7 +269,7 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle) {
       )
     }
 
-    if (view === 'edit' && draft) {
+    if ((route === 'new' || route === 'continue' || route === 'edit') && draft) {
       let device = draft
       let size = resolvedSize(device)
       let previewText = device.notes.trim() || device.label.trim() || 'Notes preview'
@@ -277,9 +278,9 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle) {
       return (
         <div mix={pageStyle}>
           <header mix={headerRowStyle}>
-            <button type="button" mix={[ghostButtonStyle, on('click', () => void goStart())]}>
+            <a href={routes.home.href()} data-rmx-document mix={ghostButtonStyle}>
               {strings.editor.back}
-            </button>
+            </a>
             <h1 mix={headingStyle}>
               {editingNew ? strings.editor.titleNew : strings.editor.titleEdit}
             </h1>
@@ -509,26 +510,29 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle) {
         </ol>
 
         <div mix={startActionsStyle}>
-          <button
-            type="button"
-            mix={[primaryButtonStyle, startButtonStyle, on('click', () => void openNew())]}
+          <a
+            href={routes.newDevice.href()}
+            data-rmx-document
+            mix={[primaryButtonStyle, startButtonStyle]}
           >
             {strings.start.new}
-          </button>
+          </a>
           {hasDraft ? (
-            <button
-              type="button"
-              mix={[secondaryButtonStyle, startButtonStyle, on('click', () => void openContinue())]}
+            <a
+              href={routes.continueDevice.href()}
+              data-rmx-document
+              mix={[secondaryButtonStyle, startButtonStyle]}
             >
               {strings.start.continue}
-            </button>
+            </a>
           ) : null}
-          <button
-            type="button"
-            mix={[secondaryButtonStyle, startButtonStyle, on('click', () => void openBrowse())]}
+          <a
+            href={routes.browseDevices.href()}
+            data-rmx-document
+            mix={[secondaryButtonStyle, startButtonStyle]}
           >
             {strings.start.browse}
-          </button>
+          </a>
         </div>
         {hasDraft ? <p mix={hintStyle}>{strings.start.continueHint}</p> : null}
       </div>
@@ -772,6 +776,7 @@ const primaryButtonStyle = css({
   padding: '11px 16px',
   fontWeight: 600,
   cursor: 'pointer',
+  textDecoration: 'none',
   background: 'var(--text)',
   color: '#09090b',
   display: 'inline-flex',
@@ -784,6 +789,7 @@ const secondaryButtonStyle = css({
   padding: '11px 16px',
   fontWeight: 600,
   cursor: 'pointer',
+  textDecoration: 'none',
   background: 'var(--surface-2)',
   border: '1px solid var(--border)',
   color: 'var(--text)',
@@ -798,6 +804,7 @@ const ghostButtonStyle = css({
   color: 'var(--accent)',
   fontWeight: 600,
   cursor: 'pointer',
+  textDecoration: 'none',
   padding: '4px 0',
 })
 

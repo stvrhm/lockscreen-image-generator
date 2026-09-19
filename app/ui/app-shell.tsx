@@ -1,15 +1,22 @@
-import { css } from 'remix/ui'
+import { css, type Handle } from 'remix/ui'
 
 import { App } from '../assets/app.tsx'
 import { InstallHint } from '../assets/install-hint.tsx'
 import { Document } from './document.tsx'
 
-export function AppShell() {
+export type AppRoute = 'start' | 'new' | 'continue' | 'browse' | 'edit'
+
+export interface AppShellProps {
+  route: AppRoute
+  deviceId?: string
+}
+
+export function AppShell(handle: Handle<AppShellProps>) {
   return () => (
     <Document>
       <main mix={pageStyle}>
         <InstallHint />
-        <App />
+        <App route={handle.props.route} deviceId={handle.props.deviceId} />
       </main>
     </Document>
   )

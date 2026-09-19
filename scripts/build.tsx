@@ -27,7 +27,7 @@ const PUBLIC_PRECACHE = [
 ]
 
 async function renderIndexHtml(): Promise<string> {
-  const stream = renderToStream(<AppShell />, {
+  const stream = renderToStream(<AppShell route="start" />, {
     async resolveClientEntry(entryId, component) {
       const { href, importMap, preloads } = await assetServer.getScriptEntry(entryId)
 
