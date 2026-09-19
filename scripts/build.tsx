@@ -10,7 +10,10 @@ import { AppShell } from '../app/ui/app-shell.tsx'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const DIST = join(ROOT, 'dist')
-const BUILD_ID = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14)
+const BUILD_ID = new Date()
+  .toISOString()
+  .replace(/[^0-9]/g, '')
+  .slice(0, 14)
 
 const CLIENT_ENTRIES = ['app/assets/entry.ts', 'app/assets/install-hint.tsx', 'app/assets/app.tsx']
 

@@ -11,7 +11,8 @@ export const strings = {
 
   start: {
     title: 'Make a lockscreen that identifies this Host',
-    subtitle: 'Create a Wallpaper, download it, and set it from Photos. Everything stays on this Host.',
+    subtitle:
+      'Create a Wallpaper, download it, and set it from Photos. Everything stays on this Host.',
     new: 'Create a lockscreen',
     continue: 'Continue your Draft',
     browse: 'Browse saved Devices',
@@ -64,8 +65,7 @@ export const strings = {
 
   install: {
     title: 'Keep Lockscreens on this Host',
-    body:
-      'Add the app to your Home Screen for quick access, offline use, and more reliable Drafts.',
+    body: 'Add the app to your Home Screen for quick access, offline use, and more reliable Drafts.',
     steps: 'Tap Share, then “Add to Home Screen”.',
     dismiss: 'Maybe later',
   },

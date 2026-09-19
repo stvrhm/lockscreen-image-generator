@@ -5,47 +5,46 @@ import { strings } from '../strings.ts'
 
 const DISMISS_KEY = 'tdl:install-hint-dismissed'
 
-export const InstallHint = clientEntry(
-  import.meta.url,
-  function InstallHint(handle: Handle) {
-    let visible = false
+export const InstallHint = clientEntry(import.meta.url, function InstallHint(handle: Handle) {
+  let visible = false
 
-    handle.queueTask(() => {
-      if (shouldShow()) {
-        visible = true
-        handle.update()
-      }
-    })
-
-    function dismiss() {
-      try {
-        localStorage.setItem(DISMISS_KEY, '1')
-      } catch {
-        // ignore
-      }
-      visible = false
+  handle.queueTask(() => {
+    if (shouldShow()) {
+      visible = true
       handle.update()
     }
+  })
 
-    return () => {
-      if (!visible) return null
-
-      return (
-        <aside mix={cardStyle} aria-label={strings.install.title}>
-          <div mix={installIconStyle} aria-hidden="true">＋</div>
-          <div mix={textStyle}>
-            <p mix={titleStyle}>{strings.install.title}</p>
-            <p mix={bodyStyle}>{strings.install.body}</p>
-            <p mix={stepsStyle}>{strings.install.steps}</p>
-          </div>
-          <button type="button" mix={[dismissStyle, on('click', dismiss)]}>
-            {strings.install.dismiss}
-          </button>
-        </aside>
-      )
+  function dismiss() {
+    try {
+      localStorage.setItem(DISMISS_KEY, '1')
+    } catch {
+      // ignore
     }
-  },
-)
+    visible = false
+    handle.update()
+  }
+
+  return () => {
+    if (!visible) return null
+
+    return (
+      <aside mix={cardStyle} aria-label={strings.install.title}>
+        <div mix={installIconStyle} aria-hidden="true">
+          ＋
+        </div>
+        <div mix={textStyle}>
+          <p mix={titleStyle}>{strings.install.title}</p>
+          <p mix={bodyStyle}>{strings.install.body}</p>
+          <p mix={stepsStyle}>{strings.install.steps}</p>
+        </div>
+        <button type="button" mix={[dismissStyle, on('click', dismiss)]}>
+          {strings.install.dismiss}
+        </button>
+      </aside>
+    )
+  }
+})
 
 function shouldShow(): boolean {
   if (typeof navigator === 'undefined' || typeof window === 'undefined') return false

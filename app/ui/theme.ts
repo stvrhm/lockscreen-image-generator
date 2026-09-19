@@ -1,42 +1,39 @@
+import { fluidSpace, fluidType, generatedThemeCss, leading, weights } from './generated-theme.ts'
+
 export const THEME_COLOR = '#15171b'
 
-const SPACE = {
-  none: '0',
-  xs: '4px',
-  sm: '8px',
-  md: '12px',
-  lg: '16px',
-  xl: '24px',
-  xxl: '40px',
-} as const
-
 export const theme = {
-  space: SPACE,
+  space: fluidSpace,
   radius: { sm: '8px', md: '12px', lg: '20px', full: '999px' },
-  fontSize: { xs: '12px', sm: '14px', md: '16px', lg: '20px', xl: '28px' },
-  fontWeight: { medium: 500, semibold: 600, bold: 700 },
+  fontSize: fluidType,
+  fontWeight: weights,
+  leading,
 } as const
 
-export const baseCss = `
+export const baseCss = `${generatedThemeCss}
   :root {
     color-scheme: dark;
-    --page: #0f1114;
-    --surface: #1a1d22;
-    --surface-2: #23272e;
-    --border: #2e343d;
+    --page: #0a0a0b;
+    --surface: #111113;
+    --surface-2: #19191c;
+    --surface-3: #222226;
+    --border: #2a2a2f;
+    --border-subtle: rgba(255, 255, 255, 0.08);
     --text: #f2f4f7;
     --text-muted: #9aa3af;
-    --accent: #5eb8ff;
+    --accent: #7dd3fc;
+    --accent-strong: #38bdf8;
     --danger: #f07178;
     --radius: ${theme.radius.md};
-    --space-xs: ${SPACE.xs};
-    --space-sm: ${SPACE.sm};
-    --space-md: ${SPACE.md};
-    --space-lg: ${SPACE.lg};
-    --space-xl: ${SPACE.xl};
-    --space-xxl: ${SPACE.xxl};
+    --shadow-soft: 0 12px 40px rgba(0, 0, 0, 0.24);
+    --space-xs: ${fluidSpace.xs};
+    --space-sm: ${fluidSpace.sm};
+    --space-md: ${fluidSpace.md};
+    --space-lg: ${fluidSpace.lg};
+    --space-xl: ${fluidSpace.xl};
+    --space-xxl: ${fluidSpace.xxl};
     --gutter: var(--space-lg);
-    --flow-space: 1em;
+    --flow-space: var(--space-md);
     --stroke-width: 1px;
     --stroke: var(--stroke-width) solid var(--border);
     --focus-color: var(--accent);
@@ -53,7 +50,6 @@ export const baseCss = `
     -webkit-text-size-adjust: none;
     text-size-adjust: none;
   }
-  body, h1, h2, h3, h4, p, figure, blockquote, dl, dd { margin-block: 0; }
   ul[role='list'], ol[role='list'] { list-style: none; }
   body {
     min-height: 100vh;
@@ -65,9 +61,11 @@ export const baseCss = `
     -moz-osx-font-smoothing: grayscale;
     display: flex;
     flex-direction: column;
-    background: radial-gradient(1200px 600px at 10% -10%, #1c2a3a 0%, transparent 55%), radial-gradient(900px 500px at 100% 0%, #24301f 0%, transparent 50%), var(--page);
+    background: radial-gradient(1000px 520px at 12% -10%, rgba(37, 99, 235, 0.16) 0%, transparent 58%), radial-gradient(900px 500px at 100% 0%, rgba(14, 116, 144, 0.12) 0%, transparent 52%), var(--page);
     color: var(--text);
     font-family: var(--font);
+    font-size: var(--font-size-body);
+    line-height: var(--leading-standard);
   }
   h1, h2, h3, h4, button, input, label { line-height: 1.1; }
   h1, h2, h3, h4 { text-wrap: balance; }
@@ -83,10 +81,10 @@ export const baseCss = `
     line-height: 1.2;
     font-weight: var(--font-weight-bold, 700);
   }
-  h1 { font-size: clamp(28px, 7vw, 40px); max-width: 25ch; }
-  h2 { font-size: 28px; max-width: 35ch; }
-  h3 { font-size: 22px; max-width: 35ch; }
-  :is(h4, h5, h6) { font-size: 18px; }
+  h1 { font-size: var(--font-size-h1); max-width: 25ch; }
+  h2 { font-size: var(--font-size-h2); max-width: 35ch; }
+  h3 { font-size: var(--font-size-h3); max-width: 35ch; }
+  :is(h4, h5, h6) { font-size: var(--font-size-body); }
 
   :is(code, kbd, samp) {
     box-decoration-break: clone;

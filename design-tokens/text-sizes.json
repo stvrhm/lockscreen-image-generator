@@ -1,0 +1,8 @@
+[
+  { "name": "body", "min": 15, "max": 17 },
+  { "name": "small", "min": 13, "max": 14 },
+  { "name": "h3", "min": 20, "max": 26 },
+  { "name": "h2", "min": 26, "max": 36 },
+  { "name": "h1", "min": 34, "max": 56 },
+  { "name": "display", "min": 44, "max": 72 }
+]

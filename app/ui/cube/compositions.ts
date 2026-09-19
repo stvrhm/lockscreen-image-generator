@@ -4,18 +4,37 @@ import { cubeVars, dataAttrs, type CubeValue } from './helpers.ts'
 
 type CubeMix = MixInput<Element>
 
-interface FlowOptions { flowSpace?: CubeValue }
-interface ClusterOptions { gutter?: CubeValue; alignment?: string; justification?: string }
-interface GridOptions { gutter?: CubeValue; minItemSize?: CubeValue; equalHeight?: boolean }
+interface FlowOptions {
+  flowSpace?: CubeValue
+}
+interface ClusterOptions {
+  gutter?: CubeValue
+  alignment?: string
+  justification?: string
+}
+interface GridOptions {
+  gutter?: CubeValue
+  minItemSize?: CubeValue
+  equalHeight?: boolean
+}
 interface SidebarOptions {
   gutter?: CubeValue
   sidebarWidth?: CubeValue
   contentMinWidth?: CubeValue
   direction?: 'rtl' | 'stack-to-row'
 }
-interface SwitcherOptions { gutter?: CubeValue; targetWidth?: CubeValue }
-interface WrapperOptions { gutter?: CubeValue; maxWidth?: CubeValue }
-interface RepelOptions { gutter?: CubeValue; alignment?: string }
+interface SwitcherOptions {
+  gutter?: CubeValue
+  targetWidth?: CubeValue
+}
+interface WrapperOptions {
+  gutter?: CubeValue
+  maxWidth?: CubeValue
+}
+interface RepelOptions {
+  gutter?: CubeValue
+  alignment?: string
+}
 
 const flowStyle = css({ '& > * + *': { marginBlockStart: 'var(--flow-space, 1em)' } })
 const clusterStyle = css({
@@ -36,7 +55,11 @@ const sidebarStyle = css({
   flexWrap: 'wrap',
   gap: 'var(--gutter, var(--space-xl))',
   '& > :first-child': { flexBasis: 'var(--sidebar-width, 20rem)', flexGrow: 1 },
-  '& > :last-child': { flexBasis: 0, flexGrow: 999, minInlineSize: 'var(--sidebar-content-min-width, 50%)' },
+  '& > :last-child': {
+    flexBasis: 0,
+    flexGrow: 999,
+    minInlineSize: 'var(--sidebar-content-min-width, 50%)',
+  },
   '&[data-direction="stack-to-row"]': {
     flexDirection: 'column',
     '& > :first-child': { flexBasis: 'auto', flexGrow: 0 },
@@ -79,25 +102,53 @@ export function stack(options: FlowOptions = {}): CubeMix {
 }
 
 export function cluster(options: ClusterOptions = {}): CubeMix {
-  return [clusterStyle, cubeVars({ '--gutter': options.gutter, '--cluster-alignment': options.alignment, '--cluster-justification': options.justification })]
+  return [
+    clusterStyle,
+    cubeVars({
+      '--gutter': options.gutter,
+      '--cluster-alignment': options.alignment,
+      '--cluster-justification': options.justification,
+    }),
+  ]
 }
 
 export function grid(options: GridOptions = {}): CubeMix {
-  return [gridStyle, cubeVars({ '--gutter': options.gutter, '--grid-min-item-size': options.minItemSize }), dataAttrs({ 'data-equal-height': options.equalHeight ? '' : undefined })]
+  return [
+    gridStyle,
+    cubeVars({ '--gutter': options.gutter, '--grid-min-item-size': options.minItemSize }),
+    dataAttrs({ 'data-equal-height': options.equalHeight ? '' : undefined }),
+  ]
 }
 
 export function sidebar(options: SidebarOptions = {}): CubeMix {
-  return [sidebarStyle, cubeVars({ '--gutter': options.gutter, '--sidebar-width': options.sidebarWidth, '--sidebar-content-min-width': options.contentMinWidth }), dataAttrs({ 'data-direction': options.direction })]
+  return [
+    sidebarStyle,
+    cubeVars({
+      '--gutter': options.gutter,
+      '--sidebar-width': options.sidebarWidth,
+      '--sidebar-content-min-width': options.contentMinWidth,
+    }),
+    dataAttrs({ 'data-direction': options.direction }),
+  ]
 }
 
 export function switcher(options: SwitcherOptions = {}): CubeMix {
-  return [switcherStyle, cubeVars({ '--gutter': options.gutter, '--switcher-target-width': options.targetWidth })]
+  return [
+    switcherStyle,
+    cubeVars({ '--gutter': options.gutter, '--switcher-target-width': options.targetWidth }),
+  ]
 }
 
 export function repel(options: RepelOptions = {}): CubeMix {
-  return [repelStyle, cubeVars({ '--gutter': options.gutter, '--repel-alignment': options.alignment })]
+  return [
+    repelStyle,
+    cubeVars({ '--gutter': options.gutter, '--repel-alignment': options.alignment }),
+  ]
 }
 
 export function wrapper(options: WrapperOptions = {}): CubeMix {
-  return [wrapperStyle, cubeVars({ '--gutter': options.gutter, '--wrapper-max-width': options.maxWidth })]
+  return [
+    wrapperStyle,
+    cubeVars({ '--gutter': options.gutter, '--wrapper-max-width': options.maxWidth }),
+  ]
 }

@@ -78,7 +78,9 @@ export async function downloadWallpaper(options: WallpaperOptions): Promise<bool
   return true
 }
 
-export async function shareWallpaper(options: WallpaperOptions): Promise<'shared' | 'unsupported' | 'failed'> {
+export async function shareWallpaper(
+  options: WallpaperOptions,
+): Promise<'shared' | 'unsupported' | 'failed'> {
   let blob = await renderWallpaperBlob(options)
   if (!blob) return 'failed'
 
@@ -140,7 +142,11 @@ function tokenizeMarkdownLine(segments: MarkdownSegment[]): MarkdownToken[][] {
   return atoms
 }
 
-function measureAtomWidth(ctx: CanvasRenderingContext2D, atom: MarkdownToken[], fontSize: number): number {
+function measureAtomWidth(
+  ctx: CanvasRenderingContext2D,
+  atom: MarkdownToken[],
+  fontSize: number,
+): number {
   let width = 0
   for (let token of atom) {
     ctx.font = markdownFont(fontSize, token)

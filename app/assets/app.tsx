@@ -1,11 +1,4 @@
-import {
-  clientEntry,
-  css,
-  on,
-  ref,
-  type Handle,
-  type MixInput,
-} from 'remix/ui'
+import { clientEntry, css, on, ref, type Handle, type MixInput } from 'remix/ui'
 
 import { cluster, flow, grid, region, sidebar, switcher, wrapper } from '../ui/cube/index.ts'
 import { theme } from '../ui/theme.ts'
@@ -243,7 +236,8 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle) {
                   <div mix={listMainStyle}>
                     <strong>{device.label || 'Untitled'}</strong>
                     <span mix={mutedStyle}>
-                      {device.platform.toUpperCase()} · {new Date(device.updatedAt).toLocaleString()}
+                      {device.platform.toUpperCase()} ·{' '}
+                      {new Date(device.updatedAt).toLocaleString()}
                     </span>
                   </div>
                   <div mix={actionsRowStyle}>
@@ -366,10 +360,7 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle) {
                     <button
                       key={shortcut.id}
                       type="button"
-                      mix={[
-                        chipStyle,
-                        on('click', () => insertShortcut(shortcut.insert)),
-                      ]}
+                      mix={[chipStyle, on('click', () => insertShortcut(shortcut.insert))]}
                     >
                       {shortcut.label}
                     </button>
@@ -503,7 +494,10 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle) {
           {strings.start.steps.map((step, index) => (
             <li
               key={step.title}
-              mix={[sidebar({ gutter: theme.space.md, direction: 'stack-to-row' }), onboardingStepStyle]}
+              mix={[
+                sidebar({ gutter: theme.space.md, direction: 'stack-to-row' }),
+                onboardingStepStyle,
+              ]}
             >
               <span mix={stepNumberStyle}>{index + 1}</span>
               <span mix={stepTextStyle}>
@@ -515,7 +509,10 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle) {
         </ol>
 
         <div mix={startActionsStyle}>
-          <button type="button" mix={[primaryButtonStyle, startButtonStyle, on('click', () => void openNew())]}>
+          <button
+            type="button"
+            mix={[primaryButtonStyle, startButtonStyle, on('click', () => void openNew())]}
+          >
             {strings.start.new}
           </button>
           {hasDraft ? (
@@ -539,9 +536,7 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle) {
   }
 })
 
-function SegmentButton(
-  handle: Handle<{ active: boolean; label: string; onSelect: () => void }>,
-) {
+function SegmentButton(handle: Handle<{ active: boolean; label: string; onSelect: () => void }>) {
   return () => {
     let { active, label, onSelect } = handle.props
     return (
@@ -566,13 +561,11 @@ function PhonePreview(handle: Handle<{ platform: Platform; text: string }>) {
           <div mix={previewTextStyle}>
             {lines.map((segments, lineIndex) => (
               <div key={lineIndex}>
-                {segments.every((segment) => segment.text === '') ? (
-                  ' '
-                ) : (
-                  segments.map((segment, segmentIndex) => (
-                    <MarkdownSpan key={segmentIndex} segment={segment} />
-                  ))
-                )}
+                {segments.every((segment) => segment.text === '')
+                  ? ' '
+                  : segments.map((segment, segmentIndex) => (
+                      <MarkdownSpan key={segmentIndex} segment={segment} />
+                    ))}
               </div>
             ))}
           </div>
@@ -595,20 +588,20 @@ function MarkdownSpan(handle: Handle<{ segment: MarkdownSegment }>) {
 }
 
 const pageStyle = [
-  wrapper({ gutter: theme.space.lg, maxWidth: '52rem' }),
-  region(theme.space.lg),
-  flow({ flowSpace: theme.space.xl }),
+  wrapper({ gutter: theme.space.lg, maxWidth: '68rem' }),
+  region(theme.space.xxl),
+  flow({ flowSpace: '32px' }),
 ]
 
 const loadingStyle = [
   wrapper({ gutter: theme.space.lg, maxWidth: '52rem' }),
   css({
-  minHeight: 'min(70dvh, 32rem)',
-  display: 'grid',
-  placeItems: 'center',
-  alignContent: 'center',
-  gap: '16px',
-  textAlign: 'center',
+    minHeight: 'min(70dvh, 32rem)',
+    display: 'grid',
+    placeItems: 'center',
+    alignContent: 'center',
+    gap: '16px',
+    textAlign: 'center',
   }),
 ]
 
@@ -633,7 +626,10 @@ const loadingTitleStyle = css({
   fontWeight: 700,
 })
 
-const startHeaderStyle = flow({ flowSpace: theme.space.sm })
+const startHeaderStyle = [
+  flow({ flowSpace: theme.space.sm }),
+  css({ maxWidth: '42rem' }),
+]
 
 const eyebrowStyle = css({
   fontSize: '12px',
@@ -644,14 +640,16 @@ const eyebrowStyle = css({
 })
 
 const titleStyle = css({
-  fontSize: 'clamp(28px, 7vw, 40px)',
+  fontSize: 'clamp(34px, 7vw, 52px)',
   fontFamily: 'var(--font-display)',
-  letterSpacing: '-0.02em',
+  letterSpacing: '-0.045em',
+  lineHeight: 1.04,
 })
 
 const headingStyle = css({
-  fontSize: '20px',
+  fontSize: '24px',
   fontWeight: 600,
+  letterSpacing: '-0.02em',
 })
 
 const mutedStyle = css({
@@ -670,7 +668,10 @@ const statusStyle = css({
   fontWeight: 600,
 })
 
-const startActionsStyle = switcher({ gutter: theme.space.md, targetWidth: '32rem' })
+const startActionsStyle = [
+  switcher({ gutter: theme.space.md, targetWidth: '32rem' }),
+  css({ maxWidth: '42rem' }),
+]
 
 const onboardingStepsStyle = [
   grid({ gutter: theme.space.sm, minItemSize: '14rem' }),
@@ -678,11 +679,12 @@ const onboardingStepsStyle = [
 ]
 
 const onboardingStepStyle = css({
-  minHeight: '126px',
-  padding: '14px',
-  background: 'rgba(26, 29, 34, 0.72)',
-  border: '1px solid var(--border)',
-  borderRadius: 'var(--radius)',
+  minHeight: '138px',
+  padding: '18px',
+  background: 'rgba(17, 17, 19, 0.72)',
+  border: '1px solid var(--border-subtle)',
+  borderRadius: '14px',
+  boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.04)',
   '@media (max-width: 560px)': { minHeight: 'auto' },
 })
 
@@ -692,7 +694,7 @@ const stepNumberStyle = css({
   width: '26px',
   height: '26px',
   borderRadius: '50%',
-  background: 'rgba(94, 184, 255, 0.16)',
+  background: 'rgba(56, 189, 248, 0.14)',
   color: 'var(--accent)',
   fontSize: '13px',
   fontWeight: 800,
@@ -709,28 +711,37 @@ const startButtonStyle = css({
   justifyContent: 'center',
 })
 
-const headerRowStyle = cluster({ gutter: theme.space.md })
+const headerRowStyle = [
+  cluster({ gutter: theme.space.md }),
+  css({ alignItems: 'baseline', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '18px' }),
+]
 
-const editorLayoutStyle = sidebar({ gutter: theme.space.xxl, sidebarWidth: 'min(24rem, 100%)' })
+const editorLayoutStyle = sidebar({ gutter: 'clamp(28px, 5vw, 72px)', sidebarWidth: 'min(34rem, 100%)' })
 
-const formStyle = [flow({ flowSpace: theme.space.lg }), css({ minWidth: '260px' })]
+const formStyle = [
+  flow({ flowSpace: theme.space.xl }),
+  css({ minWidth: '260px', padding: 'clamp(18px, 3vw, 28px)', background: 'rgba(17, 17, 19, 0.76)', border: '1px solid var(--border-subtle)', borderRadius: '16px', boxShadow: 'var(--shadow-soft)' }),
+]
 
 const fieldStyle = [
-  flow({ flowSpace: theme.space.xs }),
+  flow({ flowSpace: theme.space.sm }),
   css({ display: 'flex', flexDirection: 'column' }),
 ]
 
 const fieldLabelStyle = css({
-  fontSize: '13px',
+  fontSize: '14px',
   fontWeight: 600,
+  color: 'var(--text)',
 })
 
 const inputStyle = css({
-  padding: '10px 12px',
-  borderRadius: '8px',
+  padding: '12px 13px',
+  borderRadius: '10px',
   border: '1px solid var(--border)',
-  background: 'var(--surface)',
+  background: 'rgba(10, 10, 11, 0.72)',
   color: 'var(--text)',
+  transition: 'border-color 140ms ease, box-shadow 140ms ease',
+  ':focus': { borderColor: 'var(--accent-strong)', boxShadow: '0 0 0 3px rgba(56, 189, 248, 0.14)' },
 })
 
 const textareaStyle = css({
@@ -743,23 +754,23 @@ const actionsRowStyle = cluster({ gutter: theme.space.sm })
 const primaryButtonStyle = css({
   appearance: 'none',
   border: 0,
-  borderRadius: '8px',
-  padding: '10px 16px',
+  borderRadius: '9px',
+  padding: '11px 16px',
   fontWeight: 600,
   cursor: 'pointer',
-  background: 'var(--accent)',
-  color: '#0b1220',
+  background: 'var(--text)',
+  color: '#09090b',
   display: 'inline-flex',
   alignItems: 'center',
 })
 
 const secondaryButtonStyle = css({
   appearance: 'none',
-  borderRadius: '8px',
-  padding: '10px 16px',
+  borderRadius: '9px',
+  padding: '11px 16px',
   fontWeight: 600,
   cursor: 'pointer',
-  background: 'transparent',
+  background: 'var(--surface-2)',
   border: '1px solid var(--border)',
   color: 'var(--text)',
   display: 'inline-flex',
@@ -808,7 +819,7 @@ const chipRowStyle = css({
 const chipStyle = css({
   appearance: 'none',
   border: '1px solid var(--border)',
-  background: 'var(--surface-2)',
+  background: 'transparent',
   color: 'var(--text)',
   borderRadius: '999px',
   padding: '6px 12px',
@@ -821,7 +832,8 @@ const segmentStyle = css({
   display: 'flex',
   gap: '0',
   border: '1px solid var(--border)',
-  borderRadius: '8px',
+  borderRadius: '10px',
+  background: 'var(--surface)',
   overflow: 'hidden',
   width: 'fit-content',
 })
@@ -837,8 +849,9 @@ const segmentButtonStyle = css({
 })
 
 const segmentActiveStyle = css({
-  background: 'var(--surface-2)',
+  background: 'var(--surface-3)',
   color: 'var(--text)',
+  boxShadow: 'inset 0 0 0 1px var(--border)',
 })
 
 const sizeInputsStyle = css({
@@ -862,21 +875,31 @@ const listItemStyle = css({
   display: 'flex',
   flexDirection: 'column',
   gap: '12px',
-  padding: '14px',
-  background: 'var(--surface)',
-  border: '1px solid var(--border)',
-  borderRadius: 'var(--radius)',
+  padding: '18px',
+  background: 'rgba(17, 17, 19, 0.78)',
+  border: '1px solid var(--border-subtle)',
+  borderRadius: '14px',
+  boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.03)',
 })
 
 const listMainStyle = flow({ flowSpace: theme.space.xs })
 
 const previewColumnStyle = [
   css({
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  gap: '12px',
-  flex: '0 0 auto',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '16px',
+    flex: '0 0 auto',
+    alignSelf: 'flex-start',
+    position: 'sticky',
+    top: '24px',
+    padding: '24px',
+    borderRadius: '16px',
+    border: '1px solid var(--border-subtle)',
+    background: 'rgba(17, 17, 19, 0.58)',
+    boxShadow: 'var(--shadow-soft)',
+    '@media (max-width: 800px)': { position: 'static' },
   }),
 ]
 
@@ -889,12 +912,12 @@ const previewLabelStyle = css({
 })
 
 const phoneFrameStyle = css({
-  width: '231px',
-  height: '500px',
+  width: '224px',
+  height: '484px',
   padding: '10px',
   borderRadius: '48px',
   background: '#0b0c0e',
-  boxShadow: '0 12px 30px rgba(0, 0, 0, 0.35)',
+  boxShadow: '0 24px 50px rgba(0, 0, 0, 0.48), 0 0 0 1px rgba(255, 255, 255, 0.08)',
 })
 
 const phoneScreenStyle = css({

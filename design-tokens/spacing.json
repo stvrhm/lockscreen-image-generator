@@ -1,0 +1,14 @@
+[
+  { "name": "3xs", "min": 4, "max": 6 },
+  { "name": "2xs", "min": 8, "max": 12 },
+  { "name": "xs", "min": 12, "max": 16 },
+  { "name": "sm", "min": 16, "max": 24 },
+  { "name": "md", "min": 24, "max": 32 },
+  { "name": "lg", "min": 32, "max": 48 },
+  { "name": "xl", "min": 48, "max": 72 },
+  { "name": "xxl", "min": 72, "max": 112 },
+  { "name": "xs-sm", "min": 12, "max": 24 },
+  { "name": "sm-md", "min": 16, "max": 32 },
+  { "name": "md-lg", "min": 24, "max": 48 },
+  { "name": "lg-xl", "min": 32, "max": 72 }
+]
