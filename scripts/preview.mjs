@@ -38,9 +38,7 @@ async function tryFile(path) {
 const server = createServer(async (req, res) => {
   try {
     const url = new URL(req.url, 'http://localhost')
-    // Asset URLs intentionally preserve encoded package names such as
-    // `%40remix-run`; the build writes those encoded names to dist/.
-    const rel = normalize(url.pathname).replace(/^(\.\.(\/|\\|$))+/, '')
+    const rel = normalize(decodeURIComponent(url.pathname)).replace(/^(\.\.(\/|\\|$))+/, '')
     let filePath = join(DIST, rel)
 
     let resolved = await tryFile(filePath)

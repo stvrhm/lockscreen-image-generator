@@ -130,7 +130,11 @@ async function build() {
       throw new Error(`Asset fetch failed for ${assetUrl}: ${res?.status}`)
     }
     const bytes = Buffer.from(await res.arrayBuffer())
-    writeFileEnsured(join(DIST, assetUrl.replace(/^\//, '')), bytes)
+    // Netlify decodes URL-encoded path segments before resolving static files.
+    // Write package paths such as `%40remix-run` under their decoded name so
+    // `/assets/npm/%40remix-run/...` resolves instead of falling through to
+    // the SPA HTML fallback.
+    writeFileEnsured(join(DIST, decodeURIComponent(assetUrl.replace(/^\//, ''))), bytes)
   }
   console.log(`  ${assetUrls.length} assets`)
 
