@@ -73,14 +73,19 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle<AppP
   // Keep the first client render identical to that tree, then resolve the
   // browser pathname in the queued task below.
   let initialRoute = props.route as AppRoute
+  let activeRoute = initialRoute
 
   // The landing page does not need IndexedDB before it can render. Showing it
   // immediately avoids a loading flash while its optional draft state loads.
-  if (initialRoute === 'start') ready = true
+  // On a static client route, however, the server HTML is always the home
+  // shell. Wait for the pathname before showing it so Home and Browse cannot
+  // briefly render as two screens in the same document.
+  if (initialRoute === 'start' && routeForLocation(initialRoute) === 'start') ready = true
 
   handle.queueTask(async () => {
     try {
       let route = routeForLocation(props.route as AppRoute)
+      activeRoute = route
       if (route === 'new') {
         let size = hostSize()
         draft = blankDevice(inferPlatform(), size.width, size.height)
@@ -247,7 +252,7 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle<AppP
   }
 
   return () => {
-    let route = routeForLocation(props.route as AppRoute)
+    let route = activeRoute
 
     if (!ready) {
       return (
