@@ -3,6 +3,7 @@ import { css, type Handle } from 'remix/ui'
 import { App } from '../assets/app.tsx'
 import { InstallHint } from '../assets/install-hint.tsx'
 import { Document } from './document.tsx'
+import { ToastViewport } from './toast.tsx'
 
 export type AppRoute = 'start' | 'new' | 'continue' | 'browse' | 'edit'
 
@@ -17,6 +18,7 @@ export function AppShell(handle: Handle<AppShellProps>) {
       <main mix={pageStyle}>
         <InstallHint />
         <App route={handle.props.route} deviceId={handle.props.deviceId} />
+        <ToastViewport />
       </main>
     </Document>
   )

@@ -24,7 +24,28 @@ export function createSwBootScript(nodeEnv: string | undefined): string {
 
   return `(function () {
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js')['catch'](function () {});
+    var updateNotified = false;
+    function notifyUpdate() {
+      if (updateNotified) return;
+      updateNotified = true;
+      window.__tdlPwaUpdateAvailable = true;
+      window.dispatchEvent(new Event('tdl:sw-update'));
+    }
+    function watchRegistration(registration) {
+      function watchWorker(worker) {
+        if (!worker) return;
+        if (worker.state === 'installed' && navigator.serviceWorker.controller) notifyUpdate();
+        worker.addEventListener('statechange', function () {
+          if (worker.state === 'installed' && navigator.serviceWorker.controller) notifyUpdate();
+        });
+      }
+      watchWorker(registration.waiting);
+      registration.addEventListener('updatefound', function () {
+        watchWorker(registration.installing);
+      });
+      registration.update()['catch'](function () {});
+    }
+    navigator.serviceWorker.register('/sw.js').then(watchRegistration)['catch'](function () {});
   }
   if (navigator.storage && navigator.storage.persist) {
     navigator.storage.persist()['catch'](function () {});

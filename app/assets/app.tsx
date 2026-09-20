@@ -69,7 +69,11 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle<AppP
   let platformOverride = false
   let editingNew = false
   let notesRef: HTMLTextAreaElement | null = null
-  let initialRoute = routeForLocation(props.route as AppRoute)
+  // Static deployments serve the root index.html for every client route. The
+  // server-rendered tree therefore reflects props.route, not window.location.
+  // Keep the first client render identical to that tree, then resolve the
+  // browser pathname in the queued task below.
+  let initialRoute = props.route as AppRoute
 
   // The landing page does not need IndexedDB before it can render. Showing it
   // immediately avoids a loading flash while its optional draft state loads.

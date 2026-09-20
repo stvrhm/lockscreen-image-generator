@@ -15,7 +15,12 @@ const BUILD_ID = new Date()
   .replace(/[^0-9]/g, '')
   .slice(0, 14)
 
-const CLIENT_ENTRIES = ['app/assets/entry.ts', 'app/assets/install-hint.tsx', 'app/assets/app.tsx']
+const CLIENT_ENTRIES = [
+  'app/assets/entry.ts',
+  'app/assets/install-hint.tsx',
+  'app/assets/app.tsx',
+  'app/ui/toast.tsx',
+]
 
 const PUBLIC_PRECACHE = [
   '/manifest.webmanifest',
@@ -75,6 +80,10 @@ self.addEventListener('activate', (event) => {
       await self.clients.claim()
     })(),
   )
+})
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'tdl:skip-waiting') self.skipWaiting()
 })
 
 self.addEventListener('fetch', (event) => {

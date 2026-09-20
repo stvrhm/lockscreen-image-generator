@@ -14,4 +14,7 @@ test('does not register or clean up service workers in tests', () => {
 
 test('registers the service worker for the static production build', () => {
   assert.match(createSwBootScript('production'), /serviceWorker\.register\('\/sw\.js'\)/)
+  assert.match(createSwBootScript('production'), /updatefound/)
+  assert.match(createSwBootScript('production'), /__tdlPwaUpdateAvailable/)
+  assert.match(createSwBootScript('production'), /registration\.update\(\)/)
 })
