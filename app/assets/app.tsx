@@ -1,4 +1,10 @@
 import { clientEntry, css, on, ref, type Handle, type MixInput } from 'remix/ui'
+import button from 'remix/ui/button'
+import { animateEntrance } from 'remix/ui/animation'
+import input from 'remix/ui/input'
+import * as popover from 'remix/ui/popover'
+import { Option, Select } from 'remix/ui/select'
+import { onSelectChange } from 'remix/ui/select/primitives'
 
 import { cluster, flow, grid, region, sidebar, switcher, wrapper } from '../ui/cube/index.ts'
 import { theme } from '../ui/theme.ts'
@@ -25,6 +31,11 @@ import { routes } from '../routes.ts'
 import type { AppRoute } from '../ui/app-shell.tsx'
 
 const NOTES_MAX_HEIGHT = 260
+const TOOLTIP_DELAY = 750
+const TOOLTIP_CLOSE_DELAY = 500
+
+let tooltipWarmUntil = 0
+let activeTooltipHide: ((skipExitAnimation?: boolean) => void) | undefined
 
 interface AppProps extends Record<string, string | undefined> {
   route: string
@@ -335,6 +346,7 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle<AppP
                   autoFocus={editingNew}
                   autoComplete="off"
                   mix={[
+                    input(),
                     inputStyle,
                     on('input', (event) => patchDraft({ label: event.currentTarget.value })),
                   ]}
@@ -422,19 +434,23 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle<AppP
                     <span mix={fieldLabelStyle}>{strings.editor.platform}</span>
                     <p mix={mutedStyle}>{strings.editor.platformInferred}</p>
                     {platformOverride ? (
-                      <select
-                        value={device.platform}
+                      <Select
+                        defaultLabel={device.platform === 'ios' ? 'iOS' : 'Android'}
+                        defaultValue={device.platform}
                         mix={[
-                          inputStyle,
-                          on('change', (event) => {
-                            let value = event.currentTarget.value === 'android' ? 'android' : 'ios'
-                            patchDraft({ platform: value as Platform })
-                          }),
+                          platformSelectStyle,
+                          onSelectChange((event) =>
+                            patchDraft({ platform: event.value as Platform }),
+                          ),
                         ]}
                       >
-                        <option value="ios">iOS</option>
-                        <option value="android">Android</option>
-                      </select>
+                        <Option label="iOS" value="ios">
+                          iOS
+                        </Option>
+                        <Option label="Android" value="android">
+                          Android
+                        </Option>
+                      </Select>
                     ) : (
                       <button
                         type="button"
@@ -485,6 +501,7 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle<AppP
                             min={1}
                             value={device.customWidth}
                             mix={[
+                              input(),
                               inputStyle,
                               on('input', (event) =>
                                 patchDraft({
@@ -501,6 +518,7 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle<AppP
                             min={1}
                             value={device.customHeight}
                             mix={[
+                              input(),
                               inputStyle,
                               on('input', (event) =>
                                 patchDraft({
@@ -538,24 +556,45 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle<AppP
               </details>
 
               <div mix={actionsRowStyle}>
-                <button type="button" mix={[primaryButtonStyle, on('click', () => void onSave())]}>
+                <button
+                  type="button"
+                  mix={[
+                    button({ size: 'lg', tone: 'primary' }),
+                    primaryButtonStyle,
+                    on('click', () => void onSave()),
+                  ]}
+                >
                   {editingNew ? strings.editor.create : strings.editor.save}
                 </button>
                 <button
                   type="button"
-                  mix={[secondaryButtonStyle, on('click', () => void onDownload())]}
+                  mix={[button(), secondaryButtonStyle, on('click', () => void onDownload())]}
                 >
                   {strings.editor.download}
                 </button>
                 <button
                   type="button"
-                  mix={[secondaryButtonStyle, on('click', () => void onShare())]}
+                  mix={[button(), secondaryButtonStyle, on('click', () => void onShare())]}
                 >
                   {strings.editor.share}
                 </button>
               </div>
               <p mix={hintStyle}>{strings.editor.applyHint}</p>
-              {statusMessage ? <p mix={statusStyle}>{statusMessage}</p> : null}
+              {statusMessage ? (
+                <p
+                  key={statusMessage}
+                  mix={[
+                    statusStyle,
+                    animateEntrance({
+                      opacity: 0,
+                      transform: 'translateY(4px)',
+                      duration: 160,
+                    }),
+                  ]}
+                >
+                  {statusMessage}
+                </p>
+              ) : null}
             </div>
 
             <div mix={previewColumnStyle}>
@@ -645,17 +684,103 @@ function SegmentButton(handle: Handle<{ active: boolean; label: string; onSelect
 }
 
 function FormatButton(handle: Handle<{ label: string; symbol: string; onSelect: () => void }>) {
+  let visible = false
+  let immediate = false
+  let immediateExit = false
+  let tooltipSurface: (HTMLElement & { hidePopover?: () => void }) | null = null
+  let showTimer: ReturnType<typeof setTimeout> | undefined
+  let hideTimer: ReturnType<typeof setTimeout> | undefined
+  let tooltipId = `format-tooltip-${handle.props.label.toLowerCase().replaceAll(' ', '-')}`
+
+  function clearTimers() {
+    if (showTimer) clearTimeout(showTimer)
+    if (hideTimer) clearTimeout(hideTimer)
+    showTimer = undefined
+    hideTimer = undefined
+  }
+
+  function hide(skipExitAnimation = false) {
+    clearTimers()
+    immediateExit = skipExitAnimation
+    visible = false
+    tooltipSurface?.hidePopover?.()
+    if (activeTooltipHide === hide) activeTooltipHide = undefined
+    tooltipWarmUntil = Date.now() + TOOLTIP_CLOSE_DELAY
+    handle.update()
+  }
+
+  function showImmediately(skipAnimation = false) {
+    clearTimers()
+    if (visible) return
+    activeTooltipHide?.(true)
+    immediate = skipAnimation
+    immediateExit = false
+    visible = true
+    activeTooltipHide = hide
+    tooltipWarmUntil = Date.now() + TOOLTIP_CLOSE_DELAY
+    handle.update()
+  }
+
+  function showAfterHover() {
+    clearTimers()
+    let skipAnimation = tooltipWarmUntil > Date.now()
+    let delay = skipAnimation ? 0 : TOOLTIP_DELAY
+    showTimer = setTimeout(() => showImmediately(skipAnimation), delay)
+  }
+
+  function hideAfterHover() {
+    clearTimers()
+    hideTimer = setTimeout(hide, TOOLTIP_CLOSE_DELAY)
+  }
+
   return () => {
     let { label, symbol, onSelect } = handle.props
     return (
-      <button
-        type="button"
-        aria-label={label}
-        title={label}
-        mix={[formatButtonStyle, on('click', onSelect)]}
-      >
-        {symbol}
-      </button>
+      <popover.Context>
+        <span
+          mix={[
+            tooltipTriggerStyle,
+            popover.anchor({ placement: 'top', offset: 8 }),
+            on('mouseenter', showAfterHover),
+            on('mouseleave', hideAfterHover),
+          ]}
+        >
+          <button
+            type="button"
+            aria-label={label}
+            aria-describedby={tooltipId}
+            mix={[
+              formatButtonStyle,
+              popover.focusOnHide(),
+              on('click', onSelect),
+              on('focus', () => showImmediately()),
+              on('blur', () => hide()),
+              on('pointerdown', () => hide()),
+            ]}
+          >
+            {symbol}
+          </button>
+        </span>
+        <span
+          id={tooltipId}
+          role="tooltip"
+          mix={[
+            tooltipStyle,
+            immediate ? tooltipImmediateStyle : null,
+            immediateExit ? tooltipImmediateExitStyle : null,
+            ref((node) => {
+              tooltipSurface = node as HTMLElement & { hidePopover?: () => void }
+            }),
+            popover.surface({
+              open: visible,
+              onHide: () => hide(),
+              restoreFocusOnHide: false,
+            }),
+          ]}
+        >
+          {label}
+        </span>
+      </popover.Context>
     )
   }
 }
@@ -897,6 +1022,19 @@ const inputStyle = css({
   },
 })
 
+const platformSelectStyle = css({
+  width: '100%',
+  minHeight: '2.75rem',
+  justifyContent: 'space-between',
+  padding: `${theme.space.xs} ${theme.space.xs}`,
+  borderRadius: theme.radius.sm,
+  border: '1px solid var(--border)',
+  background: 'rgba(10, 10, 11, 0.72)',
+  color: 'var(--text)',
+  fontWeight: theme.fontWeight.medium,
+  textAlign: 'start',
+})
+
 const textareaStyle = css({
   resize: 'vertical',
   minHeight: '5.75rem',
@@ -944,6 +1082,115 @@ const formatButtonStyle = css({
   ':focus-visible': {
     outline: '2px solid var(--accent)',
     outlineOffset: '1px',
+  },
+})
+
+const tooltipTriggerStyle = css({
+  position: 'relative',
+  display: 'inline-flex',
+})
+
+const tooltipStyle = css({
+  position: 'fixed',
+  inset: 'auto',
+  margin: 0,
+  overflow: 'visible',
+  padding: '5px 8px',
+  border: '1px solid var(--border)',
+  borderRadius: '6px',
+  background: 'var(--surface-3)',
+  color: 'var(--text)',
+  boxShadow: 'var(--shadow-soft)',
+  fontSize: theme.fontSize.small,
+  fontWeight: theme.fontWeight.medium,
+  lineHeight: 1.2,
+  whiteSpace: 'nowrap',
+  pointerEvents: 'none',
+  opacity: 0,
+  transform: 'translateY(4px)',
+  transition:
+    'opacity 160ms ease-out, transform 160ms cubic-bezier(0.19, 1, 0.22, 1), overlay 160ms ease-out, display 160ms ease-out',
+  transitionBehavior: 'allow-discrete',
+  '&:popover-open': {
+    opacity: 1,
+    transform: 'translate(0, 0)',
+  },
+  '&:not(:popover-open)': {
+    pointerEvents: 'none',
+  },
+  '&[data-anchor-placement^="bottom"]': {
+    transform: 'translateY(-4px)',
+  },
+  '&[data-anchor-placement^="left"]': {
+    transform: 'translateX(4px)',
+  },
+  '&[data-anchor-placement^="right"]': {
+    transform: 'translateX(-4px)',
+  },
+  '&::after': {
+    content: '""',
+    position: 'absolute',
+    width: '8px',
+    height: '8px',
+    left: '50%',
+    bottom: '-5px',
+    borderRight: '1px solid var(--border)',
+    borderBottom: '1px solid var(--border)',
+    background: 'var(--surface-3)',
+    transform: 'translateX(-50%) rotate(45deg)',
+  },
+  '&[data-anchor-placement^="bottom"]::after': {
+    top: '-5px',
+    right: 'auto',
+    bottom: 'auto',
+    left: '50%',
+    borderTop: '1px solid var(--border)',
+    borderLeft: '1px solid var(--border)',
+    borderRight: 0,
+    borderBottom: 0,
+    transform: 'translateX(-50%) rotate(45deg)',
+  },
+  '&[data-anchor-placement^="left"]::after': {
+    top: '50%',
+    right: '-5px',
+    bottom: 'auto',
+    left: 'auto',
+    borderTop: 0,
+    borderLeft: 0,
+    borderRight: '1px solid var(--border)',
+    borderBottom: '1px solid var(--border)',
+    transform: 'translateY(-50%) rotate(45deg)',
+  },
+  '&[data-anchor-placement^="right"]::after': {
+    top: '50%',
+    right: 'auto',
+    bottom: 'auto',
+    left: '-5px',
+    borderTop: '1px solid var(--border)',
+    borderLeft: '1px solid var(--border)',
+    borderRight: 0,
+    borderBottom: 0,
+    transform: 'translateY(-50%) rotate(45deg)',
+  },
+  '@media (prefers-reduced-motion: reduce)': {
+    transition: 'opacity 160ms ease-out, overlay 160ms ease-out, display 160ms ease-out',
+    transform: 'none',
+    '&:popover-open': { transform: 'none' },
+    '&[data-anchor-placement^="bottom"]': { transform: 'none' },
+    '&[data-anchor-placement^="left"]': { transform: 'none' },
+    '&[data-anchor-placement^="right"]': { transform: 'none' },
+  },
+})
+
+const tooltipImmediateStyle = css({
+  '&:popover-open': {
+    transition: 'none',
+  },
+})
+
+const tooltipImmediateExitStyle = css({
+  '&:not(:popover-open)': {
+    transition: 'none',
   },
 })
 
