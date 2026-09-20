@@ -2,6 +2,8 @@ import type { ExportEncoding } from './devices.ts'
 import { parseMarkdownLines, type MarkdownSegment } from './markdown.ts'
 
 const JPEG_QUALITY = 0.92
+const BASE_WIDTH = 1170
+const BASE_HEIGHT = 2532
 
 export interface WallpaperOptions {
   label: string
@@ -13,6 +15,8 @@ export interface WallpaperOptions {
 
 export async function renderWallpaperBlob(options: WallpaperOptions): Promise<Blob | null> {
   let { label, notes, width, height, encoding } = options
+  let scale = width / BASE_WIDTH
+  let heightScale = height / BASE_HEIGHT
   let canvas = document.createElement('canvas')
   canvas.width = width
   canvas.height = height
@@ -32,13 +36,16 @@ export async function renderWallpaperBlob(options: WallpaperOptions): Promise<Bl
     ctx.shadowBlur = 28
     ctx.shadowOffsetY = 6
 
-    let fontSize = Math.max(28, Math.round(width * 0.05))
-    let maxLineWidth = width - Math.round(width * 0.16)
+    let fontSize = Math.max(28, Math.round(58 * scale))
+    let maxLineWidth = width - Math.round(94 * scale)
     let lines = wrapMarkdownText(ctx, parseMarkdownLines(text), fontSize, maxLineWidth)
     let lineHeight = fontSize * 1.35
-    let minFont = Math.max(18, Math.round(width * 0.022))
+    let minFont = Math.max(18, Math.round(26 * scale))
 
-    while (lines.length * lineHeight > height - Math.round(height * 0.08) && fontSize > minFont) {
+    while (
+      lines.length * lineHeight > height - Math.round(202 * heightScale) &&
+      fontSize > minFont
+    ) {
       fontSize -= 4
       lines = wrapMarkdownText(ctx, parseMarkdownLines(text), fontSize, maxLineWidth)
       lineHeight = fontSize * 1.35

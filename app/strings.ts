@@ -10,15 +10,15 @@ export const strings = {
   },
 
   start: {
-    title: 'Make a lockscreen that identifies this Host',
+    title: 'Make a lockscreen that identifies this device',
     subtitle:
-      'Create a Wallpaper, download it, and set it from Photos. Everything stays on this Host.',
+      'Add the details people need, preview the result, then set it from Photos. Everything stays on this device.',
     new: 'Create a lockscreen',
     continue: 'Continue your Draft',
     browse: 'Browse saved Devices',
-    continueHint: 'Your last Draft is saved on this Host.',
+    continueHint: 'Your last Draft is saved on this device.',
     steps: [
-      { title: 'Add a Label', body: 'Give this Host a name people can recognize.' },
+      { title: 'Add a Label', body: 'Give this device a name people can recognize.' },
       { title: 'Add Notes', body: 'Write the details that should appear on the Wallpaper.' },
       { title: 'Download', body: 'Save it, then choose Use as Wallpaper in Photos.' },
     ],
@@ -52,6 +52,10 @@ export const strings = {
     exportSize: 'Export size',
     exportSizeAuto: 'Auto',
     exportSizeCustom: 'Custom',
+    customizeExport: 'Customize export',
+    detectedAutomatically: 'Detected automatically',
+    autoSize: 'Auto size',
+    customized: 'Customized',
     width: 'Width',
     height: 'Height',
     encoding: 'File',
@@ -60,6 +64,7 @@ export const strings = {
     encodingQualityHint: 'PNG — sharpest',
     encodingSizeHint: 'JPEG — smaller file',
     save: 'Save',
+    create: 'Create lockscreen',
     download: 'Download',
     share: 'Share',
     applyHint: 'After download or share: Photos → Use as Wallpaper',
@@ -69,7 +74,7 @@ export const strings = {
   },
 
   install: {
-    title: 'Keep Lockscreens on this Host',
+    title: 'Keep Lockscreens on this device',
     body: 'Add the app to your Home Screen for quick access, offline use, and more reliable Drafts.',
     steps: 'Tap Share, then “Add to Home Screen”.',
     dismiss: 'Maybe later',

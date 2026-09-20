@@ -3,8 +3,12 @@ import test from 'node:test'
 
 import { createSwBootScript } from './sw-boot.ts'
 
-test('does not register a service worker outside the static production build', () => {
-  assert.equal(createSwBootScript('development'), '')
+test('cleans up production service workers during development', () => {
+  assert.match(createSwBootScript('development'), /getRegistrations\(\)/)
+  assert.match(createSwBootScript('development'), /unregister\(\)/)
+})
+
+test('does not register or clean up service workers in tests', () => {
   assert.equal(createSwBootScript(undefined), '')
 })
 

@@ -24,6 +24,8 @@ import { strings } from '../strings.ts'
 import { routes } from '../routes.ts'
 import type { AppRoute } from '../ui/app-shell.tsx'
 
+const NOTES_MAX_HEIGHT = 260
+
 interface AppProps extends Record<string, string | undefined> {
   route: string
   deviceId?: string
@@ -56,6 +58,11 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle<AppP
   let platformOverride = false
   let editingNew = false
   let notesRef: HTMLTextAreaElement | null = null
+  let initialRoute = routeForLocation(props.route as AppRoute)
+
+  // The landing page does not need IndexedDB before it can render. Showing it
+  // immediately avoids a loading flash while its optional draft state loads.
+  if (initialRoute === 'start') ready = true
 
   handle.queueTask(async () => {
     try {
@@ -157,6 +164,13 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle<AppP
       let nextEnd = selected ? nextStart : nextStart + marker.length
       notesRef.setSelectionRange(nextStart, nextEnd)
     })
+  }
+
+  function resizeNotes() {
+    if (!notesRef) return
+    notesRef.style.height = 'auto'
+    notesRef.style.height = `${Math.min(notesRef.scrollHeight, NOTES_MAX_HEIGHT)}px`
+    notesRef.style.overflowY = notesRef.scrollHeight > NOTES_MAX_HEIGHT ? 'auto' : 'hidden'
   }
 
   async function onSave() {
@@ -328,43 +342,12 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle<AppP
               </label>
 
               <div mix={fieldStyle}>
-                <span mix={fieldLabelStyle}>{strings.editor.platform}</span>
-                <p mix={mutedStyle}>
-                  {strings.editor.platformInferred}: {device.platform.toUpperCase()}
-                </p>
-                {platformOverride ? (
-                  <select
-                    value={device.platform}
-                    mix={[
-                      inputStyle,
-                      on('change', (event) => {
-                        let value = event.currentTarget.value === 'android' ? 'android' : 'ios'
-                        patchDraft({ platform: value as Platform })
-                      }),
-                    ]}
-                  >
-                    <option value="ios">iOS</option>
-                    <option value="android">Android</option>
-                  </select>
-                ) : (
-                  <button
-                    type="button"
-                    mix={[
-                      linkButtonStyle,
-                      on('click', () => {
-                        platformOverride = true
-                        handle.update()
-                      }),
-                    ]}
-                  >
-                    {strings.editor.platformOverride}
-                  </button>
-                )}
-              </div>
-
-              <label mix={fieldStyle}>
-                <span mix={fieldLabelStyle}>{strings.editor.notes}</span>
-                <span mix={hintStyle}>{strings.editor.notesHint}</span>
+                <span id="notes-label" mix={fieldLabelStyle}>
+                  {strings.editor.notes}
+                </span>
+                <span id="notes-hint" mix={hintStyle}>
+                  {strings.editor.notesHint}
+                </span>
                 <div mix={composerStyle}>
                   <div mix={toolbarStyle} role="toolbar" aria-label={strings.editor.formatting}>
                     <FormatButton
@@ -391,17 +374,21 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle<AppP
                   <textarea
                     rows={7}
                     value={device.notes}
-                    aria-label={strings.editor.notes}
+                    aria-labelledby="notes-label"
+                    aria-describedby="notes-hint"
                     mix={[
                       textareaStyle,
                       ref((node) => {
                         notesRef = node as HTMLTextAreaElement | null
                       }),
-                      on('input', (event) => patchDraft({ notes: event.currentTarget.value })),
+                      on('input', (event) => {
+                        patchDraft({ notes: event.currentTarget.value })
+                        handle.queueTask(resizeNotes)
+                      }),
                     ]}
                   />
                 </div>
-              </label>
+              </div>
 
               <div mix={fieldStyle}>
                 <span mix={fieldLabelStyle}>{strings.editor.shortcuts}</span>
@@ -418,93 +405,141 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle<AppP
                 </div>
               </div>
 
-              <div mix={fieldStyle}>
-                <span mix={fieldLabelStyle}>{strings.editor.exportSize}</span>
-                <div mix={segmentStyle}>
-                  <SegmentButton
-                    active={device.exportSizeMode === 'auto'}
-                    label={strings.editor.exportSizeAuto}
-                    onSelect={() => patchDraft({ exportSizeMode: 'auto' as ExportSizeMode })}
-                  />
-                  <SegmentButton
-                    active={device.exportSizeMode === 'custom'}
-                    label={strings.editor.exportSizeCustom}
-                    onSelect={() => {
-                      let auto = hostSize()
-                      patchDraft({
-                        exportSizeMode: 'custom',
-                        customWidth: device.customWidth || auto.width,
-                        customHeight: device.customHeight || auto.height,
-                      })
-                    }}
-                  />
-                </div>
-                {device.exportSizeMode === 'auto' ? (
-                  <p mix={mutedStyle}>
-                    {size.width} × {size.height}px
-                  </p>
-                ) : (
-                  <div mix={sizeInputsStyle}>
-                    <label mix={inlineFieldStyle}>
-                      {strings.editor.width}
-                      <input
-                        type="number"
-                        min={1}
-                        value={device.customWidth}
-                        mix={[
-                          inputStyle,
-                          on('input', (event) =>
-                            patchDraft({
-                              customWidth: Number.parseInt(event.currentTarget.value, 10) || 1,
-                            }),
-                          ),
-                        ]}
-                      />
-                    </label>
-                    <label mix={inlineFieldStyle}>
-                      {strings.editor.height}
-                      <input
-                        type="number"
-                        min={1}
-                        value={device.customHeight}
-                        mix={[
-                          inputStyle,
-                          on('input', (event) =>
-                            patchDraft({
-                              customHeight: Number.parseInt(event.currentTarget.value, 10) || 1,
-                            }),
-                          ),
-                        ]}
-                      />
-                    </label>
-                  </div>
-                )}
+              <div mix={mobilePreviewStyle}>
+                <p mix={previewLabelStyle}>{strings.editor.preview}</p>
+                <PhonePreview platform={device.platform} text={previewText} />
+                <ExportSummary
+                  device={device}
+                  size={size}
+                  automatic={editingNew && !platformOverride}
+                />
               </div>
 
-              <div mix={fieldStyle}>
-                <span mix={fieldLabelStyle}>{strings.editor.encoding}</span>
-                <div mix={segmentStyle}>
-                  <SegmentButton
-                    active={device.encoding === 'quality'}
-                    label={strings.editor.encodingQuality}
-                    onSelect={() => patchDraft({ encoding: 'quality' as ExportEncoding })}
-                  />
-                  <SegmentButton
-                    active={device.encoding === 'size'}
-                    label={strings.editor.encodingSize}
-                    onSelect={() => patchDraft({ encoding: 'size' as ExportEncoding })}
-                  />
+              <details mix={advancedStyle}>
+                <summary>{strings.editor.customizeExport}</summary>
+                <div mix={advancedContentStyle}>
+                  <div mix={fieldStyle}>
+                    <span mix={fieldLabelStyle}>{strings.editor.platform}</span>
+                    <p mix={mutedStyle}>{strings.editor.platformInferred}</p>
+                    {platformOverride ? (
+                      <select
+                        value={device.platform}
+                        mix={[
+                          inputStyle,
+                          on('change', (event) => {
+                            let value = event.currentTarget.value === 'android' ? 'android' : 'ios'
+                            patchDraft({ platform: value as Platform })
+                          }),
+                        ]}
+                      >
+                        <option value="ios">iOS</option>
+                        <option value="android">Android</option>
+                      </select>
+                    ) : (
+                      <button
+                        type="button"
+                        mix={[
+                          linkButtonStyle,
+                          on('click', () => {
+                            platformOverride = true
+                            handle.update()
+                          }),
+                        ]}
+                      >
+                        {strings.editor.platformOverride}
+                      </button>
+                    )}
+                  </div>
+
+                  <div mix={fieldStyle}>
+                    <span mix={fieldLabelStyle}>{strings.editor.exportSize}</span>
+                    <div mix={segmentStyle} role="group" aria-label={strings.editor.exportSize}>
+                      <SegmentButton
+                        active={device.exportSizeMode === 'auto'}
+                        label={strings.editor.exportSizeAuto}
+                        onSelect={() => patchDraft({ exportSizeMode: 'auto' as ExportSizeMode })}
+                      />
+                      <SegmentButton
+                        active={device.exportSizeMode === 'custom'}
+                        label={strings.editor.exportSizeCustom}
+                        onSelect={() => {
+                          let auto = hostSize()
+                          patchDraft({
+                            exportSizeMode: 'custom',
+                            customWidth: device.customWidth || auto.width,
+                            customHeight: device.customHeight || auto.height,
+                          })
+                        }}
+                      />
+                    </div>
+                    {device.exportSizeMode === 'auto' ? (
+                      <p mix={mutedStyle}>
+                        {size.width} × {size.height}px
+                      </p>
+                    ) : (
+                      <div mix={sizeInputsStyle}>
+                        <label mix={inlineFieldStyle}>
+                          {strings.editor.width}
+                          <input
+                            type="number"
+                            min={1}
+                            value={device.customWidth}
+                            mix={[
+                              inputStyle,
+                              on('input', (event) =>
+                                patchDraft({
+                                  customWidth: Number.parseInt(event.currentTarget.value, 10) || 1,
+                                }),
+                              ),
+                            ]}
+                          />
+                        </label>
+                        <label mix={inlineFieldStyle}>
+                          {strings.editor.height}
+                          <input
+                            type="number"
+                            min={1}
+                            value={device.customHeight}
+                            mix={[
+                              inputStyle,
+                              on('input', (event) =>
+                                patchDraft({
+                                  customHeight: Number.parseInt(event.currentTarget.value, 10) || 1,
+                                }),
+                              ),
+                            ]}
+                          />
+                        </label>
+                      </div>
+                    )}
+                  </div>
+
+                  <div mix={fieldStyle}>
+                    <span mix={fieldLabelStyle}>{strings.editor.encoding}</span>
+                    <div mix={segmentStyle} role="group" aria-label={strings.editor.encoding}>
+                      <SegmentButton
+                        active={device.encoding === 'quality'}
+                        label={strings.editor.encodingQuality}
+                        onSelect={() => patchDraft({ encoding: 'quality' as ExportEncoding })}
+                      />
+                      <SegmentButton
+                        active={device.encoding === 'size'}
+                        label={strings.editor.encodingSize}
+                        onSelect={() => patchDraft({ encoding: 'size' as ExportEncoding })}
+                      />
+                    </div>
+                    <p mix={mutedStyle}>
+                      {device.encoding === 'quality'
+                        ? strings.editor.encodingQualityHint
+                        : strings.editor.encodingSizeHint}
+                    </p>
+                  </div>
                 </div>
-                <p mix={mutedStyle}>
-                  {device.encoding === 'quality'
-                    ? strings.editor.encodingQualityHint
-                    : strings.editor.encodingSizeHint}
-                </p>
-              </div>
+              </details>
 
               <div mix={actionsRowStyle}>
                 <button type="button" mix={[primaryButtonStyle, on('click', () => void onSave())]}>
-                  {strings.editor.save}
+                  {editingNew ? strings.editor.create : strings.editor.save}
                 </button>
                 <button
                   type="button"
@@ -526,6 +561,11 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle<AppP
             <div mix={previewColumnStyle}>
               <p mix={previewLabelStyle}>{strings.editor.preview}</p>
               <PhonePreview platform={device.platform} text={previewText} />
+              <ExportSummary
+                device={device}
+                size={size}
+                automatic={editingNew && !platformOverride}
+              />
             </div>
           </div>
         </div>
@@ -596,6 +636,7 @@ function SegmentButton(handle: Handle<{ active: boolean; label: string; onSelect
       <button
         type="button"
         mix={[segmentButtonStyle, active ? segmentActiveStyle : null, on('click', onSelect)]}
+        aria-pressed={active}
       >
         {label}
       </button>
@@ -644,6 +685,34 @@ function PhonePreview(handle: Handle<{ platform: Platform; text: string }>) {
   }
 }
 
+function ExportSummary(
+  handle: Handle<{
+    device: Device
+    size: { width: number; height: number }
+    automatic: boolean
+  }>,
+) {
+  return () => {
+    let { device, size, automatic } = handle.props
+    let exportStatus =
+      device.exportSizeMode === 'auto'
+        ? automatic
+          ? strings.editor.detectedAutomatically
+          : strings.editor.autoSize
+        : strings.editor.customized
+    return (
+      <div mix={exportSummaryStyle}>
+        <strong>
+          {device.platform === 'ios' ? 'iOS' : 'Android'} · {size.width} × {size.height} px
+        </strong>
+        <span>
+          {device.encoding === 'quality' ? 'PNG' : 'JPEG'} · {exportStatus}
+        </span>
+      </div>
+    )
+  }
+}
+
 function MarkdownSpan(handle: Handle<{ segment: MarkdownSegment }>) {
   return () => {
     let { segment } = handle.props
@@ -669,7 +738,7 @@ const loadingStyle = [
     display: 'grid',
     placeItems: 'center',
     alignContent: 'center',
-    gap: '16px',
+    gap: theme.space.xs,
     textAlign: 'center',
   }),
 ]
@@ -691,8 +760,8 @@ const loadingMarkStyle = css({
 const loadingCopyStyle = flow({ flowSpace: theme.space.xs })
 
 const loadingTitleStyle = css({
-  fontSize: '18px',
-  fontWeight: 700,
+  fontSize: theme.fontSize.h3,
+  fontWeight: theme.fontWeight.bold,
 })
 
 const startHeaderStyle = [flow({ flowSpace: theme.space.sm }), css({ maxWidth: '42rem' })]
@@ -713,25 +782,25 @@ const titleStyle = css({
 })
 
 const headingStyle = css({
-  fontSize: '24px',
-  fontWeight: 600,
+  fontSize: theme.fontSize.h2,
+  fontWeight: theme.fontWeight.semibold,
   letterSpacing: '-0.02em',
 })
 
 const mutedStyle = css({
   color: 'var(--text-muted)',
-  fontSize: '14px',
+  fontSize: theme.fontSize.small,
 })
 
 const hintStyle = css({
   color: 'var(--text-muted)',
-  fontSize: '13px',
+  fontSize: theme.fontSize.small,
 })
 
 const statusStyle = css({
   color: 'var(--accent)',
-  fontSize: '14px',
-  fontWeight: 600,
+  fontSize: theme.fontSize.small,
+  fontWeight: theme.fontWeight.semibold,
 })
 
 const startActionsStyle = [
@@ -745,30 +814,35 @@ const onboardingStepsStyle = [
 ]
 
 const onboardingStepStyle = css({
-  minHeight: '138px',
-  padding: '18px',
-  background: 'rgba(17, 17, 19, 0.72)',
+  minHeight: '5.5rem',
+  padding: `${theme.space.xs} ${theme.space.sm}`,
+  background: 'rgba(17, 17, 19, 0.46)',
   border: '1px solid var(--border-subtle)',
-  borderRadius: '14px',
-  boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.04)',
+  borderRadius: theme.radius.md,
+  boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.025)',
   '@media (max-width: 560px)': { minHeight: 'auto' },
 })
 
 const stepNumberStyle = css({
   display: 'grid',
   placeItems: 'center',
-  width: '26px',
-  height: '26px',
+  width: '1.625rem',
+  height: '1.625rem',
   borderRadius: '50%',
   background: 'rgba(56, 189, 248, 0.14)',
   color: 'var(--accent)',
-  fontSize: '13px',
-  fontWeight: 800,
+  fontSize: theme.fontSize.small,
+  fontWeight: theme.fontWeight.bold,
 })
 
 const stepTextStyle = [
   flow({ flowSpace: theme.space.xs }),
-  css({ display: 'flex', flexDirection: 'column', fontSize: '14px', lineHeight: 1.35 }),
+  css({
+    display: 'flex',
+    flexDirection: 'column',
+    fontSize: theme.fontSize.small,
+    lineHeight: 1.35,
+  }),
 ]
 
 const startButtonStyle = css({
@@ -795,11 +869,7 @@ const formStyle = [
   flow({ flowSpace: theme.space.lg }),
   css({
     minWidth: '260px',
-    padding: 'clamp(16px, 2.5vw, 24px)',
-    background: 'rgba(17, 17, 19, 0.76)',
-    border: '1px solid var(--border-subtle)',
-    borderRadius: '16px',
-    boxShadow: 'var(--shadow-soft)',
+    paddingBlock: theme.space.xs,
   }),
 ]
 
@@ -809,14 +879,14 @@ const fieldStyle = [
 ]
 
 const fieldLabelStyle = css({
-  fontSize: '14px',
-  fontWeight: 600,
+  fontSize: theme.fontSize.small,
+  fontWeight: theme.fontWeight.semibold,
   color: 'var(--text)',
 })
 
 const inputStyle = css({
-  padding: '12px 13px',
-  borderRadius: '10px',
+  padding: `${theme.space.xs} ${theme.space.xs}`,
+  borderRadius: theme.radius.sm,
   border: '1px solid var(--border)',
   background: 'rgba(10, 10, 11, 0.72)',
   color: 'var(--text)',
@@ -829,9 +899,10 @@ const inputStyle = css({
 
 const textareaStyle = css({
   resize: 'vertical',
-  minHeight: '120px',
+  minHeight: '5.75rem',
+  maxHeight: `${NOTES_MAX_HEIGHT}px`,
   width: '100%',
-  padding: '12px 13px',
+  padding: `${theme.space.xs} ${theme.space.xs}`,
   border: 0,
   borderTop: '1px solid var(--border)',
   borderRadius: 0,
@@ -844,7 +915,7 @@ const textareaStyle = css({
 const composerStyle = css({
   overflow: 'hidden',
   border: '1px solid var(--border)',
-  borderRadius: '12px',
+  borderRadius: theme.radius.md,
   background: 'rgba(10, 10, 11, 0.72)',
   ':focus-within': {
     borderColor: 'var(--accent-strong)',
@@ -859,15 +930,15 @@ const toolbarStyle = [
 
 const formatButtonStyle = css({
   appearance: 'none',
-  width: '30px',
-  height: '28px',
+  width: '2.75rem',
+  height: '2.625rem',
   display: 'inline-grid',
   placeItems: 'center',
   border: 0,
   borderRadius: '6px',
   background: 'transparent',
   color: 'var(--text-muted)',
-  fontWeight: 700,
+  fontWeight: theme.fontWeight.bold,
   cursor: 'pointer',
   ':hover': { background: 'var(--surface-2)', color: 'var(--text)' },
   ':focus-visible': {
@@ -876,27 +947,36 @@ const formatButtonStyle = css({
   },
 })
 
-const actionsRowStyle = cluster({ gutter: theme.space.sm })
+const actionsRowStyle = [
+  cluster({ gutter: theme.space.sm }),
+  css({
+    flexWrap: 'wrap',
+    '@media (max-width: 560px)': {
+      '& > :first-child': { flex: '1 1 100%' },
+    },
+  }),
+]
 
 const primaryButtonStyle = css({
   appearance: 'none',
   border: 0,
-  borderRadius: '9px',
-  padding: '11px 16px',
-  fontWeight: 600,
+  borderRadius: theme.radius.sm,
+  padding: `${theme.space.xs} ${theme.space.sm}`,
+  fontWeight: theme.fontWeight.semibold,
   cursor: 'pointer',
   textDecoration: 'none',
   background: 'var(--text)',
   color: '#09090b',
   display: 'inline-flex',
   alignItems: 'center',
+  minHeight: '2.875rem',
 })
 
 const secondaryButtonStyle = css({
   appearance: 'none',
-  borderRadius: '9px',
-  padding: '11px 16px',
-  fontWeight: 600,
+  borderRadius: theme.radius.sm,
+  padding: `${theme.space.xs} ${theme.space.sm}`,
+  fontWeight: theme.fontWeight.semibold,
   cursor: 'pointer',
   textDecoration: 'none',
   background: 'var(--surface-2)',
@@ -948,6 +1028,7 @@ const chipStyle = css({
   background: 'transparent',
   color: 'var(--text)',
   borderRadius: '999px',
+  minHeight: '40px',
   padding: '6px 12px',
   fontSize: '13px',
   fontWeight: 600,
@@ -969,8 +1050,9 @@ const segmentButtonStyle = css({
   border: 0,
   background: 'var(--surface)',
   color: 'var(--text-muted)',
-  padding: '8px 14px',
-  fontWeight: 600,
+  minHeight: '2.75rem',
+  padding: `${theme.space['2xs']} ${theme.space.xs}`,
+  fontWeight: theme.fontWeight.semibold,
   cursor: 'pointer',
 })
 
@@ -983,11 +1065,11 @@ const segmentActiveStyle = css({
 const sizeInputsStyle = cluster({ gutter: '12px', alignment: 'stretch' })
 
 const inlineFieldStyle = [
-  flow({ flowSpace: '4px' }),
+  flow({ flowSpace: theme.space['3xs'] }),
   css({
     display: 'flex',
     flexDirection: 'column',
-    fontSize: '12px',
+    fontSize: theme.fontSize.small,
     color: 'var(--text-muted)',
     flex: '1 1 120px',
   }),
@@ -1018,14 +1100,41 @@ const previewColumnStyle = [
     alignSelf: 'flex-start',
     position: 'sticky',
     top: '24px',
-    padding: '24px',
-    borderRadius: '16px',
-    border: '1px solid var(--border-subtle)',
-    background: 'rgba(17, 17, 19, 0.58)',
-    boxShadow: 'var(--shadow-soft)',
-    '@media (max-width: 800px)': { position: 'static' },
+    padding: '8px 0 0',
+    '@media (max-width: 800px)': { display: 'none', position: 'static' },
   }),
 ]
+
+const mobilePreviewStyle = css({
+  display: 'none',
+  '@media (max-width: 800px)': {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: theme.space.xs,
+    paddingBlock: theme.space['3xs'] + ' ' + theme.space.xs,
+  },
+})
+
+const exportSummaryStyle = css({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: theme.space['3xs'],
+  width: '100%',
+  color: 'var(--text-muted)',
+  fontSize: theme.fontSize.small,
+  lineHeight: 1.35,
+  textAlign: 'center',
+  strong: { color: 'var(--text)', fontWeight: 600 },
+})
+
+const advancedStyle = css({
+  borderBlock: '1px solid var(--border-subtle)',
+  paddingBlock: theme.space.xs,
+  '&[open] summary': { marginBottom: theme.space.sm },
+})
+
+const advancedContentStyle = [flow({ flowSpace: theme.space.lg }), css({ paddingInline: '2px' })]
 
 const previewLabelStyle = css({
   fontSize: '12px',
@@ -1054,6 +1163,7 @@ const phoneScreenStyle = css({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
+  containerType: 'inline-size',
 })
 
 const notchStyle = css({
@@ -1079,10 +1189,11 @@ const punchHoleStyle = css({
 })
 
 const previewTextStyle = css({
-  padding: '32px 20px',
+  padding: '8.7cqi 1.7cqi',
   color: '#fff',
-  fontSize: '15px',
-  fontWeight: 600,
+  fontSize: '4.96cqi',
+  lineHeight: 1.35,
+  fontWeight: theme.fontWeight.semibold,
   textAlign: 'center',
   textShadow: '0 2px 8px rgba(0, 0, 0, 0.6)',
 })
