@@ -5,15 +5,36 @@ import { strings } from '../strings.ts'
 
 const DISMISS_KEY = 'tdl:install-hint-dismissed'
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<{ outcome: 'accepted' | 'dismissed' }>
+}
+
 export const InstallHint = clientEntry(import.meta.url, function InstallHint(handle: Handle) {
   let visible = false
+  let installPrompt: BeforeInstallPromptEvent | null = null
+  let platform: 'ios' | 'android' = 'ios'
 
   handle.queueTask(() => {
-    if (shouldShow()) {
+    if (isAndroid()) {
+      window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt as EventListener)
+    }
+
+    if (shouldShowIOS()) {
+      platform = 'ios'
       visible = true
       handle.update()
     }
   })
+
+  function onBeforeInstallPrompt(event: BeforeInstallPromptEvent) {
+    if (wasDismissed()) return
+
+    event.preventDefault()
+    installPrompt = event
+    platform = 'android'
+    visible = true
+    handle.update()
+  }
 
   function dismiss() {
     try {
@@ -23,6 +44,16 @@ export const InstallHint = clientEntry(import.meta.url, function InstallHint(han
     }
     visible = false
     handle.update()
+  }
+
+  async function install() {
+    if (!installPrompt) return
+
+    let prompt = installPrompt
+    installPrompt = null
+    visible = false
+    handle.update()
+    await prompt.prompt()
   }
 
   return () => {
@@ -35,9 +66,18 @@ export const InstallHint = clientEntry(import.meta.url, function InstallHint(han
         </div>
         <div mix={textStyle}>
           <p mix={titleStyle}>{strings.install.title}</p>
-          <p mix={bodyStyle}>{strings.install.body}</p>
-          <p mix={stepsStyle}>{strings.install.steps}</p>
+          <p mix={bodyStyle}>
+            {platform === 'android' ? strings.install.androidBody : strings.install.body}
+          </p>
+          <p mix={stepsStyle}>
+            {platform === 'android' ? strings.install.androidSteps : strings.install.steps}
+          </p>
         </div>
+        {platform === 'android' ? (
+          <button type="button" mix={[installStyle, on('click', () => void install())]}>
+            {strings.install.install}
+          </button>
+        ) : null}
         <button type="button" mix={[dismissStyle, on('click', dismiss)]}>
           {strings.install.dismiss}
         </button>
@@ -46,7 +86,12 @@ export const InstallHint = clientEntry(import.meta.url, function InstallHint(han
   }
 })
 
-function shouldShow(): boolean {
+function isAndroid(): boolean {
+  if (typeof navigator === 'undefined') return false
+  return /android/i.test(navigator.userAgent)
+}
+
+function shouldShowIOS(): boolean {
   if (typeof navigator === 'undefined' || typeof window === 'undefined') return false
 
   let nav = navigator as Navigator & { standalone?: boolean }
@@ -58,12 +103,15 @@ function shouldShow(): boolean {
     (nav.platform === 'MacIntel' && nav.maxTouchPoints > 1)
   if (!isIOS) return false
 
+  return !wasDismissed()
+}
+
+function wasDismissed(): boolean {
   try {
-    if (localStorage.getItem(DISMISS_KEY)) return false
+    return Boolean(localStorage.getItem(DISMISS_KEY))
   } catch {
-    // still show
+    return false
   }
-  return true
 }
 
 const cardStyle = [
@@ -121,3 +169,5 @@ const dismissStyle = css({
   background: 'var(--accent)',
   color: '#0b1220',
 })
+
+const installStyle = dismissStyle

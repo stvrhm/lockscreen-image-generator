@@ -77,6 +77,9 @@ export const strings = {
     title: 'Keep Lockscreens on this device',
     body: 'Add the app to your Home Screen for quick access, offline use, and more reliable Drafts.',
     steps: 'Tap Share, then “Add to Home Screen”.',
+    androidBody: 'Install the app for quick access, offline use, and more reliable Drafts.',
+    androidSteps: 'Use the install prompt to add it to your Home Screen.',
+    install: 'Install app',
     dismiss: 'Maybe later',
   },
 } as const
