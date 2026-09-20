@@ -143,6 +143,7 @@ export const baseCss = `${generatedThemeCss}
   form > * + * { margin-block-start: var(--flow-space, 1rem); }
   :is(input, select, textarea) { accent-color: var(--accent); }
   :is(input:not([type='checkbox'], [type='radio'], [type='color']), select, textarea) {
+    display: block;
     width: 100%;
     padding: 0.5em 0.8em;
     border: var(--stroke);

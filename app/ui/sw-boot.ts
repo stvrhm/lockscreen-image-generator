@@ -43,7 +43,14 @@ export function createSwBootScript(nodeEnv: string | undefined): string {
       registration.addEventListener('updatefound', function () {
         watchWorker(registration.installing);
       });
-      registration.update()['catch'](function () {});
+      function checkForUpdate() {
+        if (document.visibilityState === 'hidden') return;
+        registration.update()['catch'](function () {});
+      }
+      window.addEventListener('focus', checkForUpdate);
+      document.addEventListener('visibilitychange', checkForUpdate);
+      window.setInterval(checkForUpdate, 60000);
+      checkForUpdate();
     }
     navigator.serviceWorker.register('/sw.js').then(watchRegistration)['catch'](function () {});
   }

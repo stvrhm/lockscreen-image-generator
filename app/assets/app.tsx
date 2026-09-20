@@ -1,5 +1,4 @@
 import { clientEntry, css, on, ref, type Handle, type MixInput } from 'remix/ui'
-import button from 'remix/ui/button'
 import { animateEntrance } from 'remix/ui/animation'
 import input from 'remix/ui/input'
 import * as popover from 'remix/ui/popover'
@@ -331,7 +330,7 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle<AppP
 
       return (
         <div mix={pageStyle}>
-          <header mix={headerRowStyle}>
+          <header mix={editorHeaderStyle}>
             <a href={routes.home.href()} data-rmx-document mix={ghostButtonStyle}>
               {strings.editor.back}
             </a>
@@ -342,28 +341,33 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle<AppP
 
           <div mix={editorLayoutStyle}>
             <div mix={formStyle}>
-              <label mix={fieldStyle}>
-                <span mix={fieldLabelStyle}>{strings.editor.label}</span>
+              <div mix={fieldStyle}>
+                <label htmlFor="device-label" mix={fieldLabelStyle}>
+                  {strings.editor.label}
+                </label>
                 <input
+                  id="device-label"
+                  name="label"
                   type="text"
                   value={device.label}
                   autoFocus={editingNew}
                   autoComplete="off"
                   mix={[
-                    input(),
                     inputStyle,
                     on('input', (event) => patchDraft({ label: event.currentTarget.value })),
                   ]}
                 />
-              </label>
+              </div>
 
-              <div mix={fieldStyle}>
-                <span id="notes-label" mix={fieldLabelStyle}>
-                  {strings.editor.notes}
-                </span>
-                <span id="notes-hint" mix={hintStyle}>
-                  {strings.editor.notesHint}
-                </span>
+              <div mix={notesFieldStyle}>
+                <div mix={notesCopyStyle}>
+                  <label htmlFor="device-notes" id="notes-label" mix={fieldLabelStyle}>
+                    {strings.editor.notes}
+                  </label>
+                  <div id="notes-hint" mix={hintStyle}>
+                    {strings.editor.notesHint}
+                  </div>
+                </div>
                 <div mix={composerStyle}>
                   <div mix={toolbarStyle} role="toolbar" aria-label={strings.editor.formatting}>
                     <FormatButton
@@ -388,6 +392,8 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle<AppP
                     />
                   </div>
                   <textarea
+                    id="device-notes"
+                    name="notes"
                     rows={7}
                     value={device.notes}
                     aria-labelledby="notes-label"
@@ -560,25 +566,18 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle<AppP
               </details>
 
               <div mix={actionsRowStyle}>
-                <button
-                  type="button"
-                  mix={[
-                    button({ size: 'lg', tone: 'primary' }),
-                    primaryButtonStyle,
-                    on('click', () => void onSave()),
-                  ]}
-                >
+                <button type="button" mix={[primaryButtonStyle, on('click', () => void onSave())]}>
                   {editingNew ? strings.editor.create : strings.editor.save}
                 </button>
                 <button
                   type="button"
-                  mix={[button(), secondaryButtonStyle, on('click', () => void onDownload())]}
+                  mix={[secondaryButtonStyle, on('click', () => void onDownload())]}
                 >
                   {strings.editor.download}
                 </button>
                 <button
                   type="button"
-                  mix={[button(), secondaryButtonStyle, on('click', () => void onShare())]}
+                  mix={[secondaryButtonStyle, on('click', () => void onShare())]}
                 >
                   {strings.editor.share}
                 </button>
@@ -989,6 +988,15 @@ const headerRowStyle = [
   }),
 ]
 
+const editorHeaderStyle = [
+  flow({ flowSpace: theme.space.sm }),
+  css({
+    alignItems: 'flex-start',
+    borderBottom: '1px solid var(--border-subtle)',
+    paddingBottom: '12px',
+  }),
+]
+
 const editorLayoutStyle = switcher({
   gutter: theme.space.xl,
   targetWidth: '52rem',
@@ -1004,10 +1012,18 @@ const formStyle = [
 
 const fieldStyle = [
   flow({ flowSpace: theme.space.xs }),
-  css({ display: 'flex', flexDirection: 'column' }),
+]
+
+const notesFieldStyle = [
+  flow({ flowSpace: theme.space.sm }),
+]
+
+const notesCopyStyle = [
+  flow({ flowSpace: theme.space['3xs'] }),
 ]
 
 const fieldLabelStyle = css({
+  display: 'block',
   fontSize: theme.fontSize.small,
   fontWeight: theme.fontWeight.semibold,
   color: 'var(--text)',
@@ -1040,6 +1056,7 @@ const platformSelectStyle = css({
 })
 
 const textareaStyle = css({
+  display: 'block',
   resize: 'vertical',
   minHeight: '5.75rem',
   maxHeight: `${NOTES_MAX_HEIGHT}px`,
@@ -1220,6 +1237,7 @@ const primaryButtonStyle = css({
   color: '#09090b',
   display: 'inline-flex',
   alignItems: 'center',
+  justifyContent: 'center',
   minHeight: '2.875rem',
 })
 

@@ -37,6 +37,12 @@ interface RepelOptions {
 }
 
 const flowStyle = css({ '& > * + *': { marginBlockStart: 'var(--flow-space, 1em)' } })
+
+function flowStyleFor(flowSpace?: CubeValue) {
+  return flowSpace === undefined
+    ? flowStyle
+    : css({ '& > * + *': { marginBlockStart: flowSpace } })
+}
 const clusterStyle = css({
   alignItems: 'var(--cluster-alignment, center)',
   display: 'flex',
@@ -94,7 +100,7 @@ const wrapperStyle = css({
 })
 
 export function flow(options: FlowOptions = {}): CubeMix {
-  return [flowStyle, cubeVars({ '--flow-space': options.flowSpace })]
+  return [flowStyleFor(options.flowSpace), cubeVars({ '--flow-space': options.flowSpace })]
 }
 
 export function stack(options: FlowOptions = {}): CubeMix {

@@ -179,7 +179,13 @@ export const ToastViewport = clientEntry(import.meta.url, function ToastViewport
           {item.action ? (
             <button
               type="button"
-              mix={[actionStyle, on('click', () => void item.action?.onClick())]}
+              mix={[
+                actionStyle,
+                on('click', () => {
+                  dismiss(item.id)
+                  void item.action?.onClick()
+                }),
+              ]}
             >
               {item.action.label}
             </button>

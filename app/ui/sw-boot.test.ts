@@ -13,8 +13,16 @@ test('does not register or clean up service workers in tests', () => {
 })
 
 test('registers the service worker for the static production build', () => {
-  assert.match(createSwBootScript('production'), /serviceWorker\.register\('\/sw\.js'\)/)
-  assert.match(createSwBootScript('production'), /updatefound/)
-  assert.match(createSwBootScript('production'), /__tdlPwaUpdateAvailable/)
-  assert.match(createSwBootScript('production'), /registration\.update\(\)/)
+  let script = createSwBootScript('production')
+  assert.match(script, /serviceWorker\.register\('\/sw\.js'\)/)
+  assert.match(script, /updatefound/)
+  assert.match(script, /__tdlPwaUpdateAvailable/)
+  assert.match(script, /registration\.update\(\)/)
+})
+
+test('checks for service worker updates while the app remains open', () => {
+  let script = createSwBootScript('production')
+  assert.match(script, /addEventListener\('focus'/)
+  assert.match(script, /addEventListener\('visibilitychange'/)
+  assert.match(script, /setInterval\(/)
 })
