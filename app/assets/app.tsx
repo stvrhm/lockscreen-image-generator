@@ -726,7 +726,7 @@ function MarkdownSpan(handle: Handle<{ segment: MarkdownSegment }>) {
 }
 
 const pageStyle = [
-  wrapper({ gutter: theme.space.lg, maxWidth: '68rem' }),
+  wrapper({ gutter: theme.space.lg, maxWidth: '76rem' }),
   region(theme.space.lg),
   flow({ flowSpace: '24px' }),
 ]
@@ -860,9 +860,9 @@ const headerRowStyle = [
   }),
 ]
 
-const editorLayoutStyle = sidebar({
-  gutter: 'clamp(20px, 3vw, 40px)',
-  sidebarWidth: 'min(34rem, 100%)',
+const editorLayoutStyle = switcher({
+  gutter: theme.space.xl,
+  targetWidth: '52rem',
 })
 
 const formStyle = [
@@ -1101,13 +1101,13 @@ const previewColumnStyle = [
     position: 'sticky',
     top: '24px',
     padding: '8px 0 0',
-    '@media (max-width: 800px)': { display: 'none', position: 'static' },
+    '@media (max-width: 52rem)': { display: 'none', position: 'static' },
   }),
 ]
 
 const mobilePreviewStyle = css({
   display: 'none',
-  '@media (max-width: 800px)': {
+  '@media (max-width: 52rem)': {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
