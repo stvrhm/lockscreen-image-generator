@@ -1,4 +1,4 @@
-import { clientEntry, css, on, type Handle } from 'remix/ui'
+import { css, on, type Handle } from 'remix/ui'
 import { animateEntrance, animateExit, animateLayout, spring } from 'remix/ui/animation'
 
 export type ToastVariant = 'default' | 'success' | 'error'
@@ -58,7 +58,7 @@ function updateToLatest() {
   window.location.reload()
 }
 
-export const ToastViewport = clientEntry(import.meta.url, function ToastViewport(handle: Handle) {
+export function ToastViewport(handle: Handle) {
   let items: ToastRecord[] = []
   let timers = new Map<string, number>()
   let updateToastShown = false
@@ -182,7 +182,7 @@ export const ToastViewport = clientEntry(import.meta.url, function ToastViewport
       ))}
     </div>
   )
-})
+}
 
 const viewportStyle = css({
   position: 'fixed',

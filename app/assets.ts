@@ -9,17 +9,12 @@ const isHmr = Boolean(isDevelopment && process.env.REMIX_NODE_HMR)
 export const assetServer = createAssetServer({
   basePath: '/assets',
   rootDir,
-  // Client SPA: browser modules may import shared app code. Keep server-only
-  // files out via denyFiles.
-  allowFiles: ['app/**', 'node_modules/**'],
-  allowPackages: ['remix'],
-  denyFiles: [
-    'app/**/*.server.*',
-    'app/**/*.test.*',
-    'app/router.ts',
-    'app/actions/**',
-    'app/middleware/**',
-  ],
+  // Client SPA: name the browser-reachable trees explicitly. `app/actions/**`,
+  // `app/router.ts`, and this file are server-only and simply absent from the
+  // allow list rather than recovered afterwards by deny rules.
+  allowFiles: ['app/assets/**', 'app/data/**', 'app/ui/**', 'app/routes.ts', 'app/strings.ts'],
+  allowPackages: ['remix', 'bowser'],
+  denyFiles: ['app/**/*.server.*', 'app/**/*.test.*', 'app/assets.ts'],
   sourceMaps: isDevelopment ? 'external' : undefined,
   minify: !isDevelopment,
   watch: isDevelopment,
@@ -37,6 +32,6 @@ export const assetServer = createAssetServer({
   },
 })
 
-const entry = 'app/assets/entry.ts'
+const entry = 'app/assets/entry.tsx'
 
 export const scriptEntry = await assetServer.getScriptEntry(entry)

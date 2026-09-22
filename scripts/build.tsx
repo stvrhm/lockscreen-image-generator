@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url'
 import { renderToStream } from 'remix/ui/server'
 
 import { assetServer } from '../app/assets.ts'
-import { AppShell } from '../app/ui/app-shell.tsx'
+import { Document } from '../app/ui/document.tsx'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const DIST = join(ROOT, 'dist')
@@ -16,25 +16,15 @@ const BUILD_ID = new Date()
   .replace(/[^0-9]/g, '')
   .slice(0, 14)
 
-const CLIENT_ENTRIES = [
-  'app/assets/entry.ts',
-  'app/assets/install-hint.tsx',
-  'app/assets/app.tsx',
-  'app/ui/toast.tsx',
-]
+// One entry now. Screens are plain modules reached through the browser router
+// rather than separately hydrated islands, so the entry's import graph already
+// covers everything the browser needs.
+const CLIENT_ENTRIES = ['app/assets/entry.tsx']
 
 async function renderIndexHtml(): Promise<string> {
-  const stream = renderToStream(<AppShell route="start" />, {
-    async resolveClientEntry(entryId, component) {
-      const { href, importMap, preloads } = await assetServer.getScriptEntry(entryId)
-
-      return {
-        href,
-        importMap,
-        preloads,
-        exportName: entryId.split('#')[1] || component.name,
-      }
-    },
+  // A neutral shell with an empty body. The SPA router fills it in from the
+  // requested URL, so no screen is baked into the static HTML.
+  const stream = renderToStream(<Document />, {
     onError(error) {
       throw error
     },

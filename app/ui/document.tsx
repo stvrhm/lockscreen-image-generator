@@ -7,14 +7,22 @@ import { swBootScript } from './sw-boot.ts'
 import { THEME_COLOR, baseCss } from './theme.ts'
 
 export interface DocumentProps {
-  children?: RemixNode
   head?: RemixNode
   title?: string
 }
 
+/**
+ * The static shell served for every screen URL, in development and in the
+ * production build alike.
+ *
+ * The body is deliberately empty. Screen content is owned entirely by the SPA
+ * router, which renders into the document's top frame once the first route
+ * resolves; pre-rendering a screen here is what previously let the shell's
+ * Home markup appear alongside the screen the URL actually asked for.
+ */
 export function Document(handle: Handle<DocumentProps>) {
   return () => {
-    let { children, head, title = strings.appName } = handle.props
+    let { head, title = strings.appName } = handle.props
     let { href, importMap, preloads } = scriptEntry
 
     return (
@@ -41,11 +49,11 @@ export function Document(handle: Handle<DocumentProps>) {
             <link key={preloadHref} rel="modulepreload" href={preloadHref} />
           ))}
           <script type="module" src={href}></script>
-        </head>
-        <body>
-          {children}
+
+          {/* Lives in `head` so the SPA router owns an empty `body` outright. */}
           <script innerHTML={swBootScript} />
-        </body>
+        </head>
+        <body></body>
       </html>
     )
   }

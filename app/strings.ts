@@ -9,6 +9,11 @@ export const strings = {
     body: 'Opening your local workspace…',
   },
 
+  notFound: {
+    title: 'Screen not found',
+    body: 'That address does not match anything in Lockscreens.',
+  },
+
   start: {
     title: 'Make a lockscreen that identifies this device',
     subtitle:

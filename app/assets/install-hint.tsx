@@ -1,4 +1,4 @@
-import { clientEntry, css, on, type Handle } from 'remix/ui'
+import { css, on, type Handle } from 'remix/ui'
 
 import { flow, repel } from '../ui/cube/index.ts'
 import { strings } from '../strings.ts'
@@ -9,7 +9,7 @@ interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
-export const InstallHint = clientEntry(import.meta.url, function InstallHint(handle: Handle) {
+export function InstallHint(handle: Handle) {
   let visible = false
   let installPrompt: BeforeInstallPromptEvent | null = null
   let platform: 'ios' | 'android' = 'ios'
@@ -84,7 +84,7 @@ export const InstallHint = clientEntry(import.meta.url, function InstallHint(han
       </aside>
     )
   }
-})
+}
 
 function isAndroid(): boolean {
   if (typeof navigator === 'undefined') return false

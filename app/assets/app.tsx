@@ -1,4 +1,4 @@
-import { clientEntry, css, on, ref, type Handle, type MixInput } from 'remix/ui'
+import { css, navigate, on, ref, type Handle, type MixInput } from 'remix/ui'
 import { animateEntrance } from 'remix/ui/animation'
 import input from 'remix/ui/input'
 import * as popover from 'remix/ui/popover'
@@ -9,11 +9,8 @@ import { cluster, flow, grid, region, sidebar, switcher, wrapper } from '../ui/c
 import { theme } from '../ui/theme.ts'
 
 import {
-  blankDevice,
   deleteDevice,
   duplicateDevice,
-  findDevice,
-  getLastDraft,
   listDevices,
   saveDevice,
   type Device,
@@ -21,13 +18,17 @@ import {
   type ExportSizeMode,
   type Platform,
 } from '../data/devices.ts'
-import { hostDetails, inferPlatform, measureHostExportSize } from '../data/host.ts'
+import { hostDetails, measureHostExportSize } from '../data/host.ts'
 import { parseMarkdownLines, type MarkdownSegment } from '../data/markdown.ts'
 import { shortcutsFor } from '../data/shortcuts.ts'
 import { downloadWallpaper, shareWallpaper } from '../data/wallpaper.ts'
 import { strings } from '../strings.ts'
 import { routes } from '../routes.ts'
-import type { AppRoute } from '../ui/app-shell.tsx'
+
+// Screens owned by the browser route actions in `./controller.tsx`. Each one
+// receives the data its route already resolved, so no screen inspects the
+// location or decides which screen it is — that was the source of two screens
+// rendering into the same document.
 
 const NOTES_MAX_HEIGHT = 260
 const TOOLTIP_DELAY = 750
@@ -36,588 +37,37 @@ const TOOLTIP_CLOSE_DELAY = 500
 let tooltipWarmUntil = 0
 let activeTooltipHide: ((skipExitAnimation?: boolean) => void) | undefined
 
-interface AppProps extends Record<string, string | undefined> {
-  route: string
-  deviceId?: string
+/** Shown by the SPA runtime while the first route resolves. */
+export function LoadingScreen() {
+  return () => (
+    <div mix={loadingStyle} role="status" aria-live="polite">
+      <div mix={loadingMarkStyle} aria-hidden="true" />
+      <div mix={loadingCopyStyle}>
+        <p mix={loadingTitleStyle}>{strings.loading.title}</p>
+        <p mix={mutedStyle}>{strings.loading.body}</p>
+      </div>
+    </div>
+  )
 }
 
-function routeForLocation(fallback: AppRoute): AppRoute {
-  if (typeof window === 'undefined') return fallback
-  let path = window.location.pathname
-  if (path === routes.newDevice.href()) return 'new'
-  if (path === routes.continueDevice.href()) return 'continue'
-  if (path === routes.browseDevices.href()) return 'browse'
-  if (/^\/devices\/[^/]+\/edit$/.test(path)) return 'edit'
-  return 'start'
+/** Rendered by the browser router for a URL that matches no screen. */
+export function NotFoundScreen() {
+  return () => (
+    <div mix={pageStyle}>
+      <header mix={headerRowStyle}>
+        <a href={routes.screens.home.href()} mix={ghostButtonStyle}>
+          {strings.browse.back}
+        </a>
+        <h1 mix={headingStyle}>{strings.notFound.title}</h1>
+      </header>
+      <p mix={mutedStyle}>{strings.notFound.body}</p>
+    </div>
+  )
 }
 
-function deviceIdForLocation(): string | undefined {
-  if (typeof window === 'undefined') return undefined
-  let match = window.location.pathname.match(/^\/devices\/([^/]+)\/edit$/)
-  return match?.[1]
-}
-
-export const App = clientEntry(import.meta.url, function App(handle: Handle<AppProps>) {
-  let props = handle.props
-  let ready = false
-  let devices: Device[] = []
-  let draft: Device | null = null
-  let hasDraft = false
-  let loadError = ''
-  let statusMessage = ''
-  let platformOverride = false
-  let editingNew = false
-  let notesRef: HTMLTextAreaElement | null = null
-  // Static deployments serve the root index.html for every client route. The
-  // server-rendered tree therefore reflects props.route, not window.location.
-  // Keep the first client render identical to that tree, then resolve the
-  // browser pathname in the queued task below.
-  let initialRoute = props.route as AppRoute
-  let activeRoute = initialRoute
-
-  // The landing page does not need IndexedDB before it can render. Showing it
-  // immediately avoids a loading flash while its optional draft state loads.
-  // On a static client route, however, the server HTML is always the home
-  // shell. Wait for the pathname before showing it so Home and Browse cannot
-  // briefly render as two screens in the same document.
-  if (initialRoute === 'start' && routeForLocation(initialRoute) === 'start') ready = true
-
-  handle.queueTask(async () => {
-    try {
-      let route = routeForLocation(props.route as AppRoute)
-      activeRoute = route
-      if (route === 'new') {
-        let size = hostSize()
-        draft = blankDevice(inferPlatform(), size.width, size.height)
-        editingNew = true
-      } else if (route === 'continue') {
-        draft = (await getLastDraft()) ?? null
-        if (!draft) {
-          window.location.replace(routes.home.href())
-          return
-        }
-        editingNew = false
-      } else if (route === 'edit') {
-        let deviceId = props.deviceId ?? deviceIdForLocation()
-        draft = deviceId ? ((await findDevice(deviceId)) ?? null) : null
-        if (!draft) {
-          window.location.replace(routes.browseDevices.href())
-          return
-        }
-        editingNew = false
-      } else {
-        await refresh()
-      }
-      ready = true
-    } catch (error) {
-      console.error('Failed to load local Devices', error)
-      loadError = 'Local storage is unavailable. Reload the app or disable private browsing.'
-    }
-    handle.update()
-  })
-
-  async function refresh() {
-    devices = await listDevices()
-    let last = await getLastDraft()
-    draft = last ?? null
-    hasDraft = Boolean(last)
-  }
-
-  function hostSize() {
-    return measureHostExportSize()
-  }
-
-  function resolvedSize(device: Device) {
-    if (device.exportSizeMode === 'custom') {
-      return {
-        width: Math.max(1, device.customWidth || 1),
-        height: Math.max(1, device.customHeight || 1),
-      }
-    }
-    return hostSize()
-  }
-
-  function patchDraft(patch: Partial<Device>) {
-    if (!draft) return
-    draft = { ...draft, ...patch }
-    handle.update()
-  }
-
-  function insertShortcut(snippet: string) {
-    if (!draft) return
-    let el = notesRef
-    let notes = draft.notes
-    if (el && typeof el.selectionStart === 'number') {
-      let start = el.selectionStart
-      let end = el.selectionEnd
-      let next = notes.slice(0, start) + snippet + notes.slice(end)
-      draft = { ...draft, notes: next }
-      handle.update()
-      handle.queueTask(() => {
-        if (!notesRef) return
-        let pos = start + snippet.length
-        notesRef.focus()
-        notesRef.setSelectionRange(pos, pos)
-      })
-      return
-    }
-    let prefix = notes && !notes.endsWith('\n') && notes.length > 0 ? '\n' : ''
-    draft = { ...draft, notes: notes + prefix + snippet }
-    handle.update()
-  }
-
-  function applyFormatting(marker: string) {
-    if (!draft || !notesRef) return
-    let el = notesRef
-    let start = el.selectionStart
-    let end = el.selectionEnd
-    let notes = draft.notes
-    let selected = notes.slice(start, end)
-    let replacement = selected ? `${marker}${selected}${marker}` : `${marker}${marker}`
-    draft = { ...draft, notes: notes.slice(0, start) + replacement + notes.slice(end) }
-    handle.update()
-    handle.queueTask(() => {
-      if (!notesRef) return
-      notesRef.focus()
-      let nextStart = selected ? start + replacement.length : start + marker.length
-      let nextEnd = selected ? nextStart : nextStart + marker.length
-      notesRef.setSelectionRange(nextStart, nextEnd)
-    })
-  }
-
-  function resizeNotes() {
-    if (!notesRef) return
-    notesRef.style.height = 'auto'
-    notesRef.style.height = `${Math.min(notesRef.scrollHeight, NOTES_MAX_HEIGHT)}px`
-    notesRef.style.overflowY = notesRef.scrollHeight > NOTES_MAX_HEIGHT ? 'auto' : 'hidden'
-  }
-
-  async function onSave() {
-    if (!draft) return
-    if (!draft.label.trim()) {
-      statusMessage = 'Label is required'
-      handle.update()
-      return
-    }
-    let wasNew = editingNew
-    draft = await saveDevice({ ...draft, label: draft.label.trim() })
-    editingNew = false
-    if (wasNew) {
-      window.location.assign(routes.editDevice.href({ id: draft.id }))
-      return
-    }
-    statusMessage = strings.editor.saved
-    await refresh()
-    handle.update()
-  }
-
-  async function onDownload() {
-    if (!draft) return
-    let size = resolvedSize(draft)
-    await downloadWallpaper({
-      label: draft.label,
-      notes: draft.notes,
-      width: size.width,
-      height: size.height,
-      encoding: draft.encoding,
-    })
-  }
-
-  async function onShare() {
-    if (!draft) return
-    let size = resolvedSize(draft)
-    let result = await shareWallpaper({
-      label: draft.label,
-      notes: draft.notes,
-      width: size.width,
-      height: size.height,
-      encoding: draft.encoding,
-    })
-    if (result === 'unsupported') {
-      statusMessage = 'Share unavailable — use Download'
-      handle.update()
-    }
-  }
-
-  async function onDuplicate(device: Device) {
-    let copy = await duplicateDevice(device)
-    window.location.assign(routes.editDevice.href({ id: copy.id }))
-  }
-
-  async function onDelete(device: Device) {
-    if (!window.confirm(strings.browse.confirmDelete)) return
-    await deleteDevice(device.id)
-    await refresh()
-    handle.update()
-  }
-
+export function Home(handle: Handle<{ hasDraft: boolean }>) {
   return () => {
-    let route = activeRoute
-
-    if (!ready) {
-      return (
-        <div mix={loadingStyle} role="status" aria-live="polite">
-          <div mix={loadingMarkStyle} aria-hidden="true" />
-          <div mix={loadingCopyStyle}>
-            <p mix={loadingTitleStyle}>{strings.loading.title}</p>
-            <p mix={mutedStyle}>{strings.loading.body}</p>
-          </div>
-        </div>
-      )
-    }
-
-    if (loadError) {
-      return <div mix={pageStyle}>{loadError}</div>
-    }
-
-    if (route === 'browse') {
-      return (
-        <div mix={pageStyle}>
-          <header mix={headerRowStyle}>
-            <a href={routes.home.href()} data-rmx-document mix={ghostButtonStyle}>
-              {strings.browse.back}
-            </a>
-            <h1 mix={headingStyle}>{strings.browse.title}</h1>
-          </header>
-          {devices.length === 0 ? (
-            <p mix={mutedStyle}>{strings.browse.empty}</p>
-          ) : (
-            <ul mix={listStyle}>
-              {devices.map((device) => (
-                <li key={device.id} mix={listItemStyle}>
-                  <div mix={listMainStyle}>
-                    <strong>{device.label || 'Untitled'}</strong>
-                    <span mix={mutedStyle}>
-                      {device.platform.toUpperCase()} ·{' '}
-                      {new Date(device.updatedAt).toLocaleString()}
-                    </span>
-                  </div>
-                  <div mix={actionsRowStyle}>
-                    <a
-                      href={routes.editDevice.href({ id: device.id })}
-                      data-rmx-document
-                      mix={secondaryButtonStyle}
-                    >
-                      {strings.browse.edit}
-                    </a>
-                    <button
-                      type="button"
-                      mix={[secondaryButtonStyle, on('click', () => void onDuplicate(device))]}
-                    >
-                      {strings.browse.duplicate}
-                    </button>
-                    <button
-                      type="button"
-                      mix={[dangerButtonStyle, on('click', () => void onDelete(device))]}
-                    >
-                      {strings.browse.delete}
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )
-    }
-
-    if ((route === 'new' || route === 'continue' || route === 'edit') && draft) {
-      let device = draft
-      let size = resolvedSize(device)
-      let previewText = device.notes.trim() || device.label.trim() || 'Notes preview'
-      let host = hostDetails()
-      let shortcuts = shortcutsFor({
-        width: size.width,
-        height: size.height,
-        pixelRatio: host.pixelRatio,
-        detectedOS: host.detectedOS,
-      })
-
-      return (
-        <div mix={pageStyle}>
-          <header mix={editorHeaderStyle}>
-            <a href={routes.home.href()} data-rmx-document mix={ghostButtonStyle}>
-              {strings.editor.back}
-            </a>
-            <h1 mix={headingStyle}>
-              {editingNew ? strings.editor.titleNew : strings.editor.titleEdit}
-            </h1>
-          </header>
-
-          <div mix={editorLayoutStyle}>
-            <div mix={formStyle}>
-              <div mix={fieldStyle}>
-                <label htmlFor="device-label" mix={fieldLabelStyle}>
-                  {strings.editor.label}
-                </label>
-                <input
-                  id="device-label"
-                  name="label"
-                  type="text"
-                  value={device.label}
-                  autoFocus={editingNew}
-                  autoComplete="off"
-                  mix={[
-                    inputStyle,
-                    on('input', (event) => patchDraft({ label: event.currentTarget.value })),
-                  ]}
-                />
-              </div>
-
-              <div mix={notesFieldStyle}>
-                <div mix={notesCopyStyle}>
-                  <label htmlFor="device-notes" id="notes-label" mix={fieldLabelStyle}>
-                    {strings.editor.notes}
-                  </label>
-                  <div id="notes-hint" mix={hintStyle}>
-                    {strings.editor.notesHint}
-                  </div>
-                </div>
-                <div mix={composerStyle}>
-                  <div mix={toolbarStyle} role="toolbar" aria-label={strings.editor.formatting}>
-                    <FormatButton
-                      label={strings.editor.bold}
-                      symbol="B"
-                      onSelect={() => applyFormatting('**')}
-                    />
-                    <FormatButton
-                      label={strings.editor.italic}
-                      symbol="I"
-                      onSelect={() => applyFormatting('*')}
-                    />
-                    <FormatButton
-                      label={strings.editor.strike}
-                      symbol="S"
-                      onSelect={() => applyFormatting('~~')}
-                    />
-                    <FormatButton
-                      label={strings.editor.code}
-                      symbol="<>"
-                      onSelect={() => applyFormatting('`')}
-                    />
-                  </div>
-                  <textarea
-                    id="device-notes"
-                    name="notes"
-                    rows={7}
-                    value={device.notes}
-                    aria-labelledby="notes-label"
-                    aria-describedby="notes-hint"
-                    mix={[
-                      textareaStyle,
-                      ref((node) => {
-                        notesRef = node as HTMLTextAreaElement | null
-                      }),
-                      on('input', (event) => {
-                        patchDraft({ notes: event.currentTarget.value })
-                        handle.queueTask(resizeNotes)
-                      }),
-                    ]}
-                  />
-                </div>
-              </div>
-
-              <div mix={fieldStyle}>
-                <span mix={fieldLabelStyle}>{strings.editor.shortcuts}</span>
-                <div mix={chipRowStyle}>
-                  {shortcuts.map((shortcut) => (
-                    <button
-                      key={shortcut.id}
-                      type="button"
-                      mix={[chipStyle, on('click', () => insertShortcut(shortcut.insert))]}
-                    >
-                      {shortcut.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div mix={mobilePreviewStyle}>
-                <p mix={previewLabelStyle}>{strings.editor.preview}</p>
-                <PhonePreview platform={device.platform} text={previewText} />
-                <ExportSummary
-                  device={device}
-                  size={size}
-                  automatic={editingNew && !platformOverride}
-                />
-              </div>
-
-              <details mix={advancedStyle}>
-                <summary>{strings.editor.customizeExport}</summary>
-                <div mix={advancedContentStyle}>
-                  <div mix={fieldStyle}>
-                    <span mix={fieldLabelStyle}>{strings.editor.platform}</span>
-                    <p mix={mutedStyle}>{strings.editor.platformInferred}</p>
-                    {platformOverride ? (
-                      <Select
-                        defaultLabel={device.platform === 'ios' ? 'iOS' : 'Android'}
-                        defaultValue={device.platform}
-                        mix={[
-                          platformSelectStyle,
-                          onSelectChange((event) =>
-                            patchDraft({ platform: event.value as Platform }),
-                          ),
-                        ]}
-                      >
-                        <Option label="iOS" value="ios">
-                          iOS
-                        </Option>
-                        <Option label="Android" value="android">
-                          Android
-                        </Option>
-                      </Select>
-                    ) : (
-                      <button
-                        type="button"
-                        mix={[
-                          linkButtonStyle,
-                          on('click', () => {
-                            platformOverride = true
-                            handle.update()
-                          }),
-                        ]}
-                      >
-                        {strings.editor.platformOverride}
-                      </button>
-                    )}
-                  </div>
-
-                  <div mix={fieldStyle}>
-                    <span mix={fieldLabelStyle}>{strings.editor.exportSize}</span>
-                    <div mix={segmentStyle} role="group" aria-label={strings.editor.exportSize}>
-                      <SegmentButton
-                        active={device.exportSizeMode === 'auto'}
-                        label={strings.editor.exportSizeAuto}
-                        onSelect={() => patchDraft({ exportSizeMode: 'auto' as ExportSizeMode })}
-                      />
-                      <SegmentButton
-                        active={device.exportSizeMode === 'custom'}
-                        label={strings.editor.exportSizeCustom}
-                        onSelect={() => {
-                          let auto = hostSize()
-                          patchDraft({
-                            exportSizeMode: 'custom',
-                            customWidth: device.customWidth || auto.width,
-                            customHeight: device.customHeight || auto.height,
-                          })
-                        }}
-                      />
-                    </div>
-                    {device.exportSizeMode === 'auto' ? (
-                      <p mix={mutedStyle}>
-                        {size.width} × {size.height}px
-                      </p>
-                    ) : (
-                      <div mix={sizeInputsStyle}>
-                        <label mix={inlineFieldStyle}>
-                          {strings.editor.width}
-                          <input
-                            type="number"
-                            min={1}
-                            value={device.customWidth}
-                            mix={[
-                              input(),
-                              inputStyle,
-                              on('input', (event) =>
-                                patchDraft({
-                                  customWidth: Number.parseInt(event.currentTarget.value, 10) || 1,
-                                }),
-                              ),
-                            ]}
-                          />
-                        </label>
-                        <label mix={inlineFieldStyle}>
-                          {strings.editor.height}
-                          <input
-                            type="number"
-                            min={1}
-                            value={device.customHeight}
-                            mix={[
-                              input(),
-                              inputStyle,
-                              on('input', (event) =>
-                                patchDraft({
-                                  customHeight: Number.parseInt(event.currentTarget.value, 10) || 1,
-                                }),
-                              ),
-                            ]}
-                          />
-                        </label>
-                      </div>
-                    )}
-                  </div>
-
-                  <div mix={fieldStyle}>
-                    <span mix={fieldLabelStyle}>{strings.editor.encoding}</span>
-                    <div mix={segmentStyle} role="group" aria-label={strings.editor.encoding}>
-                      <SegmentButton
-                        active={device.encoding === 'quality'}
-                        label={strings.editor.encodingQuality}
-                        onSelect={() => patchDraft({ encoding: 'quality' as ExportEncoding })}
-                      />
-                      <SegmentButton
-                        active={device.encoding === 'size'}
-                        label={strings.editor.encodingSize}
-                        onSelect={() => patchDraft({ encoding: 'size' as ExportEncoding })}
-                      />
-                    </div>
-                    <p mix={mutedStyle}>
-                      {device.encoding === 'quality'
-                        ? strings.editor.encodingQualityHint
-                        : strings.editor.encodingSizeHint}
-                    </p>
-                  </div>
-                </div>
-              </details>
-
-              <div mix={actionsRowStyle}>
-                <button type="button" mix={[primaryButtonStyle, on('click', () => void onSave())]}>
-                  {editingNew ? strings.editor.create : strings.editor.save}
-                </button>
-                <button
-                  type="button"
-                  mix={[secondaryButtonStyle, on('click', () => void onDownload())]}
-                >
-                  {strings.editor.download}
-                </button>
-                <button
-                  type="button"
-                  mix={[secondaryButtonStyle, on('click', () => void onShare())]}
-                >
-                  {strings.editor.share}
-                </button>
-              </div>
-              <p mix={hintStyle}>{strings.editor.applyHint}</p>
-              {statusMessage ? (
-                <p
-                  key={statusMessage}
-                  mix={[
-                    statusStyle,
-                    animateEntrance({
-                      opacity: 0,
-                      transform: 'translateY(4px)',
-                      duration: 160,
-                    }),
-                  ]}
-                >
-                  {statusMessage}
-                </p>
-              ) : null}
-            </div>
-
-            <div mix={previewColumnStyle}>
-              <p mix={previewLabelStyle}>{strings.editor.preview}</p>
-              <PhonePreview platform={device.platform} text={previewText} />
-              <ExportSummary
-                device={device}
-                size={size}
-                automatic={editingNew && !platformOverride}
-              />
-            </div>
-          </div>
-        </div>
-      )
-    }
+    let { hasDraft } = handle.props
 
     return (
       <div mix={pageStyle}>
@@ -646,25 +96,19 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle<AppP
         </ol>
 
         <div mix={startActionsStyle}>
-          <a
-            href={routes.newDevice.href()}
-            data-rmx-document
-            mix={[primaryButtonStyle, startButtonStyle]}
-          >
+          <a href={routes.screens.newDevice.href()} mix={[primaryButtonStyle, startButtonStyle]}>
             {strings.start.new}
           </a>
           {hasDraft ? (
             <a
-              href={routes.continueDevice.href()}
-              data-rmx-document
+              href={routes.screens.continueDevice.href()}
               mix={[secondaryButtonStyle, startButtonStyle]}
             >
               {strings.start.continue}
             </a>
           ) : null}
           <a
-            href={routes.browseDevices.href()}
-            data-rmx-document
+            href={routes.screens.browseDevices.href()}
             mix={[secondaryButtonStyle, startButtonStyle]}
           >
             {strings.start.browse}
@@ -674,7 +118,491 @@ export const App = clientEntry(import.meta.url, function App(handle: Handle<AppP
       </div>
     )
   }
-})
+}
+
+export function BrowseDevices(handle: Handle<{ devices: Device[] }>) {
+  let devices = handle.props.devices
+
+  async function refresh() {
+    devices = await listDevices()
+    handle.update()
+  }
+
+  async function onDuplicate(device: Device) {
+    let copy = await duplicateDevice(device)
+    navigate(routes.screens.editDevice.href({ id: copy.id }))
+  }
+
+  async function onDelete(device: Device) {
+    if (!window.confirm(strings.browse.confirmDelete)) return
+    await deleteDevice(device.id)
+    await refresh()
+  }
+
+  return () => {
+    return (
+      <div mix={pageStyle}>
+        <header mix={headerRowStyle}>
+          <a href={routes.screens.home.href()} mix={ghostButtonStyle}>
+            {strings.browse.back}
+          </a>
+          <h1 mix={headingStyle}>{strings.browse.title}</h1>
+        </header>
+        {devices.length === 0 ? (
+          <p mix={mutedStyle}>{strings.browse.empty}</p>
+        ) : (
+          <ul mix={listStyle}>
+            {devices.map((device) => (
+              <li key={device.id} mix={listItemStyle}>
+                <div mix={listMainStyle}>
+                  <strong>{device.label || 'Untitled'}</strong>
+                  <span mix={mutedStyle}>
+                    {device.platform.toUpperCase()} · {new Date(device.updatedAt).toLocaleString()}
+                  </span>
+                </div>
+                <div mix={actionsRowStyle}>
+                  <a
+                    href={routes.screens.editDevice.href({ id: device.id })}
+                    mix={secondaryButtonStyle}
+                  >
+                    {strings.browse.edit}
+                  </a>
+                  <button
+                    type="button"
+                    mix={[secondaryButtonStyle, on('click', () => void onDuplicate(device))]}
+                  >
+                    {strings.browse.duplicate}
+                  </button>
+                  <button
+                    type="button"
+                    mix={[dangerButtonStyle, on('click', () => void onDelete(device))]}
+                  >
+                    {strings.browse.delete}
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    )
+  }
+}
+
+export function Editor(handle: Handle<{ draft: Device; editingNew: boolean }>) {
+  let draft = handle.props.draft
+  let editingNew = handle.props.editingNew
+  let statusMessage = ''
+  let platformOverride = false
+  let notesRef: HTMLTextAreaElement | null = null
+
+  function hostSize() {
+    return measureHostExportSize()
+  }
+
+  function resolvedSize(device: Device) {
+    if (device.exportSizeMode === 'custom') {
+      return {
+        width: Math.max(1, device.customWidth || 1),
+        height: Math.max(1, device.customHeight || 1),
+      }
+    }
+    return hostSize()
+  }
+
+  function patchDraft(patch: Partial<Device>) {
+    draft = { ...draft, ...patch }
+    handle.update()
+  }
+
+  function insertShortcut(snippet: string) {
+    let el = notesRef
+    let notes = draft.notes
+    if (el && typeof el.selectionStart === 'number') {
+      let start = el.selectionStart
+      let end = el.selectionEnd
+      let next = notes.slice(0, start) + snippet + notes.slice(end)
+      draft = { ...draft, notes: next }
+      handle.update()
+      handle.queueTask(() => {
+        if (!notesRef) return
+        let pos = start + snippet.length
+        notesRef.focus()
+        notesRef.setSelectionRange(pos, pos)
+      })
+      return
+    }
+    let prefix = notes && !notes.endsWith('\n') && notes.length > 0 ? '\n' : ''
+    draft = { ...draft, notes: notes + prefix + snippet }
+    handle.update()
+  }
+
+  function applyFormatting(marker: string) {
+    if (!notesRef) return
+    let el = notesRef
+    let start = el.selectionStart
+    let end = el.selectionEnd
+    let notes = draft.notes
+    let selected = notes.slice(start, end)
+    let replacement = selected ? `${marker}${selected}${marker}` : `${marker}${marker}`
+    draft = { ...draft, notes: notes.slice(0, start) + replacement + notes.slice(end) }
+    handle.update()
+    handle.queueTask(() => {
+      if (!notesRef) return
+      notesRef.focus()
+      let nextStart = selected ? start + replacement.length : start + marker.length
+      let nextEnd = selected ? nextStart : nextStart + marker.length
+      notesRef.setSelectionRange(nextStart, nextEnd)
+    })
+  }
+
+  function resizeNotes() {
+    if (!notesRef) return
+    notesRef.style.height = 'auto'
+    notesRef.style.height = `${Math.min(notesRef.scrollHeight, NOTES_MAX_HEIGHT)}px`
+    notesRef.style.overflowY = notesRef.scrollHeight > NOTES_MAX_HEIGHT ? 'auto' : 'hidden'
+  }
+
+  async function onSave() {
+    if (!draft.label.trim()) {
+      statusMessage = 'Label is required'
+      handle.update()
+      return
+    }
+    let wasNew = editingNew
+    draft = await saveDevice({ ...draft, label: draft.label.trim() })
+    editingNew = false
+
+    // A new Device only gets its id once saved, so move to its canonical URL.
+    if (wasNew) {
+      navigate(routes.screens.editDevice.href({ id: draft.id }), { history: 'replace' })
+      return
+    }
+    statusMessage = strings.editor.saved
+    handle.update()
+  }
+
+  async function onDownload() {
+    let size = resolvedSize(draft)
+    await downloadWallpaper({
+      label: draft.label,
+      notes: draft.notes,
+      width: size.width,
+      height: size.height,
+      encoding: draft.encoding,
+    })
+  }
+
+  async function onShare() {
+    let size = resolvedSize(draft)
+    let result = await shareWallpaper({
+      label: draft.label,
+      notes: draft.notes,
+      width: size.width,
+      height: size.height,
+      encoding: draft.encoding,
+    })
+    if (result === 'unsupported') {
+      statusMessage = 'Share unavailable — use Download'
+      handle.update()
+    }
+  }
+
+  return () => {
+    let device = draft
+    let size = resolvedSize(device)
+    let previewText = device.notes.trim() || device.label.trim() || 'Notes preview'
+    let host = hostDetails()
+    let shortcuts = shortcutsFor({
+      width: size.width,
+      height: size.height,
+      pixelRatio: host.pixelRatio,
+      detectedOS: host.detectedOS,
+    })
+
+    return (
+      <div mix={pageStyle}>
+        <header mix={editorHeaderStyle}>
+          <a href={routes.screens.home.href()} mix={ghostButtonStyle}>
+            {strings.editor.back}
+          </a>
+          <h1 mix={headingStyle}>
+            {editingNew ? strings.editor.titleNew : strings.editor.titleEdit}
+          </h1>
+        </header>
+
+        <div mix={editorLayoutStyle}>
+          <div mix={formStyle}>
+            <div mix={fieldStyle}>
+              <label htmlFor="device-label" mix={fieldLabelStyle}>
+                {strings.editor.label}
+              </label>
+              <input
+                id="device-label"
+                name="label"
+                type="text"
+                value={device.label}
+                autoFocus={editingNew}
+                autoComplete="off"
+                mix={[
+                  inputStyle,
+                  on('input', (event) => patchDraft({ label: event.currentTarget.value })),
+                ]}
+              />
+            </div>
+
+            <div mix={notesFieldStyle}>
+              <div mix={notesCopyStyle}>
+                <label htmlFor="device-notes" id="notes-label" mix={fieldLabelStyle}>
+                  {strings.editor.notes}
+                </label>
+                <div id="notes-hint" mix={hintStyle}>
+                  {strings.editor.notesHint}
+                </div>
+              </div>
+              <div mix={composerStyle}>
+                <div mix={toolbarStyle} role="toolbar" aria-label={strings.editor.formatting}>
+                  <FormatButton
+                    label={strings.editor.bold}
+                    symbol="B"
+                    onSelect={() => applyFormatting('**')}
+                  />
+                  <FormatButton
+                    label={strings.editor.italic}
+                    symbol="I"
+                    onSelect={() => applyFormatting('*')}
+                  />
+                  <FormatButton
+                    label={strings.editor.strike}
+                    symbol="S"
+                    onSelect={() => applyFormatting('~~')}
+                  />
+                  <FormatButton
+                    label={strings.editor.code}
+                    symbol="<>"
+                    onSelect={() => applyFormatting('`')}
+                  />
+                </div>
+                <textarea
+                  id="device-notes"
+                  name="notes"
+                  rows={7}
+                  value={device.notes}
+                  aria-labelledby="notes-label"
+                  aria-describedby="notes-hint"
+                  mix={[
+                    textareaStyle,
+                    ref((node) => {
+                      notesRef = node as HTMLTextAreaElement | null
+                    }),
+                    on('input', (event) => {
+                      patchDraft({ notes: event.currentTarget.value })
+                      handle.queueTask(resizeNotes)
+                    }),
+                  ]}
+                />
+              </div>
+            </div>
+
+            <div mix={fieldStyle}>
+              <span mix={fieldLabelStyle}>{strings.editor.shortcuts}</span>
+              <div mix={chipRowStyle}>
+                {shortcuts.map((shortcut) => (
+                  <button
+                    key={shortcut.id}
+                    type="button"
+                    mix={[chipStyle, on('click', () => insertShortcut(shortcut.insert))]}
+                  >
+                    {shortcut.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div mix={mobilePreviewStyle}>
+              <p mix={previewLabelStyle}>{strings.editor.preview}</p>
+              <PhonePreview platform={device.platform} text={previewText} />
+              <ExportSummary
+                device={device}
+                size={size}
+                automatic={editingNew && !platformOverride}
+              />
+            </div>
+
+            <details mix={advancedStyle}>
+              <summary>{strings.editor.customizeExport}</summary>
+              <div mix={advancedContentStyle}>
+                <div mix={fieldStyle}>
+                  <span mix={fieldLabelStyle}>{strings.editor.platform}</span>
+                  <p mix={mutedStyle}>{strings.editor.platformInferred}</p>
+                  {platformOverride ? (
+                    <Select
+                      defaultLabel={device.platform === 'ios' ? 'iOS' : 'Android'}
+                      defaultValue={device.platform}
+                      mix={[
+                        platformSelectStyle,
+                        onSelectChange((event) =>
+                          patchDraft({ platform: event.value as Platform }),
+                        ),
+                      ]}
+                    >
+                      <Option label="iOS" value="ios">
+                        iOS
+                      </Option>
+                      <Option label="Android" value="android">
+                        Android
+                      </Option>
+                    </Select>
+                  ) : (
+                    <button
+                      type="button"
+                      mix={[
+                        linkButtonStyle,
+                        on('click', () => {
+                          platformOverride = true
+                          handle.update()
+                        }),
+                      ]}
+                    >
+                      {strings.editor.platformOverride}
+                    </button>
+                  )}
+                </div>
+
+                <div mix={fieldStyle}>
+                  <span mix={fieldLabelStyle}>{strings.editor.exportSize}</span>
+                  <div mix={segmentStyle} role="group" aria-label={strings.editor.exportSize}>
+                    <SegmentButton
+                      active={device.exportSizeMode === 'auto'}
+                      label={strings.editor.exportSizeAuto}
+                      onSelect={() => patchDraft({ exportSizeMode: 'auto' as ExportSizeMode })}
+                    />
+                    <SegmentButton
+                      active={device.exportSizeMode === 'custom'}
+                      label={strings.editor.exportSizeCustom}
+                      onSelect={() => {
+                        let auto = hostSize()
+                        patchDraft({
+                          exportSizeMode: 'custom',
+                          customWidth: device.customWidth || auto.width,
+                          customHeight: device.customHeight || auto.height,
+                        })
+                      }}
+                    />
+                  </div>
+                  {device.exportSizeMode === 'auto' ? (
+                    <p mix={mutedStyle}>
+                      {size.width} × {size.height}px
+                    </p>
+                  ) : (
+                    <div mix={sizeInputsStyle}>
+                      <label mix={inlineFieldStyle}>
+                        {strings.editor.width}
+                        <input
+                          type="number"
+                          min={1}
+                          value={device.customWidth}
+                          mix={[
+                            input(),
+                            inputStyle,
+                            on('input', (event) =>
+                              patchDraft({
+                                customWidth: Number.parseInt(event.currentTarget.value, 10) || 1,
+                              }),
+                            ),
+                          ]}
+                        />
+                      </label>
+                      <label mix={inlineFieldStyle}>
+                        {strings.editor.height}
+                        <input
+                          type="number"
+                          min={1}
+                          value={device.customHeight}
+                          mix={[
+                            input(),
+                            inputStyle,
+                            on('input', (event) =>
+                              patchDraft({
+                                customHeight: Number.parseInt(event.currentTarget.value, 10) || 1,
+                              }),
+                            ),
+                          ]}
+                        />
+                      </label>
+                    </div>
+                  )}
+                </div>
+
+                <div mix={fieldStyle}>
+                  <span mix={fieldLabelStyle}>{strings.editor.encoding}</span>
+                  <div mix={segmentStyle} role="group" aria-label={strings.editor.encoding}>
+                    <SegmentButton
+                      active={device.encoding === 'quality'}
+                      label={strings.editor.encodingQuality}
+                      onSelect={() => patchDraft({ encoding: 'quality' as ExportEncoding })}
+                    />
+                    <SegmentButton
+                      active={device.encoding === 'size'}
+                      label={strings.editor.encodingSize}
+                      onSelect={() => patchDraft({ encoding: 'size' as ExportEncoding })}
+                    />
+                  </div>
+                  <p mix={mutedStyle}>
+                    {device.encoding === 'quality'
+                      ? strings.editor.encodingQualityHint
+                      : strings.editor.encodingSizeHint}
+                  </p>
+                </div>
+              </div>
+            </details>
+
+            <div mix={actionsRowStyle}>
+              <button type="button" mix={[primaryButtonStyle, on('click', () => void onSave())]}>
+                {editingNew ? strings.editor.create : strings.editor.save}
+              </button>
+              <button
+                type="button"
+                mix={[secondaryButtonStyle, on('click', () => void onDownload())]}
+              >
+                {strings.editor.download}
+              </button>
+              <button type="button" mix={[secondaryButtonStyle, on('click', () => void onShare())]}>
+                {strings.editor.share}
+              </button>
+            </div>
+            <p mix={hintStyle}>{strings.editor.applyHint}</p>
+            {statusMessage ? (
+              <p
+                key={statusMessage}
+                mix={[
+                  statusStyle,
+                  animateEntrance({
+                    opacity: 0,
+                    transform: 'translateY(4px)',
+                    duration: 160,
+                  }),
+                ]}
+              >
+                {statusMessage}
+              </p>
+            ) : null}
+          </div>
+
+          <div mix={previewColumnStyle}>
+            <p mix={previewLabelStyle}>{strings.editor.preview}</p>
+            <PhonePreview platform={device.platform} text={previewText} />
+            <ExportSummary
+              device={device}
+              size={size}
+              automatic={editingNew && !platformOverride}
+            />
+          </div>
+        </div>
+      </div>
+    )
+  }
+}
 
 function SegmentButton(handle: Handle<{ active: boolean; label: string; onSelect: () => void }>) {
   return () => {
