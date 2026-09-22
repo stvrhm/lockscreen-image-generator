@@ -1015,17 +1015,11 @@ const formStyle = [
   }),
 ]
 
-const fieldStyle = [
-  flow({ flowSpace: theme.space.xs }),
-]
+const fieldStyle = [flow({ flowSpace: theme.space.xs })]
 
-const notesFieldStyle = [
-  flow({ flowSpace: theme.space.sm }),
-]
+const notesFieldStyle = [flow({ flowSpace: theme.space.sm })]
 
-const notesCopyStyle = [
-  flow({ flowSpace: theme.space['3xs'] }),
-]
+const notesCopyStyle = [flow({ flowSpace: theme.space['3xs'] })]
 
 const fieldLabelStyle = css({
   display: 'block',

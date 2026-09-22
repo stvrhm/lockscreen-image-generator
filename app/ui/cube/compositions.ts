@@ -39,9 +39,7 @@ interface RepelOptions {
 const flowStyle = css({ '& > * + *': { marginBlockStart: 'var(--flow-space, 1em)' } })
 
 function flowStyleFor(flowSpace?: CubeValue) {
-  return flowSpace === undefined
-    ? flowStyle
-    : css({ '& > * + *': { marginBlockStart: flowSpace } })
+  return flowSpace === undefined ? flowStyle : css({ '& > * + *': { marginBlockStart: flowSpace } })
 }
 const clusterStyle = css({
   alignItems: 'var(--cluster-alignment, center)',
