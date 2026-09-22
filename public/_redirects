@@ -1,1 +1,7 @@
+# Netlify serves existing static files before applying these rules, so this
+# only fires for browser modules that are genuinely missing. Without it the SPA
+# fallback below rewrites them to index.html with a 200, and an HTTP cache can
+# then hold HTML under a JavaScript URL until the cache is cleared by hand.
+/assets/*  /asset-not-found  404
+
 /*  /index.html  200

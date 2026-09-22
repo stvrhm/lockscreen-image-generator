@@ -48,32 +48,13 @@ function subscribe(subscriber: ToastSubscriber) {
 
 declare global {
   interface Window {
-    __tdlPwaUpdateAvailable?: boolean
+    __tdlUpdateAvailable?: boolean
   }
 }
 
-async function updateToLatest() {
-  let registration = await navigator.serviceWorker.getRegistration()
-  let waiting = registration?.waiting
-
-  if (waiting) {
-    await new Promise<void>((resolve) => {
-      let finished = false
-      let timeout = window.setTimeout(finish, 2000)
-
-      function finish() {
-        if (finished) return
-        finished = true
-        window.clearTimeout(timeout)
-        navigator.serviceWorker.removeEventListener('controllerchange', finish)
-        resolve()
-      }
-
-      navigator.serviceWorker.addEventListener('controllerchange', finish, { once: true })
-      waiting.postMessage({ type: 'tdl:skip-waiting' })
-    })
-  }
-
+// No service worker mediates releases, so the newest build is whatever the
+// network serves. Reloading is the whole update step.
+function updateToLatest() {
   window.location.reload()
 }
 
@@ -127,15 +108,15 @@ export const ToastViewport = clientEntry(import.meta.url, function ToastViewport
     }
     reduceMotion = motionPreference.matches
     motionPreference.addEventListener('change', onMotionPreferenceChange)
-    window.addEventListener('tdl:sw-update', onUpdateAvailable)
+    window.addEventListener('tdl:update-available', onUpdateAvailable)
 
-    if (window.__tdlPwaUpdateAvailable) showUpdateToast()
+    if (window.__tdlUpdateAvailable) showUpdateToast()
 
     handle.signal.addEventListener(
       'abort',
       () => {
         unsubscribe()
-        window.removeEventListener('tdl:sw-update', onUpdateAvailable)
+        window.removeEventListener('tdl:update-available', onUpdateAvailable)
         motionPreference.removeEventListener('change', onMotionPreferenceChange)
         timers.forEach((timer) => window.clearTimeout(timer))
         timers.clear()

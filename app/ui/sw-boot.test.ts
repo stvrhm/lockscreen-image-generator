@@ -3,25 +3,43 @@ import test from 'node:test'
 
 import { createSwBootScript } from './sw-boot.ts'
 
-test('cleans up production service workers during development', () => {
-  assert.match(createSwBootScript('development'), /getRegistrations\(\)/)
-  assert.match(createSwBootScript('development'), /unregister\(\)/)
+test('cleans up service workers and tdl caches in development', () => {
+  let script = createSwBootScript('development')
+
+  assert.match(script, /getRegistrations\(\)/)
+  assert.match(script, /unregister\(\)/)
+  assert.match(script, /caches\.delete\(key\)/)
 })
 
 test('does not register or clean up service workers in tests', () => {
   assert.equal(createSwBootScript(undefined), '')
 })
 
-test('registers the service worker for the static production build', () => {
-  let script = createSwBootScript('production')
-  assert.match(script, /serviceWorker\.register\('\/sw\.js'\)/)
-  assert.match(script, /updatefound/)
-  assert.match(script, /__tdlPwaUpdateAvailable/)
-  assert.match(script, /registration\.update\(\)/)
+test('never registers a service worker in production', () => {
+  // Registering would reinstall the one-shot cleanup worker on every load and
+  // loop its client reload.
+  assert.doesNotMatch(createSwBootScript('production'), /serviceWorker\.register/)
 })
 
-test('checks for service worker updates while the app remains open', () => {
+test('cleans up leftover production service workers', () => {
   let script = createSwBootScript('production')
+
+  assert.match(script, /getRegistrations\(\)/)
+  assert.match(script, /unregister\(\)/)
+})
+
+test('announces an update when the deployed build id changes', () => {
+  let script = createSwBootScript('production')
+
+  assert.match(script, /\/version\.json/)
+  assert.match(script, /cache: 'no-store'/)
+  assert.match(script, /__tdlUpdateAvailable/)
+  assert.match(script, /'tdl:update-available'/)
+})
+
+test('re-checks the deployed build id while the app stays open', () => {
+  let script = createSwBootScript('production')
+
   assert.match(script, /addEventListener\('focus'/)
   assert.match(script, /addEventListener\('visibilitychange'/)
   assert.match(script, /setInterval\(/)

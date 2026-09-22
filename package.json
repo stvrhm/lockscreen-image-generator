@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "bowser": "^2.14.1",
-    "remix": "^3.0.0-rc.2"
+    "remix": "3.0.0-rc.2"
   },
   "devDependencies": {
     "@types/node": "latest",
