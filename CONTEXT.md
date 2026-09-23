@@ -41,7 +41,7 @@ How the Wallpaper file is encoded. Two presets: **Quality** (= PNG, default) and
 _Avoid_: Format (alone), quality slider, WebP
 
 **Wallpaper**:
-The downloadable or shareable lockscreen image produced from Label/Notes under fixed styling (no theming for now). The app offers **Save to Photos** (the system share sheet, falling back to a download where sharing files is unsupported) and a plain Download; a web app cannot write to Photos directly or set the system wallpaper — the user finishes in the share sheet and Photos/Settings. Saving a Wallpaper also saves its Device; **Save Device** stores the Device alone.
+The downloadable or shareable lockscreen image produced from Label/Notes under fixed styling (no theming for now). The app offers **Save to Photos** (the system share sheet, falling back to a download where sharing files is unsupported) and a plain Download; a web app cannot write to Photos directly or set the system wallpaper — the user finishes in the share sheet and Photos/Settings. Saving a Wallpaper also saves its Device, unless the user dismisses the share sheet; **Save Device** stores the Device alone.
 _Avoid_: Lockscreen (alone), PNG (as the concept), screenshot
 
 **Start options**:

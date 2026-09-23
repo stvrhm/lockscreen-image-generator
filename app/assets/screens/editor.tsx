@@ -152,6 +152,8 @@ export function Editor(handle: Handle<{ draft: Device; editingNew: boolean }>) {
     // Share before touching IndexedDB: the share sheet needs the tap's user
     // activation, and Safari drops it if other async work runs first.
     let result = await shareWallpaper(options)
+    // Dismissing the share sheet backs out of the whole action.
+    if (result === 'cancelled') return
     let downloaded = result === 'unsupported' && (await downloadWallpaper(options))
     await storeDevice()
 
