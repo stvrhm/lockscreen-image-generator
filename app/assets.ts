@@ -6,8 +6,14 @@ const nodeEnv = process.env.NODE_ENV ?? 'development'
 const isDevelopment = nodeEnv === 'development'
 const isHmr = Boolean(isDevelopment && process.env.REMIX_NODE_HMR)
 
+// The static build puts its build id in every module URL (see
+// scripts/build.tsx). Safari reuses ES modules it has already loaded at a URL
+// without revalidating them, even across reloads and despite `no-cache`, so a
+// new release must reach the browser under new URLs.
+export const assetBasePath = process.env.ASSET_BASE_PATH ?? '/assets'
+
 export const assetServer = createAssetServer({
-  basePath: '/assets',
+  basePath: assetBasePath,
   rootDir,
   // Client SPA: name the browser-reachable trees explicitly. `app/actions/**`,
   // `app/router.ts`, and this file are server-only and simply absent from the

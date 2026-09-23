@@ -6,9 +6,8 @@
   Cache-Control: no-cache
 
 # `remix/assets` preserves source extensions in browser module URLs. Netlify
-# otherwise serves TypeScript source files as non-JavaScript MIME types.
-/assets/app/*.ts
-  Content-Type: application/javascript; charset=utf-8
-
-/assets/app/*.tsx
+# otherwise serves TypeScript source files as non-JavaScript MIME types. Module
+# URLs carry the build id (`/assets/<build>/app/...`), and everything under
+# /assets is a JavaScript module.
+/assets/*
   Content-Type: application/javascript; charset=utf-8

@@ -66,6 +66,10 @@ the browser, so development and production run the same routing code.
   register it.
 - Updates are detected by polling `version.json` against the build id seen at
   load. Applying an update is a reload.
+- The static build serves modules from `/assets/<build id>/...`. Safari reuses
+  ES modules it has already loaded at a URL without revalidating them, even
+  across reloads and despite `no-cache`, so every release needs new module URLs.
+  Do not drop the build id from the asset base path.
 - Reintroducing offline support means making precaching atomic, scoping cache
   deletion to `tdl-*`, caching only known assets, and testing upgrades across
   two build versions.

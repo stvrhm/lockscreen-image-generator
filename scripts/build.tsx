@@ -6,15 +6,20 @@ import { fileURLToPath } from 'node:url'
 
 import { renderToStream } from 'remix/ui/server'
 
-import { assetServer } from '../app/assets.ts'
-import { Document } from '../app/ui/document.tsx'
-
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const DIST = join(ROOT, 'dist')
 const BUILD_ID = new Date()
   .toISOString()
   .replace(/[^0-9]/g, '')
   .slice(0, 14)
+
+// Every release gets fresh module URLs. Safari keeps serving ES modules it has
+// already loaded at a URL, ignoring `no-cache`, so reusing `/assets/...` across
+// builds pinned it to the old code even after reloads. The asset server reads
+// its base path at import time, so set it before loading anything that uses it.
+process.env.ASSET_BASE_PATH = `/assets/${BUILD_ID}`
+const { assetServer } = await import('../app/assets.ts')
+const { Document } = await import('../app/ui/document.tsx')
 
 // One entry now. Screens are plain modules reached through the browser router
 // rather than separately hydrated islands, so the entry's import graph already
