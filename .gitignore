@@ -4,3 +4,6 @@ tmp/
 dist/
 .DS_Store
 .netlify/
+.coverage/
+test-results/
+playwright-report/

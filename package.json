@@ -10,11 +10,12 @@
     "theme": "node --import remix/node-tsx scripts/generate-theme.ts",
     "build": "node scripts/generate-icons.mjs && NODE_ENV=production node --import remix/node-tsx scripts/build.tsx",
     "preview": "node scripts/preview.mjs",
-    "test": "NODE_ENV=test node --import remix/node-tsx --test",
+    "test": "NODE_ENV=test node --import remix/node-tsx --test 'app/**/*.test.ts'",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint app scripts server.ts hmr.ts",
     "format": "oxfmt app scripts server.ts hmr.ts",
-    "format:check": "oxfmt --check app scripts server.ts hmr.ts"
+    "format:check": "oxfmt --check app scripts server.ts hmr.ts",
+    "test:e2e": "NODE_ENV=test remix test --type e2e"
   },
   "engines": {
     "node": ">=24.3.0"
@@ -27,6 +28,7 @@
     "@types/node": "latest",
     "oxfmt": "^0.68.0",
     "oxlint": "^1.83.0",
+    "playwright": "^1.63.0",
     "typescript": "latest"
   }
 }

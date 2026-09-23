@@ -1,0 +1,10 @@
+{
+  "$schema": "./node_modules/remix/schema/remix.json",
+  "test": {
+    "e2eFiles": ["test/**/*.test.e2e.{ts,tsx}"],
+    "exclude": ["node_modules/**", "dist/**"],
+    "playwright": {
+      "configFile": "./playwright.config.ts",
+    },
+  },
+}

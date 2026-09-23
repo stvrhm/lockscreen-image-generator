@@ -13,6 +13,7 @@ npm run build
 npm run preview
 npm start
 npm test
+npm run test:e2e   # Playwright, phone viewport; first run: npx playwright install chromium
 npm run typecheck
 ```
 
@@ -38,7 +39,7 @@ the browser, so development and production run the same routing code.
 - `app/ui/app-frame.tsx` is the chrome shared by every screen, applied by the SPA render middleware
 - `app/actions/controller.tsx` serves assets; `app/actions/screens/controller.tsx` serves the shell for every screen URL
 - `app/data/` owns IndexedDB Devices, Host metrics, Shortcuts, Wallpaper export
-- `app/router.ts` wires the server router
+- `app/router.tsx` wires the server router; unknown URLs get the shell with a 404, matching Netlify
 - `app/assets.ts` owns the server-side asset pipeline
 - Root `public/` contains static files (manifest, icons, Netlify headers)
 - `scripts/build.tsx` emits the static `dist/`, plus `version.json` and a cleanup service worker

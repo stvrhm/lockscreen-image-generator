@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { router } from './router.ts'
+import { router } from './router.tsx'
 import { routes } from './routes.ts'
 import { strings } from './strings.ts'
 
