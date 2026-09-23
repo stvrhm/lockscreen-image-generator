@@ -25,7 +25,7 @@ export const strings = {
     steps: [
       { title: 'Add a Label', body: 'Give this device a name people can recognize.' },
       { title: 'Add Notes', body: 'Write the details that should appear on the Wallpaper.' },
-      { title: 'Download', body: 'Save it, then choose Use as Wallpaper in Photos.' },
+      { title: 'Save to Photos', body: 'Then open it in Photos and choose Use as Wallpaper.' },
     ],
   },
 
@@ -68,14 +68,17 @@ export const strings = {
     encodingSize: 'Size',
     encodingQualityHint: 'PNG — sharpest',
     encodingSizeHint: 'JPEG — smaller file',
-    save: 'Save',
-    create: 'Create lockscreen',
+    saveToPhotos: 'Save to Photos',
+    saveDevice: 'Save Device',
     download: 'Download',
-    share: 'Share',
-    applyHint: 'After download or share: Photos → Use as Wallpaper',
+    applyHint: 'Choose Save Image in the share sheet, then Photos → Use as Wallpaper',
     preview: 'Live preview',
     back: 'Back',
-    saved: 'Saved',
+    labelRequired: 'Label is required',
+    deviceSaved: 'Device saved',
+    imageDownloaded: 'Image downloaded',
+    imageDownloadedHint: 'Open it in Photos → Use as Wallpaper',
+    imageFailed: 'Could not create the image',
   },
 
   install: {

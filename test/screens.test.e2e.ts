@@ -76,7 +76,7 @@ describe('a Device round trip', () => {
     await expectScreen(page, strings.editor.titleNew)
 
     await page.getByLabel(/label/i).first().fill('Pixel 9 QA')
-    await page.getByRole('button', { name: strings.editor.create }).click()
+    await page.getByRole('button', { name: strings.editor.saveDevice }).click()
     await page.waitForURL(/\/devices\/[^/]+\/edit$/)
     let editPath = pathname(page)
     await expectScreen(page, strings.editor.titleEdit)
@@ -103,10 +103,25 @@ describe('a Device round trip', () => {
     await expectScreen(page, strings.editor.titleEdit)
   })
 
+  it('saving a new Device keeps the scroll position and confirms with a toast', async (t) => {
+    let page = await open(t, routes.screens.newDevice.href())
+    await page.getByLabel(/label/i).first().fill('Pixel 9 QA')
+    let save = page.getByRole('button', { name: strings.editor.saveDevice })
+    await save.scrollIntoViewIfNeeded()
+    let scrollBefore = await page.evaluate(() => window.scrollY)
+    assert.ok(scrollBefore > 0, 'the Save Device button should be below the fold')
+
+    await save.click()
+    await page.waitForURL(/\/edit$/)
+    await expectScreen(page, strings.editor.titleEdit)
+    await page.getByLabel('Notifications').getByText(strings.editor.deviceSaved).waitFor()
+    assert.equal(await page.evaluate(() => window.scrollY), scrollBefore)
+  })
+
   it('duplicates and deletes from Browse', async (t) => {
     let page = await open(t, routes.screens.newDevice.href())
     await page.getByLabel(/label/i).first().fill('Pixel 9 QA')
-    await page.getByRole('button', { name: strings.editor.create }).click()
+    await page.getByRole('button', { name: strings.editor.saveDevice }).click()
     await page.waitForURL(/\/edit$/)
 
     await page.goto(routes.screens.browseDevices.href())

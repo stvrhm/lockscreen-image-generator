@@ -1,5 +1,4 @@
 import { css, navigate, on, ref, type Handle } from 'remix/ui'
-import { animateEntrance } from 'remix/ui/animation'
 import input from 'remix/ui/input'
 import { Option, Select } from 'remix/ui/select'
 import { onSelectChange } from 'remix/ui/select/primitives'
@@ -15,9 +14,10 @@ import {
 } from '../../data/devices.ts'
 import { hostDetails, measureHostExportSize } from '../../data/host.ts'
 import { shortcutsFor } from '../../data/shortcuts.ts'
-import { downloadWallpaper, shareWallpaper } from '../../data/wallpaper.ts'
+import { downloadWallpaper, shareWallpaper, type WallpaperOptions } from '../../data/wallpaper.ts'
 import { strings } from '../../strings.ts'
 import { routes } from '../../routes.ts'
+import { toast } from '../../ui/toast.tsx'
 import { ExportSummary } from '../editor/export-summary.tsx'
 import { FormatButton } from '../editor/format-button.tsx'
 import { PhonePreview } from '../editor/phone-preview.tsx'
@@ -38,7 +38,6 @@ const NOTES_MAX_HEIGHT = 260
 export function Editor(handle: Handle<{ draft: Device; editingNew: boolean }>) {
   let draft = handle.props.draft
   let editingNew = handle.props.editingNew
-  let statusMessage = ''
   let platformOverride = false
   let notesRef: HTMLTextAreaElement | null = null
 
@@ -109,49 +108,69 @@ export function Editor(handle: Handle<{ draft: Device; editingNew: boolean }>) {
     notesRef.style.overflowY = notesRef.scrollHeight > NOTES_MAX_HEIGHT ? 'auto' : 'hidden'
   }
 
-  async function onSave() {
-    if (!draft.label.trim()) {
-      statusMessage = 'Label is required'
-      handle.update()
-      return
-    }
+  function hasLabel() {
+    if (draft.label.trim()) return true
+    toast({ title: strings.editor.labelRequired, variant: 'error' })
+    return false
+  }
+
+  async function storeDevice() {
     let wasNew = editingNew
     draft = await saveDevice({ ...draft, label: draft.label.trim() })
     editingNew = false
 
     // A new Device only gets its id once saved, so move to its canonical URL.
+    // It is still the same screen to the user, so keep their scroll position.
     if (wasNew) {
-      navigate(routes.screens.editDevice.href({ id: draft.id }), { history: 'replace' })
-      return
+      navigate(routes.screens.editDevice.href({ id: draft.id }), {
+        history: 'replace',
+        resetScroll: false,
+      })
     }
-    statusMessage = strings.editor.saved
-    handle.update()
+  }
+
+  function wallpaperOptions(): WallpaperOptions {
+    let size = resolvedSize(draft)
+    return {
+      label: draft.label,
+      notes: draft.notes,
+      width: size.width,
+      height: size.height,
+      encoding: draft.encoding,
+    }
+  }
+
+  async function onSaveDevice() {
+    if (!hasLabel()) return
+    await storeDevice()
+    toast({ title: strings.editor.deviceSaved, variant: 'success' })
+  }
+
+  async function onSaveToPhotos() {
+    if (!hasLabel()) return
+    let options = wallpaperOptions()
+    // Share before touching IndexedDB: the share sheet needs the tap's user
+    // activation, and Safari drops it if other async work runs first.
+    let result = await shareWallpaper(options)
+    let downloaded = result === 'unsupported' && (await downloadWallpaper(options))
+    await storeDevice()
+
+    if (downloaded) {
+      toast({
+        title: strings.editor.imageDownloaded,
+        description: strings.editor.imageDownloadedHint,
+        variant: 'success',
+      })
+    } else if (result === 'failed' || result === 'unsupported') {
+      toast({ title: strings.editor.imageFailed, variant: 'error' })
+    } else {
+      toast({ title: strings.editor.deviceSaved, variant: 'success' })
+    }
   }
 
   async function onDownload() {
-    let size = resolvedSize(draft)
-    await downloadWallpaper({
-      label: draft.label,
-      notes: draft.notes,
-      width: size.width,
-      height: size.height,
-      encoding: draft.encoding,
-    })
-  }
-
-  async function onShare() {
-    let size = resolvedSize(draft)
-    let result = await shareWallpaper({
-      label: draft.label,
-      notes: draft.notes,
-      width: size.width,
-      height: size.height,
-      encoding: draft.encoding,
-    })
-    if (result === 'unsupported') {
-      statusMessage = 'Share unavailable — use Download'
-      handle.update()
-    }
+    let downloaded = await downloadWallpaper(wallpaperOptions())
+    if (!downloaded) toast({ title: strings.editor.imageFailed, variant: 'error' })
   }
 
   return () => {
@@ -404,8 +423,17 @@ export function Editor(handle: Handle<{ draft: Device; editingNew: boolean }>) {
             </details>
 
             <div mix={actionsRowStyle}>
-              <button type="button" mix={[primaryButtonStyle, on('click', () => void onSave())]}>
-                {editingNew ? strings.editor.create : strings.editor.save}
+              <button
+                type="button"
+                mix={[primaryButtonStyle, on('click', () => void onSaveToPhotos())]}
+              >
+                {strings.editor.saveToPhotos}
+              </button>
+              <button
+                type="button"
+                mix={[secondaryButtonStyle, on('click', () => void onSaveDevice())]}
+              >
+                {strings.editor.saveDevice}
               </button>
               <button
                 type="button"
@@ -413,26 +441,8 @@ export function Editor(handle: Handle<{ draft: Device; editingNew: boolean }>) {
               >
                 {strings.editor.download}
               </button>
-              <button type="button" mix={[secondaryButtonStyle, on('click', () => void onShare())]}>
-                {strings.editor.share}
-              </button>
             </div>
             <p mix={hintStyle}>{strings.editor.applyHint}</p>
-            {statusMessage ? (
-              <p
-                key={statusMessage}
-                mix={[
-                  statusStyle,
-                  animateEntrance({
-                    opacity: 0,
-                    transform: 'translateY(4px)',
-                    duration: 160,
-                  }),
-                ]}
-              >
-                {statusMessage}
-              </p>
-            ) : null}
           </div>
 
           <div mix={previewColumnStyle}>
@@ -449,12 +459,6 @@ export function Editor(handle: Handle<{ draft: Device; editingNew: boolean }>) {
     )
   }
 }
-
-const statusStyle = css({
-  color: 'var(--accent)',
-  fontSize: theme.fontSize.small,
-  fontWeight: theme.fontWeight.semibold,
-})
 
 const editorHeaderStyle = [
   flow({ flowSpace: theme.space.sm }),

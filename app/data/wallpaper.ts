@@ -87,7 +87,7 @@ export async function downloadWallpaper(options: WallpaperOptions): Promise<bool
 
 export async function shareWallpaper(
   options: WallpaperOptions,
-): Promise<'shared' | 'unsupported' | 'failed'> {
+): Promise<'shared' | 'cancelled' | 'unsupported' | 'failed'> {
   let blob = await renderWallpaperBlob(options)
   if (!blob) return 'failed'
 
@@ -108,7 +108,7 @@ export async function shareWallpaper(
     await nav.share({ files: [file], title: options.label || 'Lockscreen' })
     return 'shared'
   } catch (error) {
-    if ((error as Error).name === 'AbortError') return 'shared'
+    if ((error as Error).name === 'AbortError') return 'cancelled'
     return 'failed'
   }
 }
