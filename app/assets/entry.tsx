@@ -5,7 +5,7 @@ import { run } from 'remix/spa'
 import { __uiHmrBrowserRuntime__ } from 'remix/ui-hmr/runtime/browser'
 import * as uiRefresh from 'remix/ui/dev/refresh'
 
-import { LoadingScreen } from './app.tsx'
+import { LoadingScreen } from './screens/loading.tsx'
 import { createBrowserRouter } from './browser-router.tsx'
 
 void __uiHmrBrowserRuntime__

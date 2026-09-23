@@ -32,7 +32,7 @@ the browser, so development and production run the same routing code.
 - `app/routes.ts` defines the shared route contract: `assets` plus the `screens` route map
 - `app/assets/browser-router.tsx` is the app's only screen router (`createRouter` + `render`/`run` from `remix/spa`)
 - `app/assets/controller.tsx` owns the screen actions; each resolves its data and returns exactly one screen
-- `app/assets/app.tsx` holds the screen components (`Home`, `BrowseDevices`, `Editor`) and shared styles
+- `app/assets/screens/` holds one file per screen (`Home`, `BrowseDevices`, `Editor`, plus `LoadingScreen` and `NotFoundScreen`); `app/assets/editor/` holds the Editor's subcomponents; styles live with their single owner, and only styles used by several screens go in `app/ui/screen-styles.ts`
 - `app/assets/device-store.ts` injects the Device reads the screen routes need, so the route contract is testable
 - `app/assets/entry.tsx` is the browser entrypoint and calls `run()`
 - `app/ui/document.tsx` renders the shell document; its `<body>` is empty by design

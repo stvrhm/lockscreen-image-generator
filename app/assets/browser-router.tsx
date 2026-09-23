@@ -2,7 +2,7 @@ import { createRouter, type MiddlewareContext } from 'remix/router'
 import { render } from 'remix/spa'
 
 import { AppFrame } from '../ui/app-frame.tsx'
-import { NotFoundScreen } from './app.tsx'
+import { NotFoundScreen } from './screens/not-found.tsx'
 import controller from './controller.tsx'
 import { deviceStore, type DeviceStore } from './device-store.ts'
 import { routes } from '../routes.ts'
