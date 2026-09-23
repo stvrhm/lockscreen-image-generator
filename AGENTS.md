@@ -69,6 +69,7 @@ the browser, so development and production run the same routing code.
 - Reintroducing offline support means making precaching atomic, scoping cache
   deletion to `tdl-*`, caching only known assets, and testing upgrades across
   two build versions.
+- The reasoning is recorded in `docs/adr/0003-no-service-worker-client-routed-spa.md`.
 
 ## Build-Out Notes
 
