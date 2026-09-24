@@ -50,6 +50,7 @@ export const strings = {
     italic: 'Italic',
     strike: 'Strikethrough',
     code: 'Inline code',
+    heading: 'Heading',
     platform: 'Platform',
     platformInferred: 'Inferred from this phone',
     platformOverride: 'Override',

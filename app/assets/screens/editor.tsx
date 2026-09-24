@@ -18,6 +18,7 @@ import { downloadWallpaper, shareWallpaper, type WallpaperOptions } from '../../
 import { strings } from '../../strings.ts'
 import { routes } from '../../routes.ts'
 import { toast } from '../../ui/toast.tsx'
+import { cycleHeading } from '../editor/cycle-heading.ts'
 import { ExportSummary } from '../editor/export-summary.tsx'
 import { FormatButton } from '../editor/format-button.tsx'
 import { PhonePreview } from '../editor/phone-preview.tsx'
@@ -98,6 +99,22 @@ export function Editor(handle: Handle<{ draft: Device; editingNew: boolean }>) {
       let nextStart = selected ? start + replacement.length : start + marker.length
       let nextEnd = selected ? nextStart : nextStart + marker.length
       notesRef.setSelectionRange(nextStart, nextEnd)
+    })
+  }
+
+  function applyHeading() {
+    if (!notesRef) return
+    let next = cycleHeading({
+      text: draft.notes,
+      start: notesRef.selectionStart,
+      end: notesRef.selectionEnd,
+    })
+    draft = { ...draft, notes: next.text }
+    handle.update()
+    handle.queueTask(() => {
+      if (!notesRef) return
+      notesRef.focus()
+      notesRef.setSelectionRange(next.start, next.end)
     })
   }
 
@@ -249,6 +266,7 @@ export function Editor(handle: Handle<{ draft: Device; editingNew: boolean }>) {
                     symbol="<>"
                     onSelect={() => applyFormatting('`')}
                   />
+                  <FormatButton label={strings.editor.heading} symbol="H" onSelect={applyHeading} />
                 </div>
                 <textarea
                   id="device-notes"
