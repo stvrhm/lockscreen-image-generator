@@ -123,6 +123,37 @@ describe('New Device pre-fill from Phone info', () => {
   })
 })
 
+describe('the Notes toolbar', () => {
+  it('formats with a single tap on each button', async (t) => {
+    let page = await open(t, routes.screens.newDevice.href())
+    await expectScreen(page, strings.editor.titleNew)
+    let notes = page.locator('#device-notes')
+
+    for (let [label, expected] of [
+      [strings.editor.bold, '**abc**'],
+      [strings.editor.italic, '*abc*'],
+      [strings.editor.strike, '~~abc~~'],
+      [strings.editor.code, '`abc`'],
+      [strings.editor.heading, '# abc'],
+    ]) {
+      await notes.fill('abc')
+      await notes.tap()
+      await notes.evaluate((el: HTMLTextAreaElement) => el.setSelectionRange(0, 3))
+      await page.getByRole('button', { name: label, exact: true }).tap()
+      assert.equal(await notes.inputValue(), expected, `one tap on ${label}`)
+    }
+  })
+
+  it('shows a button tooltip on keyboard focus', async (t) => {
+    let page = await open(t, routes.screens.newDevice.href())
+    await expectScreen(page, strings.editor.titleNew)
+
+    await page.getByRole('button', { name: strings.editor.bold, exact: true }).focus()
+    await page.keyboard.press('Tab')
+    await page.getByRole('tooltip', { name: strings.editor.italic }).waitFor()
+  })
+})
+
 describe('the Phone info overlay', () => {
   it('shows the empty state in desktop Chromium, and no Shortcut chips exist', async (t) => {
     let page = await open(t, routes.screens.newDevice.href())

@@ -83,7 +83,12 @@ export function FormatButton(
               formatButtonStyle,
               popover.focusOnHide(),
               on('click', onSelect),
-              on('focus', () => showImmediately()),
+              // Keyboard focus only: a tap or click also focuses the button, and
+              // opening the tooltip between that focus and the click swallows
+              // the click, so the first tap would do nothing.
+              on('focus', (event) => {
+                if (event.currentTarget.matches(':focus-visible')) showImmediately()
+              }),
               on('blur', () => hide()),
               on('pointerdown', () => hide()),
             ]}
