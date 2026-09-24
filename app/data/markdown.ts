@@ -1,7 +1,17 @@
 // Minimal Markdown for Notes: two Heading levels, plus inline bold, italic,
-// bold+italic, code and strikethrough.
+// bold+italic, code and strikethrough. Asterisks only; underscores are text.
 export interface MarkdownSegment {
   text: string
+  bold?: boolean
+  italic?: boolean
+  code?: boolean
+  strike?: boolean
+}
+
+export interface InlineToken {
+  text: string
+  from: number
+  to: number
   bold?: boolean
   italic?: boolean
   code?: boolean
@@ -17,7 +27,7 @@ export interface MarkdownLine {
 }
 
 const INLINE_MARKDOWN_PATTERN =
-  /(\*\*\*[^*]+\*\*\*)|(`[^`]+`)|(\*\*[^*]+\*\*)|(__[^_]+__)|(~~[^~]+~~)|(\*[^*]+\*)|(_[^_]+_)/g
+  /(\*\*\*[^*]+\*\*\*)|(`[^`]+`)|(\*\*[^*]+\*\*)|(~~[^~]+~~)|(\*[^*]+\*)/g
 
 export function parseMarkdownLines(text: string): MarkdownLine[] {
   return text.split('\n').map(parseLine)
@@ -34,36 +44,50 @@ function parseLine(line: string): MarkdownLine {
   return { heading, segments: parseInline(line.slice(marker[0].length)) }
 }
 
-function parseInline(line: string): MarkdownSegment[] {
-  let segments: MarkdownSegment[] = []
+/** Plain and formatted stretches of one line, in order, with source offsets. */
+export function tokenizeInline(line: string): InlineToken[] {
+  let tokens: InlineToken[] = []
   let lastIndex = 0
   let match: RegExpExecArray | null
 
   INLINE_MARKDOWN_PATTERN.lastIndex = 0
   while ((match = INLINE_MARKDOWN_PATTERN.exec(line))) {
     if (match.index > lastIndex) {
-      segments.push({ text: line.slice(lastIndex, match.index) })
+      tokens.push({ text: line.slice(lastIndex, match.index), from: lastIndex, to: match.index })
     }
 
     let token = match[0]
+    let from = match.index
+    let to = from + token.length
     if (token.startsWith('***')) {
-      segments.push({ text: token.slice(3, -3), bold: true, italic: true })
+      tokens.push({ text: token.slice(3, -3), from, to, bold: true, italic: true })
     } else if (token.startsWith('`')) {
-      segments.push({ text: token.slice(1, -1), code: true })
-    } else if (token.startsWith('**') || token.startsWith('__')) {
-      segments.push({ text: token.slice(2, -2), bold: true })
+      tokens.push({ text: token.slice(1, -1), from, to, code: true })
+    } else if (token.startsWith('**')) {
+      tokens.push({ text: token.slice(2, -2), from, to, bold: true })
     } else if (token.startsWith('~~')) {
-      segments.push({ text: token.slice(2, -2), strike: true })
+      tokens.push({ text: token.slice(2, -2), from, to, strike: true })
     } else {
-      segments.push({ text: token.slice(1, -1), italic: true })
+      tokens.push({ text: token.slice(1, -1), from, to, italic: true })
     }
 
-    lastIndex = INLINE_MARKDOWN_PATTERN.lastIndex
+    lastIndex = to
   }
 
   if (lastIndex < line.length) {
-    segments.push({ text: line.slice(lastIndex) })
+    tokens.push({ text: line.slice(lastIndex), from: lastIndex, to: line.length })
   }
 
-  return segments.length > 0 ? segments : [{ text: '' }]
+  return tokens.length > 0 ? tokens : [{ text: '', from: 0, to: 0 }]
+}
+
+function parseInline(line: string): MarkdownSegment[] {
+  return tokenizeInline(line).map((token) => {
+    let segment: MarkdownSegment = { text: token.text }
+    if (token.bold) segment.bold = true
+    if (token.italic) segment.italic = true
+    if (token.code) segment.code = true
+    if (token.strike) segment.strike = true
+    return segment
+  })
 }

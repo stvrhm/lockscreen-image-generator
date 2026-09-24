@@ -43,6 +43,12 @@ test('reads a bare "#" or "##" as an empty Heading, so it renders as a blank lin
   ])
 })
 
+test('leaves underscores as ordinary text', () => {
+  assert.deepEqual(parseMarkdownLines('__bold__ and _italic_'), [
+    { heading: 'body', segments: [{ text: '__bold__ and _italic_' }] },
+  ])
+})
+
 test('parses inline formatting inside Headings', () => {
   assert.deepEqual(parseMarkdownLines('# **Pixel** *9* `Pro` ~~XL~~'), [
     {

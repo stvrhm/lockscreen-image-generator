@@ -1,4 +1,4 @@
-import type { NotesEdit } from './cycle-heading.ts'
+import type { NotesEdit } from './set-heading.ts'
 
 /**
  * Inserts whole lines at the Notes cursor, replacing any selection. Line

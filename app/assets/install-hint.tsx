@@ -1,5 +1,6 @@
-import { css, on, type Handle } from 'remix/ui'
+import { css, type Handle } from 'remix/ui'
 
+import { Button } from '../ui/button.tsx'
 import { flow, repel } from '../ui/cube/index.ts'
 import { strings } from '../strings.ts'
 
@@ -74,13 +75,13 @@ export function InstallHint(handle: Handle) {
           </p>
         </div>
         {platform === 'android' ? (
-          <button type="button" mix={[installStyle, on('click', () => void install())]}>
+          <Button variant="accent" mix={installAlignStyle} onClick={() => void install()}>
             {strings.install.install}
-          </button>
+          </Button>
         ) : null}
-        <button type="button" mix={[dismissStyle, on('click', dismiss)]}>
+        <Button variant="accent" mix={installAlignStyle} onClick={dismiss}>
           {strings.install.dismiss}
-        </button>
+        </Button>
       </aside>
     )
   }
@@ -158,16 +159,4 @@ const stepsStyle = css({
   lineHeight: 1.4,
 })
 
-const dismissStyle = css({
-  alignSelf: 'flex-start',
-  appearance: 'none',
-  border: 0,
-  borderRadius: '8px',
-  padding: '10px 14px',
-  fontWeight: 600,
-  cursor: 'pointer',
-  background: 'var(--accent)',
-  color: '#0b1220',
-})
-
-const installStyle = dismissStyle
+const installAlignStyle = css({ alignSelf: 'flex-start' })

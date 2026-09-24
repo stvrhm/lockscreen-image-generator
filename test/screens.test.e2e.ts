@@ -134,7 +134,8 @@ describe('the Notes toolbar', () => {
       [strings.editor.italic, '*abc*'],
       [strings.editor.strike, '~~abc~~'],
       [strings.editor.code, '`abc`'],
-      [strings.editor.heading, '# abc'],
+      [strings.editor.headingLarge, '# abc'],
+      [strings.editor.headingMedium, '## abc'],
     ]) {
       await notes.fill('abc')
       await notes.tap()
@@ -142,6 +143,32 @@ describe('the Notes toolbar', () => {
       await page.getByRole('button', { name: label, exact: true }).tap()
       assert.equal(await notes.inputValue(), expected, `one tap on ${label}`)
     }
+  })
+
+  it('reflects the selected formatting and toggles it off', async (t) => {
+    let page = await open(t, routes.screens.newDevice.href())
+    await expectScreen(page, strings.editor.titleNew)
+    let notes = page.locator('#device-notes')
+    let bold = page.getByRole('button', { name: strings.editor.bold, exact: true })
+
+    await notes.fill('**abc**')
+    await notes.focus()
+    await notes.evaluate((el: HTMLTextAreaElement) => el.setSelectionRange(2, 5))
+    await page.waitForFunction(
+      (name) =>
+        document.querySelector(`button[aria-label="${name}"]`)?.getAttribute('aria-pressed') ===
+        'true',
+      strings.editor.bold,
+    )
+
+    await bold.tap()
+    assert.equal(await notes.inputValue(), 'abc')
+    assert.equal(await bold.getAttribute('aria-pressed'), 'false')
+
+    await notes.evaluate((el: HTMLTextAreaElement) => el.setSelectionRange(0, 3))
+    await bold.tap()
+    assert.equal(await notes.inputValue(), '**abc**')
+    assert.equal(await bold.getAttribute('aria-pressed'), 'true')
   })
 
   it('shows a button tooltip on keyboard focus', async (t) => {

@@ -16,8 +16,14 @@ import { measureHostExportSize } from '../../data/host.ts'
 import { downloadWallpaper, shareWallpaper, type WallpaperOptions } from '../../data/wallpaper.ts'
 import { strings } from '../../strings.ts'
 import { routes } from '../../routes.ts'
+import { Button } from '../../ui/button.tsx'
 import { toast } from '../../ui/toast.tsx'
-import { cycleHeading } from '../editor/cycle-heading.ts'
+import {
+  inlineFormatActive,
+  toggleInlineFormat,
+  type InlineFormat,
+} from '../editor/format-notes.ts'
+import { headingPressed, setHeading } from '../editor/set-heading.ts'
 import { ExportSummary } from '../editor/export-summary.tsx'
 import { FormatButton } from '../editor/format-button.tsx'
 import { insertLines } from '../editor/insert-lines.ts'
@@ -28,10 +34,7 @@ import {
   mutedStyle,
   pageStyle,
   headingStyle,
-  ghostButtonStyle,
   hintStyle,
-  primaryButtonStyle,
-  secondaryButtonStyle,
   actionsRowStyle,
 } from '../../ui/screen-styles.ts'
 
@@ -47,6 +50,22 @@ export function Editor(
   let editingNew = handle.props.editingNew
   let platformOverride = false
   let notesRef: HTMLTextAreaElement | null = null
+  let notesSelection = { start: 0, end: 0 }
+
+  handle.queueTask(() => {
+    document.addEventListener(
+      'selectionchange',
+      () => {
+        if (!notesRef || document.activeElement !== notesRef) return
+        let start = notesRef.selectionStart
+        let end = notesRef.selectionEnd
+        if (start === notesSelection.start && end === notesSelection.end) return
+        notesSelection = { start, end }
+        handle.update()
+      },
+      { signal: handle.signal },
+    )
+  })
   function hostSize() {
     return measureHostExportSize()
   }
@@ -74,6 +93,7 @@ export function Editor(
       : { start: end, end }
     let next = insertLines({ text: draft.notes, ...selection }, lines)
     draft = { ...draft, notes: next.text }
+    notesSelection = { start: next.start, end: next.end }
     handle.update()
     handle.queueTask(() => {
       resizeNotes()
@@ -83,39 +103,39 @@ export function Editor(
     })
   }
 
-  function applyFormatting(marker: string) {
+  function armNotesSelection() {
     if (!notesRef) return
-    let el = notesRef
-    let start = el.selectionStart
-    let end = el.selectionEnd
-    let notes = draft.notes
-    let selected = notes.slice(start, end)
-    let replacement = selected ? `${marker}${selected}${marker}` : `${marker}${marker}`
-    draft = { ...draft, notes: notes.slice(0, start) + replacement + notes.slice(end) }
-    handle.update()
-    handle.queueTask(() => {
-      if (!notesRef) return
-      notesRef.focus()
-      let nextStart = selected ? start + replacement.length : start + marker.length
-      let nextEnd = selected ? nextStart : nextStart + marker.length
-      notesRef.setSelectionRange(nextStart, nextEnd)
-    })
+    notesSelection = { start: notesRef.selectionStart, end: notesRef.selectionEnd }
   }
 
-  function applyHeading() {
-    if (!notesRef) return
-    let next = cycleHeading({
-      text: draft.notes,
-      start: notesRef.selectionStart,
-      end: notesRef.selectionEnd,
-    })
+  function notesEdit() {
+    if (notesRef && document.activeElement === notesRef) {
+      return {
+        text: draft.notes,
+        start: notesRef.selectionStart,
+        end: notesRef.selectionEnd,
+      }
+    }
+    return { text: draft.notes, start: notesSelection.start, end: notesSelection.end }
+  }
+
+  function applyNotesEdit(next: { text: string; start: number; end: number }) {
     draft = { ...draft, notes: next.text }
+    notesSelection = { start: next.start, end: next.end }
     handle.update()
     handle.queueTask(() => {
       if (!notesRef) return
       notesRef.focus()
       notesRef.setSelectionRange(next.start, next.end)
     })
+  }
+
+  function applyFormatting(format: InlineFormat) {
+    applyNotesEdit(toggleInlineFormat(notesEdit(), format))
+  }
+
+  function applyHeading(level: 1 | 2) {
+    applyNotesEdit(setHeading(notesEdit(), level))
   }
 
   function resizeNotes() {
@@ -200,9 +220,9 @@ export function Editor(
     return (
       <div mix={pageStyle}>
         <header mix={editorHeaderStyle}>
-          <a href={routes.screens.home.href()} mix={ghostButtonStyle}>
+          <Button href={routes.screens.home.href()} variant="ghost">
             {strings.editor.back}
-          </a>
+          </Button>
           <h1 mix={headingStyle}>
             {editingNew ? strings.editor.titleNew : strings.editor.titleEdit}
           </h1>
@@ -242,24 +262,75 @@ export function Editor(
                   <FormatButton
                     label={strings.editor.bold}
                     symbol="B"
-                    onSelect={() => applyFormatting('**')}
+                    pressed={inlineFormatActive(
+                      device.notes,
+                      notesSelection.start,
+                      notesSelection.end,
+                      'bold',
+                    )}
+                    onSelect={() => applyFormatting('bold')}
+                    onArm={armNotesSelection}
                   />
                   <FormatButton
                     label={strings.editor.italic}
                     symbol="I"
-                    onSelect={() => applyFormatting('*')}
+                    pressed={inlineFormatActive(
+                      device.notes,
+                      notesSelection.start,
+                      notesSelection.end,
+                      'italic',
+                    )}
+                    onSelect={() => applyFormatting('italic')}
+                    onArm={armNotesSelection}
                   />
                   <FormatButton
                     label={strings.editor.strike}
                     symbol="S"
-                    onSelect={() => applyFormatting('~~')}
+                    pressed={inlineFormatActive(
+                      device.notes,
+                      notesSelection.start,
+                      notesSelection.end,
+                      'strike',
+                    )}
+                    onSelect={() => applyFormatting('strike')}
+                    onArm={armNotesSelection}
                   />
                   <FormatButton
                     label={strings.editor.code}
                     symbol="<>"
-                    onSelect={() => applyFormatting('`')}
+                    pressed={inlineFormatActive(
+                      device.notes,
+                      notesSelection.start,
+                      notesSelection.end,
+                      'code',
+                    )}
+                    onSelect={() => applyFormatting('code')}
+                    onArm={armNotesSelection}
                   />
-                  <FormatButton label={strings.editor.heading} symbol="H" onSelect={applyHeading} />
+                  <FormatButton
+                    label={strings.editor.headingLarge}
+                    symbol="#"
+                    pressed={headingPressed(
+                      device.notes,
+                      notesSelection.start,
+                      notesSelection.end,
+                      1,
+                    )}
+                    onSelect={() => applyHeading(1)}
+                    onArm={armNotesSelection}
+                  />
+                  <FormatButton
+                    label={strings.editor.headingMedium}
+                    symbol="##"
+                    pressed={headingPressed(
+                      device.notes,
+                      notesSelection.start,
+                      notesSelection.end,
+                      2,
+                    )}
+                    onSelect={() => applyHeading(2)}
+                    onArm={armNotesSelection}
+                  />
                   <PhoneInfoButton onAdd={insertAtCursor} />
                 </div>
                 <textarea
@@ -276,8 +347,10 @@ export function Editor(
                     }),
                     on('input', (event) => {
                       patchDraft({ notes: event.currentTarget.value })
+                      armNotesSelection()
                       handle.queueTask(resizeNotes)
                     }),
+                    on('blur', armNotesSelection),
                   ]}
                 />
               </div>
@@ -318,18 +391,15 @@ export function Editor(
                       </Option>
                     </Select>
                   ) : (
-                    <button
-                      type="button"
-                      mix={[
-                        linkButtonStyle,
-                        on('click', () => {
-                          platformOverride = true
-                          handle.update()
-                        }),
-                      ]}
+                    <Button
+                      variant="link"
+                      onClick={() => {
+                        platformOverride = true
+                        handle.update()
+                      }}
                     >
                       {strings.editor.platformOverride}
-                    </button>
+                    </Button>
                   )}
                 </div>
 
@@ -422,24 +492,15 @@ export function Editor(
             </details>
 
             <div mix={actionsRowStyle}>
-              <button
-                type="button"
-                mix={[primaryButtonStyle, on('click', () => void onSaveToPhotos())]}
-              >
+              <Button variant="primary" onClick={() => void onSaveToPhotos()}>
                 {strings.editor.saveToPhotos}
-              </button>
-              <button
-                type="button"
-                mix={[secondaryButtonStyle, on('click', () => void onSaveDevice())]}
-              >
+              </Button>
+              <Button variant="secondary" onClick={() => void onSaveDevice()}>
                 {strings.editor.saveDevice}
-              </button>
-              <button
-                type="button"
-                mix={[secondaryButtonStyle, on('click', () => void onDownload())]}
-              >
+              </Button>
+              <Button variant="secondary" onClick={() => void onDownload()}>
                 {strings.editor.download}
-              </button>
+              </Button>
             </div>
             <p mix={hintStyle}>{strings.editor.applyHint}</p>
           </div>
@@ -552,18 +613,6 @@ const toolbarStyle = [
   // One row even on narrow phones: the buttons shrink instead of wrapping.
   css({ flexWrap: 'nowrap', padding: '6px', background: 'rgba(255, 255, 255, 0.035)' }),
 ]
-
-const linkButtonStyle = css({
-  appearance: 'none',
-  border: 0,
-  background: 'transparent',
-  color: 'var(--accent)',
-  fontWeight: 600,
-  cursor: 'pointer',
-  padding: 0,
-  alignSelf: 'flex-start',
-  textDecoration: 'underline',
-})
 
 const segmentStyle = css({
   display: 'flex',
