@@ -24,7 +24,7 @@ const { Document } = await import('../app/ui/document.tsx')
 // One entry now. Screens are plain modules reached through the browser router
 // rather than separately hydrated islands, so the entry's import graph already
 // covers everything the browser needs.
-const CLIENT_ENTRIES = ['app/assets/entry.tsx']
+const CLIENT_ENTRIES = ['app/assets/entry.tsx', 'app/ui/public/reset.css']
 
 async function renderIndexHtml(): Promise<string> {
   // A neutral shell with an empty body. The SPA router fills it in from the

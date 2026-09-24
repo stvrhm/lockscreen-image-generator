@@ -41,3 +41,4 @@ export const assetServer = createAssetServer({
 const entry = 'app/assets/entry.tsx'
 
 export const scriptEntry = await assetServer.getScriptEntry(entry)
+export const resetStylesheetHref = await assetServer.getHref('app/ui/public/reset.css')

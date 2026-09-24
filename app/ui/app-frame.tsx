@@ -1,4 +1,4 @@
-import { css, type Handle, type RemixNode } from 'remix/ui'
+import { type Handle, type RemixNode } from 'remix/ui'
 
 import { InstallHint } from '../assets/install-hint.tsx'
 import { ToastViewport } from './toast.tsx'
@@ -14,16 +14,10 @@ export interface AppFrameProps {
  */
 export function AppFrame(handle: Handle<AppFrameProps>) {
   return () => (
-    <main mix={pageStyle}>
+    <main>
       <InstallHint />
       {handle.props.children}
       <ToastViewport />
     </main>
   )
 }
-
-const pageStyle = css({
-  minHeight: '100dvh',
-  padding:
-    'calc(env(safe-area-inset-top) + 24px) calc(env(safe-area-inset-right) + 20px) calc(env(safe-area-inset-bottom) + 24px) calc(env(safe-area-inset-left) + 20px)',
-})

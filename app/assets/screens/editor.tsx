@@ -536,13 +536,13 @@ const formStyle = [
   flow({ flowSpace: theme.space.lg }),
   css({
     minWidth: '260px',
-    paddingBlock: theme.space.xs,
+    paddingBlock: theme.space['sm-md'],
   }),
 ]
 
 const fieldStyle = [flow({ flowSpace: theme.space.xs })]
 
-const notesFieldStyle = [flow({ flowSpace: theme.space.sm })]
+const notesFieldStyle = [flow({ flowSpace: theme.space.xs })]
 
 const notesLabelStyle = cluster({ gutter: theme.space['2xs'], alignment: 'center' })
 

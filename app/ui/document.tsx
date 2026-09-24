@@ -1,6 +1,6 @@
 import type { Handle, RemixNode } from 'remix/ui'
 
-import { scriptEntry } from '../assets.ts'
+import { resetStylesheetHref, scriptEntry } from '../assets.ts'
 import { strings } from '../strings.ts'
 import { swBootScript } from './sw-boot.ts'
 import { THEME_COLOR, baseCss } from './theme.ts'
@@ -41,6 +41,7 @@ export function Document(handle: Handle<DocumentProps>) {
           <meta name="apple-mobile-web-app-title" content={strings.appShortName} />
 
           <title>{title}</title>
+          <link rel="stylesheet" href={resetStylesheetHref} />
           <style>{baseCss}</style>
           {head}
           <script type="importmap" data-rmx-import-map>

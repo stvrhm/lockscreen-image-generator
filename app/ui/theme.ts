@@ -43,18 +43,9 @@ export const baseCss = `${generatedThemeCss}
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   }
 
-  /* Modern reset, adapted from Walk the Line's global reset. */
-  *, *::before, *::after { box-sizing: border-box; }
-  html {
-    -moz-text-size-adjust: none;
-    -webkit-text-size-adjust: none;
-    text-size-adjust: none;
-  }
-  ul[role='list'], ol[role='list'] { list-style: none; }
+  /* App chrome. The reset is app/ui/public/reset.css. Layout spacing remains owned by Cube compositions. */
   body {
-    min-height: 100vh;
     min-height: 100dvh;
-    line-height: 1.5;
     font-size-adjust: from-font;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -66,16 +57,10 @@ export const baseCss = `${generatedThemeCss}
     font-family: var(--font);
     font-size: var(--font-size-body);
     line-height: var(--leading-standard);
+    margin: 0;
   }
-  h1, h2, h3, h4, button, input, label { line-height: 1.1; }
-  h1, h2, h3, h4 { text-wrap: balance; }
-  a:not([class]) { color: currentColor; text-decoration-skip-ink: auto; }
-  img, picture { display: block; max-width: 100%; }
-  input, button, textarea, select { font: inherit; }
-  textarea:not([rows]) { min-height: 10em; }
-  :target { scroll-margin-block: 5ex; }
 
-  /* Global element policy. Layout spacing remains owned by Cube compositions. */
+  /* Global element policy. */
   :is(h1, h2, h3, h4) {
     font-family: var(--font-display);
     line-height: 1.2;
