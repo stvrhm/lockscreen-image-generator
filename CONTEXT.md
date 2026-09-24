@@ -9,7 +9,7 @@ A labeled wallpaper project stored on the Host (identity, label, platform, notes
 _Avoid_: Phone (alone), handset, unit, server record
 
 **Host**:
-The phone currently running the installed app — usually the same physical phone the Wallpaper is for. Its screen metrics drive automatic export size; its platform is inferred for preview chrome and Shortcut filtering (with override if wrong).
+The phone currently running the installed app — usually the same physical phone the Wallpaper is for. Its screen metrics drive automatic export size; its platform is inferred for preview chrome (with override if wrong).
 _Avoid_: Client, browser, device (for this meaning)
 
 **Draft**:

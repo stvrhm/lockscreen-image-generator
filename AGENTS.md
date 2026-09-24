@@ -38,7 +38,7 @@ the browser, so development and production run the same routing code.
 - `app/ui/document.tsx` renders the shell document; its `<body>` is empty by design
 - `app/ui/app-frame.tsx` is the chrome shared by every screen, applied by the SPA render middleware
 - `app/actions/controller.tsx` serves assets; `app/actions/screens/controller.tsx` serves the shell for every screen URL
-- `app/data/` owns IndexedDB Devices, Host metrics, Shortcuts, Wallpaper export
+- `app/data/` owns IndexedDB Devices, Host metrics, Phone info, Wallpaper export
 - `app/router.tsx` wires the server router; unknown URLs get the shell with a 404, matching Netlify
 - `app/assets.ts` owns the server-side asset pipeline
 - Root `public/` contains static files (manifest, icons, Netlify headers)

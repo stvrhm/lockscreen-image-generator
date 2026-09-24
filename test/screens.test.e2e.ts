@@ -79,6 +79,26 @@ async function settlePhoneInfo(page: Page) {
   })
 }
 
+// A New Device on an emulated Pixel 7 running Chrome, with Client Hints.
+async function openAndroid(t: TestContext): Promise<Page> {
+  let page = await t.serve(await createTestServer(router.fetch))
+  let cdp = await page.context().newCDPSession(page)
+  await cdp.send('Emulation.setUserAgentOverride', {
+    userAgent:
+      'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Mobile Safari/537.36',
+    userAgentMetadata: {
+      platform: 'Android',
+      platformVersion: '14.0.0',
+      model: 'Pixel 7',
+      architecture: '',
+      mobile: true,
+    },
+  })
+  await page.goto(routes.screens.newDevice.href())
+  await expectScreen(page, strings.editor.titleNew)
+  return page
+}
+
 describe('New Device pre-fill from Phone info', () => {
   it('starts with empty Label and Notes in desktop Chromium', async (t) => {
     let page = await open(t, routes.screens.newDevice.href())
@@ -90,21 +110,7 @@ describe('New Device pre-fill from Phone info', () => {
   })
 
   it('fills Label and Notes from Client Hints on Android Chrome', async (t) => {
-    let page = await t.serve(await createTestServer(router.fetch))
-    let cdp = await page.context().newCDPSession(page)
-    await cdp.send('Emulation.setUserAgentOverride', {
-      userAgent:
-        'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Mobile Safari/537.36',
-      userAgentMetadata: {
-        platform: 'Android',
-        platformVersion: '14.0.0',
-        model: 'Pixel 7',
-        architecture: '',
-        mobile: true,
-      },
-    })
-    await page.goto(routes.screens.newDevice.href())
-    await expectScreen(page, strings.editor.titleNew)
+    let page = await openAndroid(t)
 
     let label = page.locator('#device-label')
     await page.waitForFunction(
@@ -112,6 +118,57 @@ describe('New Device pre-fill from Phone info', () => {
     )
     assert.equal(await label.inputValue(), 'Pixel 7')
     assert.equal(await page.locator('#device-notes').inputValue(), '# Pixel 7\nAndroid 14')
+  })
+})
+
+describe('the Phone info overlay', () => {
+  it('shows the empty state in desktop Chromium, and no Shortcut chips exist', async (t) => {
+    let page = await open(t, routes.screens.newDevice.href())
+    await expectScreen(page, strings.editor.titleNew)
+
+    for (let chip of ['Canvas size', 'Pixel density', 'Detected OS', 'Insert from Device']) {
+      assert.equal(await page.getByText(chip, { exact: true }).count(), 0, `${chip} is still shown`)
+    }
+
+    let trigger = page.getByRole('button', { name: strings.editor.phoneInfo })
+    await trigger.click()
+    let overlay = page.getByRole('dialog', { name: strings.editor.phoneInfo })
+    await overlay.getByText(strings.editor.phoneInfoEmpty).waitFor()
+    assert.equal(await overlay.getByRole('button').count(), 0, 'the empty state offers Add actions')
+
+    await page.keyboard.press('Escape')
+    await overlay.waitFor({ state: 'hidden' })
+    assert.ok(
+      await trigger.evaluate((node) => node === document.activeElement),
+      'focus did not return to the Phone info button',
+    )
+
+    await page.keyboard.press('Enter')
+    await overlay.getByText(strings.editor.phoneInfoEmpty).waitFor()
+    await trigger.click()
+    await overlay.waitFor({ state: 'hidden' })
+  })
+
+  it('re-inserts Phone info with Add all after Notes are cleared on Android Chrome', async (t) => {
+    let page = await openAndroid(t)
+    let notes = page.locator('#device-notes')
+    await page.waitForFunction(
+      () => (document.querySelector('#device-notes') as HTMLTextAreaElement | null)?.value !== '',
+    )
+    await notes.fill('')
+
+    await page.getByRole('button', { name: strings.editor.phoneInfo }).click()
+    let overlay = page.getByRole('dialog', { name: strings.editor.phoneInfo })
+    await overlay.getByText('Pixel 7', { exact: true }).waitFor()
+    await overlay.getByText('Android 14', { exact: true }).waitFor()
+    await overlay.getByRole('button', { name: strings.editor.phoneInfoAddAll }).click()
+
+    await overlay.waitFor({ state: 'hidden' })
+    assert.equal(await notes.inputValue(), '# Pixel 7\nAndroid 14')
+    assert.ok(
+      await notes.evaluate((node) => node === document.activeElement),
+      'focus did not return to Notes',
+    )
   })
 })
 

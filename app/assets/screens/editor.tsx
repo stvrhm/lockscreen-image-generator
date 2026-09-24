@@ -12,9 +12,8 @@ import {
   type ExportSizeMode,
   type Platform,
 } from '../../data/devices.ts'
-import { hostDetails, measureHostExportSize } from '../../data/host.ts'
+import { measureHostExportSize } from '../../data/host.ts'
 import { prefillFields, type PhoneInfo } from '../../data/phone-info.ts'
-import { shortcutsFor } from '../../data/shortcuts.ts'
 import { downloadWallpaper, shareWallpaper, type WallpaperOptions } from '../../data/wallpaper.ts'
 import { strings } from '../../strings.ts'
 import { routes } from '../../routes.ts'
@@ -22,6 +21,8 @@ import { toast } from '../../ui/toast.tsx'
 import { cycleHeading } from '../editor/cycle-heading.ts'
 import { ExportSummary } from '../editor/export-summary.tsx'
 import { FormatButton } from '../editor/format-button.tsx'
+import { insertLines } from '../editor/insert-lines.ts'
+import { PhoneInfoButton } from '../editor/phone-info-button.tsx'
 import { PhonePreview } from '../editor/phone-preview.tsx'
 import { SegmentButton } from '../editor/segment-button.tsx'
 import {
@@ -82,27 +83,22 @@ export function Editor(
     handle.update()
   }
 
-  function insertShortcut(snippet: string) {
+  /** Inserts whole Notes lines at the cursor, then returns focus to Notes. */
+  function insertAtCursor(lines: string) {
     edited.notes = true
-    let el = notesRef
-    let notes = draft.notes
-    if (el && typeof el.selectionStart === 'number') {
-      let start = el.selectionStart
-      let end = el.selectionEnd
-      let next = notes.slice(0, start) + snippet + notes.slice(end)
-      draft = { ...draft, notes: next }
-      handle.update()
-      handle.queueTask(() => {
-        if (!notesRef) return
-        let pos = start + snippet.length
-        notesRef.focus()
-        notesRef.setSelectionRange(pos, pos)
-      })
-      return
-    }
-    let prefix = notes && !notes.endsWith('\n') && notes.length > 0 ? '\n' : ''
-    draft = { ...draft, notes: notes + prefix + snippet }
+    let end = draft.notes.length
+    let selection = notesRef
+      ? { start: notesRef.selectionStart, end: notesRef.selectionEnd }
+      : { start: end, end }
+    let next = insertLines({ text: draft.notes, ...selection }, lines)
+    draft = { ...draft, notes: next.text }
     handle.update()
+    handle.queueTask(() => {
+      resizeNotes()
+      if (!notesRef) return
+      notesRef.focus()
+      notesRef.setSelectionRange(next.start, next.end)
+    })
   }
 
   function applyFormatting(marker: string) {
@@ -127,6 +123,7 @@ export function Editor(
 
   function applyHeading() {
     if (!notesRef) return
+    edited.notes = true
     let next = cycleHeading({
       text: draft.notes,
       start: notesRef.selectionStart,
@@ -219,13 +216,6 @@ export function Editor(
     let device = draft
     let size = resolvedSize(device)
     let previewText = device.notes.trim() || device.label.trim() || 'Notes preview'
-    let host = hostDetails()
-    let shortcuts = shortcutsFor({
-      width: size.width,
-      height: size.height,
-      pixelRatio: host.pixelRatio,
-      detectedOS: host.detectedOS,
-    })
 
     return (
       <div mix={pageStyle}>
@@ -290,6 +280,7 @@ export function Editor(
                     onSelect={() => applyFormatting('`')}
                   />
                   <FormatButton label={strings.editor.heading} symbol="H" onSelect={applyHeading} />
+                  <PhoneInfoButton onAdd={insertAtCursor} />
                 </div>
                 <textarea
                   id="device-notes"
@@ -309,21 +300,6 @@ export function Editor(
                     }),
                   ]}
                 />
-              </div>
-            </div>
-
-            <div mix={fieldStyle}>
-              <span mix={fieldLabelStyle}>{strings.editor.shortcuts}</span>
-              <div mix={chipRowStyle}>
-                {shortcuts.map((shortcut) => (
-                  <button
-                    key={shortcut.id}
-                    type="button"
-                    mix={[chipStyle, on('click', () => insertShortcut(shortcut.insert))]}
-                  >
-                    {shortcut.label}
-                  </button>
-                ))}
               </div>
             </div>
 
@@ -593,7 +569,8 @@ const composerStyle = css({
 
 const toolbarStyle = [
   cluster({ gutter: '2px', alignment: 'center' }),
-  css({ padding: '6px', background: 'rgba(255, 255, 255, 0.035)' }),
+  // One row even on narrow phones: the buttons shrink instead of wrapping.
+  css({ flexWrap: 'nowrap', padding: '6px', background: 'rgba(255, 255, 255, 0.035)' }),
 ]
 
 const linkButtonStyle = css({
@@ -606,21 +583,6 @@ const linkButtonStyle = css({
   padding: 0,
   alignSelf: 'flex-start',
   textDecoration: 'underline',
-})
-
-const chipRowStyle = cluster({ gutter: '8px' })
-
-const chipStyle = css({
-  appearance: 'none',
-  border: '1px solid var(--border)',
-  background: 'transparent',
-  color: 'var(--text)',
-  borderRadius: '999px',
-  minHeight: '40px',
-  padding: '6px 12px',
-  fontSize: '13px',
-  fontWeight: 600,
-  cursor: 'pointer',
 })
 
 const segmentStyle = css({

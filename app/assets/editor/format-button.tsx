@@ -115,9 +115,11 @@ export function FormatButton(
   }
 }
 
-const formatButtonStyle = css({
+export const formatButtonStyle = css({
   appearance: 'none',
   width: '2.75rem',
+  minWidth: '2.25rem',
+  flexShrink: 1,
   height: '2.625rem',
   display: 'inline-grid',
   placeItems: 'center',
@@ -137,6 +139,7 @@ const formatButtonStyle = css({
 const tooltipTriggerStyle = css({
   position: 'relative',
   display: 'inline-flex',
+  minWidth: 0,
 })
 
 const tooltipStyle = css({
