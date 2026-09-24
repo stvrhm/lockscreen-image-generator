@@ -1,15 +1,19 @@
 import { run } from 'remix/spa'
 
-// Keep the UI HMR runtime in the initial import map so loader-injected HMR
-// imports resolve in browsers that only use the initial map.
+// Keep the UI HMR runtime and the multiple-import-map polyfill in the initial
+// import map. The HMR client loads the polyfill from outside this graph, and
+// that file bare-imports `@remix-run/multiple-import-maps-polyfill`. Browsers
+// resolve that import with the document's first import map.
 import { __uiHmrBrowserRuntime__ } from 'remix/ui-hmr/runtime/browser'
 import * as uiRefresh from 'remix/ui/dev/refresh'
+import * as multipleImportMapsPolyfill from 'remix/multiple-import-maps-polyfill'
 
 import { LoadingScreen } from './screens/loading.tsx'
 import { createBrowserRouter } from './browser-router.tsx'
 
 void __uiHmrBrowserRuntime__
 void uiRefresh
+void multipleImportMapsPolyfill
 
 const router = createBrowserRouter()
 const redirectStatuses = new Set([301, 302, 303, 307, 308])
