@@ -1,5 +1,4 @@
 import type { Handle, RemixNode } from 'remix/ui'
-import { ImportMap } from 'remix/ui/server'
 
 import { scriptEntry } from '../assets.ts'
 import { strings } from '../strings.ts'
@@ -42,16 +41,18 @@ export function Document(handle: Handle<DocumentProps>) {
           <meta name="apple-mobile-web-app-title" content={strings.appShortName} />
 
           <title>{title}</title>
-          <style innerHTML={baseCss} />
+          <style>{baseCss}</style>
           {head}
-          <ImportMap value={importMap} />
+          <script type="importmap" data-rmx-import-map>
+            {JSON.stringify(importMap).replaceAll('<', '\\u003c')}
+          </script>
           {preloads.map((preloadHref) => (
             <link key={preloadHref} rel="modulepreload" href={preloadHref} />
           ))}
           <script type="module" src={href}></script>
 
           {/* Lives in `head` so the SPA router owns an empty `body` outright. */}
-          <script innerHTML={swBootScript} />
+          <script>{swBootScript}</script>
         </head>
         <body></body>
       </html>
