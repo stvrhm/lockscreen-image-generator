@@ -3,9 +3,8 @@ import test from 'node:test'
 
 import {
   detectPhoneInfo,
-  formatModel,
-  formatOS,
   phoneInfoLabel,
+  phoneInfoItems,
   phoneInfoNotes,
   prefillFields,
   readPhoneInfo,
@@ -89,9 +88,14 @@ test('an empty user agent detects nothing', () => {
   assert.deepEqual(detectPhoneInfo(''), {})
 })
 
-test('per-item formats', () => {
-  assert.equal(formatModel('Pixel 7'), '# Pixel 7')
-  assert.equal(formatOS('Android 14'), 'Android 14')
+test('items list each detected value with its Notes line', () => {
+  assert.deepEqual(phoneInfoItems({ model: 'Pixel 7', os: 'Android 14' }), [
+    { kind: 'model', value: 'Pixel 7', line: '# Pixel 7' },
+    { kind: 'os', value: 'Android 14', line: 'Android 14' },
+  ])
+  assert.deepEqual(phoneInfoItems({ os: 'Android 14' }), [
+    { kind: 'os', value: 'Android 14', line: 'Android 14' },
+  ])
 })
 
 test('Notes put the model Heading above the OS', () => {

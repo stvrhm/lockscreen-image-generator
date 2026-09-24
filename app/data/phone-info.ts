@@ -48,22 +48,26 @@ export function detectPhoneInfo(userAgent: string, hints?: ClientHints): PhoneIn
   return compact({ os: parsedOS(userAgent) })
 }
 
-/** Model line as it appears in Notes. */
-export function formatModel(model: string): string {
-  return `# ${model}`
+export interface PhoneInfoItem {
+  kind: 'model' | 'os'
+  value: string
+  /** The item as it appears in Notes. */
+  line: string
 }
 
-/** OS line as it appears in Notes. */
-export function formatOS(os: string): string {
-  return os
+/** Detected items in Notes order: model Heading, then OS — each only if detected. */
+export function phoneInfoItems(info: PhoneInfo): PhoneInfoItem[] {
+  let items: PhoneInfoItem[] = []
+  if (info.model) items.push({ kind: 'model', value: info.model, line: `# ${info.model}` })
+  if (info.os) items.push({ kind: 'os', value: info.os, line: info.os })
+  return items
 }
 
-/** Notes text for a New Device: model Heading, then OS — each only if detected. */
+/** Notes text for a New Device, or for re-inserting every item. */
 export function phoneInfoNotes(info: PhoneInfo): string {
-  let lines: string[] = []
-  if (info.model) lines.push(formatModel(info.model))
-  if (info.os) lines.push(formatOS(info.os))
-  return lines.join('\n')
+  return phoneInfoItems(info)
+    .map((item) => item.line)
+    .join('\n')
 }
 
 /** Label for a New Device: the model, if detected. */

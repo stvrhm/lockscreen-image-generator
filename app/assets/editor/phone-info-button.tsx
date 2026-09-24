@@ -2,8 +2,7 @@ import { css, on, type Handle } from 'remix/ui'
 import * as popover from 'remix/ui/popover'
 
 import {
-  formatModel,
-  formatOS,
+  phoneInfoItems,
   phoneInfoNotes,
   readPhoneInfo,
   type PhoneInfo,
@@ -99,7 +98,7 @@ export function PhoneInfoButton(handle: Handle<{ onAdd: (lines: string) => void 
                     <button
                       type="button"
                       aria-label={`${strings.editor.phoneInfoAdd} ${item.name}`}
-                      mix={[addButtonStyle, on('click', () => add(item.lines))]}
+                      mix={[addButtonStyle, on('click', () => add(item.line))]}
                     >
                       {strings.editor.phoneInfoAdd}
                     </button>
@@ -121,18 +120,12 @@ export function PhoneInfoButton(handle: Handle<{ onAdd: (lines: string) => void 
 }
 
 function rows(info: PhoneInfo) {
-  let items: { name: string; value: string; lines: string }[] = []
-  if (info.model) {
-    items.push({
-      name: strings.editor.phoneInfoModel,
-      value: info.model,
-      lines: formatModel(info.model),
-    })
-  }
-  if (info.os) {
-    items.push({ name: strings.editor.phoneInfoOS, value: info.os, lines: formatOS(info.os) })
-  }
-  return items
+  return phoneInfoItems(info).map((item) => ({ ...item, name: itemNames[item.kind] }))
+}
+
+const itemNames = {
+  model: strings.editor.phoneInfoModel,
+  os: strings.editor.phoneInfoOS,
 }
 
 const triggerStyle = css({
