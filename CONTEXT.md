@@ -17,19 +17,23 @@ In-progress Device state on this Host. Continue always resumes the last Draft he
 _Avoid_: Unsaved session, temporary file
 
 **Label**:
-The Device’s stable display name — used in Browse, duplicate naming, download filenames, and as primary identity text on the Wallpaper. Distinct from Notes.
+The Device’s stable display name — used in Browse, duplicate naming, and download filenames. It appears on the Wallpaper only when Notes are empty; identity text on the Wallpaper is written in Notes (typically as a Heading). Distinct from Notes.
 _Avoid_: Title, name (alone), heading
 
 **Notes**:
-The free-form Markdown body that appears on the wallpaper. Inserted shortcuts become part of Notes; Notes are not a list of blocks. Drag-and-drop block editing is out of scope for now.
+The free-form Markdown body that appears on the wallpaper. A New Device starts with Notes pre-filled from Phone info; inserted Phone info becomes ordinary Notes text. Notes are not a list of blocks. Drag-and-drop block editing is out of scope for now.
 _Avoid_: Description, content blocks, text modules (as the stored shape)
 
-**Shortcut**:
-An optional composer action that inserts a labeled Markdown snapshot into Notes. Shortcuts may use measured Host details or best-effort detected OS metadata; they are not live-linked fields and are not user-editable for now.
-_Avoid_: Tag (unless UI chrome), suggestion, template (unless we later mean a full Notes preset)
+**Heading**:
+A Notes line marked `#` (large) or `##` (medium) that renders bigger than body text on the Wallpaper. The only way text size varies; there is no per-Device text size setting. When Notes are too tall to fit, all lines shrink together, keeping Headings proportionally larger.
+_Avoid_: Title, text size setting, font size (as a user concept)
+
+**Phone info**:
+Details about the Host detected from the browser: the phone model and Detected OS, each omitted when unavailable. Read fresh from the Host whenever needed, never stored; a New Device's Label and Notes are pre-filled from it (model as a `#` Heading, OS beneath), and it can be re-inserted into Notes from the editor. Inserted text is a snapshot, not a live field. On iPhones the model is never detectable, so it appears only as "iPhone".
+_Avoid_: Device info (a Device is the wallpaper project, not the phone), Shortcut, Host details, suggestion
 
 **Detected OS**:
-The operating-system name and version inferred from the Host browser when the browser exposes useful information. It is a best-effort hint, not verified device identity; unavailable values are omitted.
+The operating-system name and version inferred from the Host browser when the browser exposes useful information. It is a best-effort hint, not verified device identity; unavailable values are omitted, and versions a browser is known to freeze or fake are never shown. Part of Phone info.
 _Avoid_: Verified OS, device model, raw user agent
 
 **Export size**:
@@ -45,5 +49,5 @@ The downloadable or shareable lockscreen image produced from Label/Notes under f
 _Avoid_: Lockscreen (alone), PNG (as the concept), screenshot
 
 **Start options**:
-Home entry choices: **New** (fresh Device), **Continue** (last Draft on this Host; hidden if none), **Browse** (Devices on this Host only — edit, duplicate, or delete). Duplicate creates a new Device with copied Notes, platform, and export settings, a new id, and a distinct label (e.g. `Copy of …` or empty).
+Home entry choices: **New** (fresh Device, Label and Notes pre-filled from Phone info), **Continue** (last Draft on this Host; hidden if none), **Browse** (Devices on this Host only — edit, duplicate, or delete). Duplicate creates a new Device with copied Notes, platform, and export settings, a new id, and a distinct label (e.g. `Copy of …` or empty).
 _Avoid_: Dashboard, home feed, team library
