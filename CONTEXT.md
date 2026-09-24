@@ -25,8 +25,12 @@ The free-form Markdown body that appears on the wallpaper. A New Device starts w
 _Avoid_: Description, content blocks, text modules (as the stored shape)
 
 **Heading**:
-A Notes line marked `#` (large) or `##` (medium) that renders bigger than body text on the Wallpaper. The only way text size varies; there is no per-Device text size setting. When Notes are too tall to fit, all lines shrink together, keeping Headings proportionally larger.
-_Avoid_: Title, text size setting, font size (as a user concept)
+A Notes line marked `#` (large) or `##` (medium) that renders bigger than body text on the Wallpaper. A line has at most one Heading. The only way text size varies; there is no per-Device text size setting. When Notes are too tall to fit, all lines shrink together, keeping Headings proportionally larger.
+_Avoid_: Title, headline, h1, h2, h3, text size setting, font size (as a user concept)
+
+**Inline format**:
+Bold, italic, code, or strikethrough on a stretch of text inside a Notes line. Bold and italic can apply to the same stretch. Code and strikethrough each apply alone. Asterisks mark bold and italic. Underscores are ordinary text. A line can carry an Inline format and a Heading at the same time.
+_Avoid_: RTE, rich text, style, font
 
 **Phone info**:
 Details about the Host detected from the browser: the phone model and Detected OS, each omitted when unavailable. Read fresh from the Host whenever needed, never stored; a New Device's Label and Notes are pre-filled from it (model as a `#` Heading, OS beneath), and it can be re-inserted into Notes from the editor. Inserted text is a snapshot, not a live field. On iPhones the model is never detectable, so it appears only as "iPhone".

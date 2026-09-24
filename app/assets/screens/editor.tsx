@@ -17,7 +17,12 @@ import { downloadWallpaper, shareWallpaper, type WallpaperOptions } from '../../
 import { strings } from '../../strings.ts'
 import { routes } from '../../routes.ts'
 import { toast } from '../../ui/toast.tsx'
-import { cycleHeading } from '../editor/cycle-heading.ts'
+import {
+  inlineFormatActive,
+  toggleInlineFormat,
+  type InlineFormat,
+} from '../editor/format-notes.ts'
+import { headingPressed, setHeading } from '../editor/set-heading.ts'
 import { ExportSummary } from '../editor/export-summary.tsx'
 import { FormatButton } from '../editor/format-button.tsx'
 import { insertLines } from '../editor/insert-lines.ts'
@@ -47,6 +52,22 @@ export function Editor(
   let editingNew = handle.props.editingNew
   let platformOverride = false
   let notesRef: HTMLTextAreaElement | null = null
+  let notesSelection = { start: 0, end: 0 }
+
+  handle.queueTask(() => {
+    document.addEventListener(
+      'selectionchange',
+      () => {
+        if (!notesRef || document.activeElement !== notesRef) return
+        let start = notesRef.selectionStart
+        let end = notesRef.selectionEnd
+        if (start === notesSelection.start && end === notesSelection.end) return
+        notesSelection = { start, end }
+        handle.update()
+      },
+      { signal: handle.signal },
+    )
+  })
   function hostSize() {
     return measureHostExportSize()
   }
@@ -74,6 +95,7 @@ export function Editor(
       : { start: end, end }
     let next = insertLines({ text: draft.notes, ...selection }, lines)
     draft = { ...draft, notes: next.text }
+    notesSelection = { start: next.start, end: next.end }
     handle.update()
     handle.queueTask(() => {
       resizeNotes()
@@ -83,39 +105,39 @@ export function Editor(
     })
   }
 
-  function applyFormatting(marker: string) {
+  function armNotesSelection() {
     if (!notesRef) return
-    let el = notesRef
-    let start = el.selectionStart
-    let end = el.selectionEnd
-    let notes = draft.notes
-    let selected = notes.slice(start, end)
-    let replacement = selected ? `${marker}${selected}${marker}` : `${marker}${marker}`
-    draft = { ...draft, notes: notes.slice(0, start) + replacement + notes.slice(end) }
-    handle.update()
-    handle.queueTask(() => {
-      if (!notesRef) return
-      notesRef.focus()
-      let nextStart = selected ? start + replacement.length : start + marker.length
-      let nextEnd = selected ? nextStart : nextStart + marker.length
-      notesRef.setSelectionRange(nextStart, nextEnd)
-    })
+    notesSelection = { start: notesRef.selectionStart, end: notesRef.selectionEnd }
   }
 
-  function applyHeading() {
-    if (!notesRef) return
-    let next = cycleHeading({
-      text: draft.notes,
-      start: notesRef.selectionStart,
-      end: notesRef.selectionEnd,
-    })
+  function notesEdit() {
+    if (notesRef && document.activeElement === notesRef) {
+      return {
+        text: draft.notes,
+        start: notesRef.selectionStart,
+        end: notesRef.selectionEnd,
+      }
+    }
+    return { text: draft.notes, start: notesSelection.start, end: notesSelection.end }
+  }
+
+  function applyNotesEdit(next: { text: string; start: number; end: number }) {
     draft = { ...draft, notes: next.text }
+    notesSelection = { start: next.start, end: next.end }
     handle.update()
     handle.queueTask(() => {
       if (!notesRef) return
       notesRef.focus()
       notesRef.setSelectionRange(next.start, next.end)
     })
+  }
+
+  function applyFormatting(format: InlineFormat) {
+    applyNotesEdit(toggleInlineFormat(notesEdit(), format))
+  }
+
+  function applyHeading(level: 1 | 2) {
+    applyNotesEdit(setHeading(notesEdit(), level))
   }
 
   function resizeNotes() {
@@ -242,24 +264,75 @@ export function Editor(
                   <FormatButton
                     label={strings.editor.bold}
                     symbol="B"
-                    onSelect={() => applyFormatting('**')}
+                    pressed={inlineFormatActive(
+                      device.notes,
+                      notesSelection.start,
+                      notesSelection.end,
+                      'bold',
+                    )}
+                    onSelect={() => applyFormatting('bold')}
+                    onArm={armNotesSelection}
                   />
                   <FormatButton
                     label={strings.editor.italic}
                     symbol="I"
-                    onSelect={() => applyFormatting('*')}
+                    pressed={inlineFormatActive(
+                      device.notes,
+                      notesSelection.start,
+                      notesSelection.end,
+                      'italic',
+                    )}
+                    onSelect={() => applyFormatting('italic')}
+                    onArm={armNotesSelection}
                   />
                   <FormatButton
                     label={strings.editor.strike}
                     symbol="S"
-                    onSelect={() => applyFormatting('~~')}
+                    pressed={inlineFormatActive(
+                      device.notes,
+                      notesSelection.start,
+                      notesSelection.end,
+                      'strike',
+                    )}
+                    onSelect={() => applyFormatting('strike')}
+                    onArm={armNotesSelection}
                   />
                   <FormatButton
                     label={strings.editor.code}
                     symbol="<>"
-                    onSelect={() => applyFormatting('`')}
+                    pressed={inlineFormatActive(
+                      device.notes,
+                      notesSelection.start,
+                      notesSelection.end,
+                      'code',
+                    )}
+                    onSelect={() => applyFormatting('code')}
+                    onArm={armNotesSelection}
                   />
-                  <FormatButton label={strings.editor.heading} symbol="H" onSelect={applyHeading} />
+                  <FormatButton
+                    label={strings.editor.headingLarge}
+                    symbol="#"
+                    pressed={headingPressed(
+                      device.notes,
+                      notesSelection.start,
+                      notesSelection.end,
+                      1,
+                    )}
+                    onSelect={() => applyHeading(1)}
+                    onArm={armNotesSelection}
+                  />
+                  <FormatButton
+                    label={strings.editor.headingMedium}
+                    symbol="##"
+                    pressed={headingPressed(
+                      device.notes,
+                      notesSelection.start,
+                      notesSelection.end,
+                      2,
+                    )}
+                    onSelect={() => applyHeading(2)}
+                    onArm={armNotesSelection}
+                  />
                   <PhoneInfoButton onAdd={insertAtCursor} />
                 </div>
                 <textarea
@@ -276,8 +349,10 @@ export function Editor(
                     }),
                     on('input', (event) => {
                       patchDraft({ notes: event.currentTarget.value })
+                      armNotesSelection()
                       handle.queueTask(resizeNotes)
                     }),
+                    on('blur', armNotesSelection),
                   ]}
                 />
               </div>

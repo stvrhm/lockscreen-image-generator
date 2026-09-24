@@ -12,7 +12,13 @@ let tooltipWarmUntil = 0
 let activeTooltipHide: ((skipExitAnimation?: boolean) => void) | undefined
 
 export function FormatButton(
-  handle: Handle<{ label: string; symbol: string; onSelect: () => void }>,
+  handle: Handle<{
+    label: string
+    symbol: string
+    pressed: boolean
+    onSelect: () => void
+    onArm?: () => void
+  }>,
 ) {
   let visible = false
   let immediate = false
@@ -64,7 +70,7 @@ export function FormatButton(
   }
 
   return () => {
-    let { label, symbol, onSelect } = handle.props
+    let { label, symbol, pressed, onSelect, onArm } = handle.props
     return (
       <popover.Context>
         <span
@@ -78,6 +84,7 @@ export function FormatButton(
           <button
             type="button"
             aria-label={label}
+            aria-pressed={pressed ? 'true' : 'false'}
             aria-describedby={tooltipId}
             mix={[
               formatButtonStyle,
@@ -90,7 +97,10 @@ export function FormatButton(
                 if (event.currentTarget.matches(':focus-visible')) showImmediately()
               }),
               on('blur', () => hide()),
-              on('pointerdown', () => hide()),
+              on('pointerdown', () => {
+                onArm?.()
+                hide()
+              }),
             ]}
           >
             {symbol}
@@ -138,6 +148,10 @@ export const formatButtonStyle = css({
   ':focus-visible': {
     outline: '2px solid var(--accent)',
     outlineOffset: '1px',
+  },
+  '&[aria-pressed="true"]': {
+    background: 'var(--surface-2)',
+    color: 'var(--text)',
   },
 })
 
