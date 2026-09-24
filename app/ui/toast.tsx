@@ -1,4 +1,6 @@
-import { css, on, type Handle } from 'remix/ui'
+import { css, type Handle } from 'remix/ui'
+
+import { Button } from './button.tsx'
 import { animateEntrance, animateExit, animateLayout, spring } from 'remix/ui/animation'
 
 export type ToastVariant = 'default' | 'success' | 'error'
@@ -158,26 +160,26 @@ export function ToastViewport(handle: Handle) {
             {item.description ? <p>{item.description}</p> : null}
           </div>
           {item.action ? (
-            <button
-              type="button"
-              mix={[
-                actionStyle,
-                on('click', () => {
-                  dismiss(item.id)
-                  void item.action?.onClick()
-                }),
-              ]}
+            <Button
+              variant="accent"
+              size="sm"
+              onClick={() => {
+                dismiss(item.id)
+                void item.action?.onClick()
+              }}
             >
               {item.action.label}
-            </button>
+            </Button>
           ) : null}
-          <button
-            type="button"
-            aria-label="Dismiss notification"
-            mix={[dismissStyle, on('click', () => dismiss(item.id))]}
+          <Button
+            variant="toolbar"
+            size="icon"
+            label="Dismiss notification"
+            mix={dismissGlyphStyle}
+            onClick={() => dismiss(item.id)}
           >
             ×
-          </button>
+          </Button>
         </article>
       ))}
     </div>
@@ -228,29 +230,4 @@ const copyStyle = css({
   '& p': { margin: '0.2em 0 0', color: 'var(--text-muted)', fontSize: 'var(--font-size-small)' },
 })
 
-const actionStyle = css({
-  flex: '0 0 auto',
-  minHeight: '2.75rem',
-  padding: '0.45em 0.8em',
-  border: 0,
-  borderRadius: 'var(--radius-sm, 8px)',
-  background: 'var(--accent)',
-  color: 'var(--page)',
-  fontWeight: 'var(--font-weight-semibold)',
-  cursor: 'pointer',
-  '&:hover': { background: 'var(--accent-strong)' },
-})
-
-const dismissStyle = css({
-  flex: '0 0 auto',
-  width: '2.75rem',
-  height: '2.75rem',
-  padding: 0,
-  border: 0,
-  background: 'transparent',
-  color: 'var(--text-muted)',
-  fontSize: '1.4rem',
-  lineHeight: 1,
-  cursor: 'pointer',
-  '&:hover': { color: 'var(--text)' },
-})
+const dismissGlyphStyle = css({ flex: '0 0 auto', fontSize: '1.4rem' })

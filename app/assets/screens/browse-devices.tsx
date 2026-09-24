@@ -1,17 +1,16 @@
-import { css, navigate, on, type Handle } from 'remix/ui'
+import { css, navigate, type Handle } from 'remix/ui'
 
 import { flow } from '../../ui/cube/index.ts'
 import { theme } from '../../ui/theme.ts'
 import { deleteDevice, duplicateDevice, listDevices, type Device } from '../../data/devices.ts'
 import { strings } from '../../strings.ts'
 import { routes } from '../../routes.ts'
+import { Button } from '../../ui/button.tsx'
 import {
   mutedStyle,
   pageStyle,
   headingStyle,
   headerRowStyle,
-  ghostButtonStyle,
-  secondaryButtonStyle,
   actionsRowStyle,
 } from '../../ui/screen-styles.ts'
 
@@ -38,9 +37,9 @@ export function BrowseDevices(handle: Handle<{ devices: Device[] }>) {
     return (
       <div mix={pageStyle}>
         <header mix={headerRowStyle}>
-          <a href={routes.screens.home.href()} mix={ghostButtonStyle}>
+          <Button href={routes.screens.home.href()} variant="ghost">
             {strings.browse.back}
-          </a>
+          </Button>
           <h1 mix={headingStyle}>{strings.browse.title}</h1>
         </header>
         {devices.length === 0 ? (
@@ -56,24 +55,18 @@ export function BrowseDevices(handle: Handle<{ devices: Device[] }>) {
                   </span>
                 </div>
                 <div mix={actionsRowStyle}>
-                  <a
+                  <Button
                     href={routes.screens.editDevice.href({ id: device.id })}
-                    mix={secondaryButtonStyle}
+                    variant="secondary"
                   >
                     {strings.browse.edit}
-                  </a>
-                  <button
-                    type="button"
-                    mix={[secondaryButtonStyle, on('click', () => void onDuplicate(device))]}
-                  >
+                  </Button>
+                  <Button variant="secondary" onClick={() => void onDuplicate(device)}>
                     {strings.browse.duplicate}
-                  </button>
-                  <button
-                    type="button"
-                    mix={[dangerButtonStyle, on('click', () => void onDelete(device))]}
-                  >
+                  </Button>
+                  <Button variant="destructive" onClick={() => void onDelete(device)}>
                     {strings.browse.delete}
-                  </button>
+                  </Button>
                 </div>
               </li>
             ))}
@@ -83,17 +76,6 @@ export function BrowseDevices(handle: Handle<{ devices: Device[] }>) {
     )
   }
 }
-
-const dangerButtonStyle = css({
-  appearance: 'none',
-  borderRadius: '8px',
-  padding: '10px 16px',
-  fontWeight: 600,
-  cursor: 'pointer',
-  background: 'transparent',
-  border: '1px solid var(--danger)',
-  color: 'var(--danger)',
-})
 
 const listStyle = [flow({ flowSpace: theme.space.md }), css({ listStyle: 'none', padding: 0 })]
 

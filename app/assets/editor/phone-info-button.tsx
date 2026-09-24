@@ -1,4 +1,4 @@
-import { css, on, type Handle } from 'remix/ui'
+import { attrs, css, type Handle } from 'remix/ui'
 import * as popover from 'remix/ui/popover'
 
 import {
@@ -8,8 +8,8 @@ import {
   type PhoneInfo,
 } from '../../data/phone-info.ts'
 import { strings } from '../../strings.ts'
+import { Button } from '../../ui/button.tsx'
 import { theme } from '../../ui/theme.ts'
-import { formatButtonStyle } from './format-button.tsx'
 
 /**
  * Toolbar button whose overlay (re-)inserts the Host's Phone info into Notes,
@@ -52,22 +52,24 @@ export function PhoneInfoButton(handle: Handle<{ onAdd: (lines: string) => void 
     let allLines = info ? phoneInfoNotes(info) : ''
     return (
       <popover.Context>
-        <button
-          type="button"
-          aria-label={strings.editor.phoneInfo}
-          aria-haspopup="dialog"
-          aria-expanded={open ? 'true' : 'false'}
-          aria-controls="phone-info-overlay"
+        <Button
+          variant="toolbar"
+          size="icon"
+          label={strings.editor.phoneInfo}
           mix={[
-            formatButtonStyle,
             triggerStyle,
+            attrs({
+              'aria-haspopup': 'dialog',
+              'aria-expanded': open ? 'true' : 'false',
+              'aria-controls': 'phone-info-overlay',
+            }),
             popover.anchor({ placement: 'bottom-end', offset: 8 }),
             popover.focusOnHide(),
-            on('click', () => (open ? hide() : show())),
           ]}
+          onClick={() => (open ? hide() : show())}
         >
           ⓘ
-        </button>
+        </Button>
         <div
           id="phone-info-overlay"
           role="dialog"
@@ -95,22 +97,27 @@ export function PhoneInfoButton(handle: Handle<{ onAdd: (lines: string) => void 
                       <span mix={mutedStyle}>{item.name}</span>
                       <span mix={valueStyle}>{item.value}</span>
                     </span>
-                    <button
-                      type="button"
-                      aria-label={`${strings.editor.phoneInfoAdd} ${item.name}`}
-                      mix={[addButtonStyle, on('click', () => add(item.line))]}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      shape="pill"
+                      label={`${strings.editor.phoneInfoAdd} ${item.name}`}
+                      onClick={() => add(item.line)}
                     >
                       {strings.editor.phoneInfoAdd}
-                    </button>
+                    </Button>
                   </li>
                 ))}
               </ul>
-              <button
-                type="button"
-                mix={[addButtonStyle, addAllStyle, on('click', () => add(allLines))]}
+              <Button
+                variant="outline"
+                size="sm"
+                shape="pill"
+                mix={addAllStyle}
+                onClick={() => add(allLines)}
               >
                 {strings.editor.phoneInfoAddAll}
-              </button>
+              </Button>
             </>
           )}
         </div>
@@ -132,7 +139,6 @@ const triggerStyle = css({
   marginInlineStart: 'auto',
   fontSize: '1.125rem',
   fontWeight: theme.fontWeight.medium,
-  '&[aria-expanded="true"]': { background: 'var(--surface-2)', color: 'var(--text)' },
 })
 
 const panelStyle = css({
@@ -205,22 +211,6 @@ const rowTextStyle = css({
 const valueStyle = css({
   fontWeight: theme.fontWeight.semibold,
   overflowWrap: 'anywhere',
-})
-
-const addButtonStyle = css({
-  appearance: 'none',
-  flex: '0 0 auto',
-  minHeight: '40px',
-  padding: '6px 12px',
-  border: '1px solid var(--border)',
-  borderRadius: '999px',
-  background: 'transparent',
-  color: 'var(--text)',
-  fontSize: '13px',
-  fontWeight: 600,
-  cursor: 'pointer',
-  ':hover': { background: 'var(--surface-2)' },
-  ':focus-visible': { outline: '2px solid var(--accent)', outlineOffset: '1px' },
 })
 
 const addAllStyle = css({ alignSelf: 'stretch' })

@@ -1,16 +1,11 @@
 import { css, type Handle } from 'remix/ui'
 
 import { flow, grid, sidebar, switcher } from '../../ui/cube/index.ts'
+import { Button } from '../../ui/button.tsx'
 import { theme } from '../../ui/theme.ts'
 import { strings } from '../../strings.ts'
 import { routes } from '../../routes.ts'
-import {
-  mutedStyle,
-  pageStyle,
-  hintStyle,
-  primaryButtonStyle,
-  secondaryButtonStyle,
-} from '../../ui/screen-styles.ts'
+import { mutedStyle, pageStyle, hintStyle } from '../../ui/screen-styles.ts'
 
 export function Home(handle: Handle<{ hasDraft: boolean }>) {
   return () => {
@@ -43,23 +38,32 @@ export function Home(handle: Handle<{ hasDraft: boolean }>) {
         </ol>
 
         <div mix={startActionsStyle}>
-          <a href={routes.screens.newDevice.href()} mix={[primaryButtonStyle, startButtonStyle]}>
+          <Button
+            href={routes.screens.newDevice.href()}
+            variant="primary"
+            size="lg"
+            mix={blockStyle}
+          >
             {strings.start.new}
-          </a>
+          </Button>
           {hasDraft ? (
-            <a
+            <Button
               href={routes.screens.continueDevice.href()}
-              mix={[secondaryButtonStyle, startButtonStyle]}
+              variant="secondary"
+              size="lg"
+              mix={blockStyle}
             >
               {strings.start.continue}
-            </a>
+            </Button>
           ) : null}
-          <a
+          <Button
             href={routes.screens.browseDevices.href()}
-            mix={[secondaryButtonStyle, startButtonStyle]}
+            variant="secondary"
+            size="lg"
+            mix={blockStyle}
           >
             {strings.start.browse}
-          </a>
+          </Button>
         </div>
         {hasDraft ? <p mix={hintStyle}>{strings.start.continueHint}</p> : null}
       </div>
@@ -126,8 +130,4 @@ const stepTextStyle = [
   }),
 ]
 
-const startButtonStyle = css({
-  width: '100%',
-  minHeight: '48px',
-  justifyContent: 'center',
-})
+const blockStyle = css({ width: '100%' })

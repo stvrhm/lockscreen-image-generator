@@ -16,6 +16,7 @@ import { measureHostExportSize } from '../../data/host.ts'
 import { downloadWallpaper, shareWallpaper, type WallpaperOptions } from '../../data/wallpaper.ts'
 import { strings } from '../../strings.ts'
 import { routes } from '../../routes.ts'
+import { Button } from '../../ui/button.tsx'
 import { toast } from '../../ui/toast.tsx'
 import {
   inlineFormatActive,
@@ -33,10 +34,7 @@ import {
   mutedStyle,
   pageStyle,
   headingStyle,
-  ghostButtonStyle,
   hintStyle,
-  primaryButtonStyle,
-  secondaryButtonStyle,
   actionsRowStyle,
 } from '../../ui/screen-styles.ts'
 
@@ -222,9 +220,9 @@ export function Editor(
     return (
       <div mix={pageStyle}>
         <header mix={editorHeaderStyle}>
-          <a href={routes.screens.home.href()} mix={ghostButtonStyle}>
+          <Button href={routes.screens.home.href()} variant="ghost">
             {strings.editor.back}
-          </a>
+          </Button>
           <h1 mix={headingStyle}>
             {editingNew ? strings.editor.titleNew : strings.editor.titleEdit}
           </h1>
@@ -393,18 +391,15 @@ export function Editor(
                       </Option>
                     </Select>
                   ) : (
-                    <button
-                      type="button"
-                      mix={[
-                        linkButtonStyle,
-                        on('click', () => {
-                          platformOverride = true
-                          handle.update()
-                        }),
-                      ]}
+                    <Button
+                      variant="link"
+                      onClick={() => {
+                        platformOverride = true
+                        handle.update()
+                      }}
                     >
                       {strings.editor.platformOverride}
-                    </button>
+                    </Button>
                   )}
                 </div>
 
@@ -497,24 +492,15 @@ export function Editor(
             </details>
 
             <div mix={actionsRowStyle}>
-              <button
-                type="button"
-                mix={[primaryButtonStyle, on('click', () => void onSaveToPhotos())]}
-              >
+              <Button variant="primary" onClick={() => void onSaveToPhotos()}>
                 {strings.editor.saveToPhotos}
-              </button>
-              <button
-                type="button"
-                mix={[secondaryButtonStyle, on('click', () => void onSaveDevice())]}
-              >
+              </Button>
+              <Button variant="secondary" onClick={() => void onSaveDevice()}>
                 {strings.editor.saveDevice}
-              </button>
-              <button
-                type="button"
-                mix={[secondaryButtonStyle, on('click', () => void onDownload())]}
-              >
+              </Button>
+              <Button variant="secondary" onClick={() => void onDownload()}>
                 {strings.editor.download}
-              </button>
+              </Button>
             </div>
             <p mix={hintStyle}>{strings.editor.applyHint}</p>
           </div>
@@ -627,18 +613,6 @@ const toolbarStyle = [
   // One row even on narrow phones: the buttons shrink instead of wrapping.
   css({ flexWrap: 'nowrap', padding: '6px', background: 'rgba(255, 255, 255, 0.035)' }),
 ]
-
-const linkButtonStyle = css({
-  appearance: 'none',
-  border: 0,
-  background: 'transparent',
-  color: 'var(--accent)',
-  fontWeight: 600,
-  cursor: 'pointer',
-  padding: 0,
-  alignSelf: 'flex-start',
-  textDecoration: 'underline',
-})
 
 const segmentStyle = css({
   display: 'flex',

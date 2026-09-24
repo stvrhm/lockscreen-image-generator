@@ -1,6 +1,7 @@
-import { css, on, ref, type Handle } from 'remix/ui'
+import { attrs, css, on, ref, type Handle } from 'remix/ui'
 import * as popover from 'remix/ui/popover'
 
+import { Button } from '../../ui/button.tsx'
 import { theme } from '../../ui/theme.ts'
 
 const TOOLTIP_DELAY = 750
@@ -81,30 +82,30 @@ export function FormatButton(
             on('mouseleave', hideAfterHover),
           ]}
         >
-          <button
-            type="button"
-            aria-label={label}
-            aria-pressed={pressed ? 'true' : 'false'}
-            aria-describedby={tooltipId}
+          <Button
+            variant="toolbar"
+            size="icon"
+            label={label}
+            pressed={pressed}
+            onClick={onSelect}
             mix={[
-              formatButtonStyle,
+              attrs({ 'aria-describedby': tooltipId }),
               popover.focusOnHide(),
-              on('click', onSelect),
               // Keyboard focus only: a tap or click also focuses the button, and
               // opening the tooltip between that focus and the click swallows
               // the click, so the first tap would do nothing.
-              on('focus', (event) => {
+              on<HTMLButtonElement>('focus', (event) => {
                 if (event.currentTarget.matches(':focus-visible')) showImmediately()
               }),
-              on('blur', () => hide()),
-              on('pointerdown', () => {
+              on<HTMLButtonElement>('blur', () => hide()),
+              on<HTMLButtonElement>('pointerdown', () => {
                 onArm?.()
                 hide()
               }),
             ]}
           >
             {symbol}
-          </button>
+          </Button>
         </span>
         <span
           id={tooltipId}
@@ -129,31 +130,6 @@ export function FormatButton(
     )
   }
 }
-
-export const formatButtonStyle = css({
-  appearance: 'none',
-  width: '2.75rem',
-  minWidth: '2.25rem',
-  flexShrink: 1,
-  height: '2.625rem',
-  display: 'inline-grid',
-  placeItems: 'center',
-  border: 0,
-  borderRadius: '6px',
-  background: 'transparent',
-  color: 'var(--text-muted)',
-  fontWeight: theme.fontWeight.bold,
-  cursor: 'pointer',
-  ':hover': { background: 'var(--surface-2)', color: 'var(--text)' },
-  ':focus-visible': {
-    outline: '2px solid var(--accent)',
-    outlineOffset: '1px',
-  },
-  '&[aria-pressed="true"]': {
-    background: 'var(--surface-2)',
-    color: 'var(--text)',
-  },
-})
 
 const tooltipTriggerStyle = css({
   position: 'relative',
