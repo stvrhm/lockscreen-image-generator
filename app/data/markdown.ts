@@ -1,4 +1,5 @@
-// Minimal inline markdown: bold, italic, bold+italic, code, strikethrough.
+// Minimal Markdown for Notes: two Heading levels, plus inline bold, italic,
+// bold+italic, code and strikethrough.
 export interface MarkdownSegment {
   text: string
   bold?: boolean
@@ -7,14 +8,33 @@ export interface MarkdownSegment {
   strike?: boolean
 }
 
+/** `body` for plain text; 1 for a `# ` Heading, 2 for a `## ` Heading. */
+export type HeadingLevel = 'body' | 1 | 2
+
+export interface MarkdownLine {
+  heading: HeadingLevel
+  segments: MarkdownSegment[]
+}
+
 const INLINE_MARKDOWN_PATTERN =
   /(\*\*\*[^*]+\*\*\*)|(`[^`]+`)|(\*\*[^*]+\*\*)|(__[^_]+__)|(~~[^~]+~~)|(\*[^*]+\*)|(_[^_]+_)/g
 
-export function parseMarkdownLines(text: string): MarkdownSegment[][] {
-  return text.split('\n').map(parseMarkdownLine)
+export function parseMarkdownLines(text: string): MarkdownLine[] {
+  return text.split('\n').map(parseLine)
 }
 
-function parseMarkdownLine(line: string): MarkdownSegment[] {
+// Only `# ` and `## ` (or a bare marker) make a Heading, so `#tag` and `###`
+// stay body text.
+const HEADING_PATTERN = /^(#{1,2})(?: |$)/
+
+function parseLine(line: string): MarkdownLine {
+  let marker = HEADING_PATTERN.exec(line)
+  if (!marker) return { heading: 'body', segments: parseInline(line) }
+  let heading: HeadingLevel = marker[1].length === 1 ? 1 : 2
+  return { heading, segments: parseInline(line.slice(marker[0].length)) }
+}
+
+function parseInline(line: string): MarkdownSegment[] {
   let segments: MarkdownSegment[] = []
   let lastIndex = 0
   let match: RegExpExecArray | null

@@ -1,14 +1,24 @@
 // Lays out Notes on the Wallpaper. Pure: text measurement is injected, so the
 // canvas renderer and the editor preview share one layout and cannot drift.
-import type { MarkdownSegment } from './markdown.ts'
+import type { HeadingLevel, MarkdownLine, MarkdownSegment } from './markdown.ts'
 
 const BASE_WIDTH = 1170
 const BASE_HEIGHT = 2532
 const LINE_HEIGHT = 1.35
-const SHRINK_STEP = 4
+
+// Body text size in pixels at the reference width, and the smallest it may be
+// on narrow exports. Headings are a multiple of the body size.
+const BODY_SIZE = 72
+const MIN_BODY_SIZE = 28
+const HEADING_RATIO: Record<HeadingLevel, number> = { body: 1, 1: 1.75, 2: 1.35 }
+
+// Too-tall Notes shrink in 5% steps, but never below 35% of full size.
+const SHRINK_STEP = 0.05
+const SHRINK_FLOOR = 0.35
 
 const BODY_WEIGHT = 600
 const BOLD_WEIGHT = 800
+const HEADING_WEIGHT = 800
 const SANS_FAMILY = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
 const MONO_FAMILY = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace'
 
@@ -44,23 +54,24 @@ export interface WallpaperLayout {
 }
 
 export function layoutWallpaper(
-  paragraphs: MarkdownSegment[][],
+  paragraphs: MarkdownLine[],
   size: { width: number; height: number },
   measure: MeasureText,
 ): WallpaperLayout {
   let { width, height } = size
   let scale = width / BASE_WIDTH
   let heightScale = height / BASE_HEIGHT
-  let baseFontSize = Math.max(28, Math.round(58 * scale))
-  let minFontSize = Math.max(18, Math.round(26 * scale))
+  let bodySize = Math.max(MIN_BODY_SIZE, Math.round(BODY_SIZE * scale))
   let maxLineWidth = width - Math.round(94 * scale)
   let availableHeight = height - Math.round(202 * heightScale)
 
-  let fontSize = baseFontSize
-  let lines = wrapParagraphs(paragraphs, fontSize, maxLineWidth, measure)
-  while (totalHeight(lines) > availableHeight && fontSize > minFontSize) {
-    fontSize -= SHRINK_STEP
-    lines = wrapParagraphs(paragraphs, fontSize, maxLineWidth, measure)
+  // Shrink every line by the same factor, one step at a time, so Headings stay
+  // proportionally larger than body text.
+  let shrink = 1
+  let lines = wrapParagraphs(paragraphs, bodySize, maxLineWidth, measure)
+  for (let step = 1; totalHeight(lines) > availableHeight && shrink > SHRINK_FLOOR; step++) {
+    shrink = Math.max(SHRINK_FLOOR, roundTo(1 - step * SHRINK_STEP, 2))
+    lines = wrapParagraphs(paragraphs, bodySize * shrink, maxLineWidth, measure)
   }
 
   let top = height / 2 - totalHeight(lines) / 2
@@ -84,7 +95,7 @@ export function layoutWallpaper(
     return { runs, fontSize: line.fontSize, weight: line.weight, y, height: line.height }
   })
 
-  return { lines: laidOut, shrink: fontSize / baseFontSize }
+  return { lines: laidOut, shrink }
 }
 
 interface Token extends MarkdownSegment {
@@ -141,18 +152,24 @@ function tokenizeLine(
   return atoms
 }
 
+function roundTo(value: number, decimals: number): number {
+  let factor = 10 ** decimals
+  return Math.round(value * factor) / factor
+}
+
 function wrapParagraphs(
-  paragraphs: MarkdownSegment[][],
-  fontSize: number,
+  paragraphs: MarkdownLine[],
+  bodySize: number,
   maxWidth: number,
   measure: MeasureText,
 ): WrappedLine[] {
-  let weight = BODY_WEIGHT
-  let height = fontSize * LINE_HEIGHT
   let lines: WrappedLine[] = []
-  let push = (tokens: Token[]) => lines.push({ tokens, fontSize, weight, height })
 
-  for (let segments of paragraphs) {
+  for (let { heading, segments } of paragraphs) {
+    let fontSize = roundTo(bodySize * HEADING_RATIO[heading], 1)
+    let weight = heading === 'body' ? BODY_WEIGHT : HEADING_WEIGHT
+    let height = fontSize * LINE_HEIGHT
+    let push = (tokens: Token[]) => lines.push({ tokens, fontSize, weight, height })
     let atoms = tokenizeLine(segments, fontSize, weight, measure)
     if (atoms.length === 0) {
       push([])
