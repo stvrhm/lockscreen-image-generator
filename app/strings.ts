@@ -44,7 +44,8 @@ export const strings = {
     titleEdit: 'Edit device',
     label: 'Label',
     notes: 'Notes',
-    notesHint: 'Write the details that should appear on the Wallpaper.',
+    notesHint:
+      'Write the details that should appear on the Wallpaper. Start a line with # or ## for a Heading.',
     formatting: 'Formatting',
     bold: 'Bold',
     italic: 'Italic',
