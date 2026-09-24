@@ -134,8 +134,8 @@ describe('the Notes toolbar', () => {
       [strings.editor.italic, '*abc*'],
       [strings.editor.strike, '~~abc~~'],
       [strings.editor.code, '`abc`'],
-      [strings.editor.headingLarge, '# abc'],
-      [strings.editor.headingMedium, '## abc'],
+      [strings.editor.h1, '# abc'],
+      [strings.editor.h2, '## abc'],
     ]) {
       await notes.fill('abc')
       await notes.tap()
@@ -177,9 +177,75 @@ describe('the Notes toolbar', () => {
 
     await page.getByRole('button', { name: strings.editor.bold, exact: true }).focus()
     await page.keyboard.press('Tab')
-    await page.getByRole('tooltip', { name: strings.editor.italic }).waitFor()
+    let tooltip = page.getByRole('tooltip', { name: strings.editor.italic })
+    await tooltip.waitFor()
+    assert.match(await tooltip.getAttribute('data-anchor-placement') ?? '', /^(top|bottom)$/)
+  })
+
+  it('names the Heading controls H1 and H2', async (t) => {
+    let page = await open(t, routes.screens.newDevice.href())
+    await expectScreen(page, strings.editor.titleNew)
+
+    for (let name of [strings.editor.h1, strings.editor.h2]) {
+      assert.equal(
+        await page.getByRole('button', { name, exact: true }).innerText(),
+        name,
+        `${name} is not the visible control`,
+      )
+    }
   })
 })
+
+describe('Formatting help', () => {
+  it('explains authoring from an icon beside the Notes label', async (t) => {
+    let page = await open(t, routes.screens.newDevice.href())
+    await expectScreen(page, strings.editor.titleNew)
+
+    assert.equal(await page.getByText(/Start a line with #/).count(), 0)
+    assert.equal(await page.locator('#notes-hint').count(), 0)
+    assert.equal(await page.locator('#device-notes').getAttribute('aria-describedby'), null)
+
+    let trigger = page.getByRole('button', { name: strings.editor.formattingHelp, exact: true })
+    assert.equal(await trigger.innerText(), 'ⓘ')
+    assert.equal(await trigger.getAttribute('aria-haspopup'), 'dialog')
+    assert.equal(
+      await trigger.evaluate(
+        (node) =>
+          node.parentElement?.contains(document.getElementById('notes-label')) === true &&
+          node.closest('[role="toolbar"]') === null,
+      ),
+      true,
+      'Formatting help is not beside the Notes label',
+    )
+
+    await trigger.click()
+    let dialog = page.getByRole('dialog', { name: strings.editor.formattingHelp })
+    await dialog.waitFor()
+    assert.match(await dialog.getAttribute('data-anchor-placement') ?? '', /^(top|bottom)$/)
+    for (let rule of strings.editor.formattingHelpRules) {
+      await dialog.getByText(rule, { exact: true }).waitFor()
+    }
+
+    await page.keyboard.press('Escape')
+    await expectPopoverClosed(page, 'formatting-help')
+    await page.waitForFunction(
+      (name) => document.activeElement?.getAttribute('aria-label') === name,
+      strings.editor.formattingHelp,
+    )
+
+    await page.keyboard.press('Enter')
+    await dialog.waitFor()
+    await trigger.click()
+    await expectPopoverClosed(page, 'formatting-help')
+  })
+})
+
+function expectPopoverClosed(page: Page, id: string) {
+  return page.waitForFunction(
+    (dialogId) => document.getElementById(dialogId)?.matches(':popover-open') !== true,
+    id,
+  )
+}
 
 describe('the Phone info overlay', () => {
   it('shows the empty state in desktop Chromium, and no Shortcut chips exist', async (t) => {
@@ -194,6 +260,7 @@ describe('the Phone info overlay', () => {
     await trigger.click()
     let overlay = page.getByRole('dialog', { name: strings.editor.phoneInfo })
     await overlay.getByText(strings.editor.phoneInfoEmpty).waitFor()
+    assert.match(await overlay.getAttribute('data-anchor-placement') ?? '', /^(top|bottom)-end$/)
     assert.equal(await overlay.getByRole('button').count(), 0, 'the empty state offers Add actions')
 
     await page.keyboard.press('Escape')

@@ -26,6 +26,7 @@ import {
 import { headingPressed, setHeading } from '../editor/set-heading.ts'
 import { ExportSummary } from '../editor/export-summary.tsx'
 import { FormatButton } from '../editor/format-button.tsx'
+import { FormattingHelpButton } from '../editor/formatting-help-button.tsx'
 import { insertLines } from '../editor/insert-lines.ts'
 import { PhoneInfoButton } from '../editor/phone-info-button.tsx'
 import { PhonePreview } from '../editor/phone-preview.tsx'
@@ -249,13 +250,11 @@ export function Editor(
             </div>
 
             <div mix={notesFieldStyle}>
-              <div mix={notesCopyStyle}>
+              <div mix={notesLabelStyle}>
                 <label htmlFor="device-notes" id="notes-label" mix={fieldLabelStyle}>
                   {strings.editor.notes}
                 </label>
-                <div id="notes-hint" mix={hintStyle}>
-                  {strings.editor.notesHint}
-                </div>
+                <FormattingHelpButton />
               </div>
               <div mix={composerStyle}>
                 <div mix={toolbarStyle} role="toolbar" aria-label={strings.editor.formatting}>
@@ -308,8 +307,8 @@ export function Editor(
                     onArm={armNotesSelection}
                   />
                   <FormatButton
-                    label={strings.editor.headingLarge}
-                    symbol="#"
+                    label={strings.editor.h1}
+                    symbol={strings.editor.h1}
                     pressed={headingPressed(
                       device.notes,
                       notesSelection.start,
@@ -320,8 +319,8 @@ export function Editor(
                     onArm={armNotesSelection}
                   />
                   <FormatButton
-                    label={strings.editor.headingMedium}
-                    symbol="##"
+                    label={strings.editor.h2}
+                    symbol={strings.editor.h2}
                     pressed={headingPressed(
                       device.notes,
                       notesSelection.start,
@@ -339,7 +338,6 @@ export function Editor(
                   rows={7}
                   value={device.notes}
                   aria-labelledby="notes-label"
-                  aria-describedby="notes-hint"
                   mix={[
                     textareaStyle,
                     ref((node) => {
@@ -546,7 +544,7 @@ const fieldStyle = [flow({ flowSpace: theme.space.xs })]
 
 const notesFieldStyle = [flow({ flowSpace: theme.space.sm })]
 
-const notesCopyStyle = [flow({ flowSpace: theme.space['3xs'] })]
+const notesLabelStyle = cluster({ gutter: theme.space['2xs'], alignment: 'center' })
 
 const fieldLabelStyle = css({
   display: 'block',
