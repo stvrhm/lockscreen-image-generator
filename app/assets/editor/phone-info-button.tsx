@@ -85,12 +85,12 @@ export function PhoneInfoButton(handle: Handle<{ onAdd: (lines: string) => void 
             {strings.editor.phoneInfo}
           </p>
           {!info ? (
-            <p mix={mutedStyle}>{strings.editor.phoneInfoDetecting}</p>
+            <p mix={[mutedStyle, stackGapStyle]}>{strings.editor.phoneInfoDetecting}</p>
           ) : items.length === 0 ? (
-            <p mix={mutedStyle}>{strings.editor.phoneInfoEmpty}</p>
+            <p mix={[mutedStyle, stackGapStyle]}>{strings.editor.phoneInfoEmpty}</p>
           ) : (
             <>
-              <ul mix={listStyle}>
+              <ul mix={[listStyle, stackGapStyle]}>
                 {items.map((item) => (
                   <li key={item.name} mix={rowStyle}>
                     <span mix={rowTextStyle}>
@@ -113,7 +113,7 @@ export function PhoneInfoButton(handle: Handle<{ onAdd: (lines: string) => void 
                 variant="outline"
                 size="sm"
                 shape="pill"
-                mix={addAllStyle}
+                mix={[addAllStyle, stackGapStyle]}
                 onClick={() => add(allLines)}
               >
                 {strings.editor.phoneInfoAddAll}
@@ -159,9 +159,6 @@ const panelStyle = css({
     'opacity 160ms ease-out, transform 160ms cubic-bezier(0.19, 1, 0.22, 1), overlay 160ms ease-out, display 160ms ease-out',
   transitionBehavior: 'allow-discrete',
   '&:popover-open': {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: theme.space.xs,
     opacity: 1,
     transform: 'translate(0, 0)',
   },
@@ -213,4 +210,6 @@ const valueStyle = css({
   overflowWrap: 'anywhere',
 })
 
-const addAllStyle = css({ alignSelf: 'stretch' })
+const addAllStyle = css({ width: '100%' })
+
+const stackGapStyle = css({ marginTop: theme.space.xs })
