@@ -13,6 +13,7 @@ import {
   type Platform,
 } from '../../data/devices.ts'
 import { hostDetails, measureHostExportSize } from '../../data/host.ts'
+import { prefillFields, type PhoneInfo } from '../../data/phone-info.ts'
 import { shortcutsFor } from '../../data/shortcuts.ts'
 import { downloadWallpaper, shareWallpaper, type WallpaperOptions } from '../../data/wallpaper.ts'
 import { strings } from '../../strings.ts'
@@ -36,11 +37,29 @@ import {
 
 const NOTES_MAX_HEIGHT = 260
 
-export function Editor(handle: Handle<{ draft: Device; editingNew: boolean }>) {
+export function Editor(
+  handle: Handle<{
+    draft: Device
+    editingNew: boolean
+    /** Phone info to pre-fill a New Device with, once detection resolves. */
+    phoneInfo?: Promise<PhoneInfo>
+  }>,
+) {
   let draft = handle.props.draft
   let editingNew = handle.props.editingNew
   let platformOverride = false
   let notesRef: HTMLTextAreaElement | null = null
+  // Fields the user has typed in; pre-fill never overwrites them.
+  let edited = { label: false, notes: false }
+
+  handle.props.phoneInfo?.then((info) => {
+    if (handle.signal.aborted) return
+    let patch = prefillFields(info, edited)
+    if (patch.label === undefined && patch.notes === undefined) return
+    draft = { ...draft, ...patch }
+    handle.update()
+    if (patch.notes !== undefined) handle.queueTask(resizeNotes)
+  })
 
   function hostSize() {
     return measureHostExportSize()
@@ -57,11 +76,14 @@ export function Editor(handle: Handle<{ draft: Device; editingNew: boolean }>) {
   }
 
   function patchDraft(patch: Partial<Device>) {
+    if ('label' in patch) edited.label = true
+    if ('notes' in patch) edited.notes = true
     draft = { ...draft, ...patch }
     handle.update()
   }
 
   function insertShortcut(snippet: string) {
+    edited.notes = true
     let el = notesRef
     let notes = draft.notes
     if (el && typeof el.selectionStart === 'number') {
@@ -85,6 +107,7 @@ export function Editor(handle: Handle<{ draft: Device; editingNew: boolean }>) {
 
   function applyFormatting(marker: string) {
     if (!notesRef) return
+    edited.notes = true
     let el = notesRef
     let start = el.selectionStart
     let end = el.selectionEnd

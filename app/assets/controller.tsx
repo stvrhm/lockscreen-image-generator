@@ -3,6 +3,7 @@ import { createController } from 'remix/router'
 
 import { blankDevice } from '../data/devices.ts'
 import { inferPlatform, measureHostExportSize } from '../data/host.ts'
+import { readPhoneInfo } from '../data/phone-info.ts'
 import { routes } from '../routes.ts'
 import { DeviceStore } from './device-store.ts'
 import { BrowseDevices } from './screens/browse-devices.tsx'
@@ -31,7 +32,8 @@ export default createController(routes.screens, {
     newDevice({ render }) {
       let size = measureHostExportSize()
       let draft = blankDevice(inferPlatform(), size.width, size.height)
-      return render(<Editor draft={draft} editingNew />)
+      // Detection is async; the Editor pre-fills Label and Notes once it resolves.
+      return render(<Editor draft={draft} editingNew phoneInfo={readPhoneInfo()} />)
     },
 
     async continueDevice({ get, render }) {

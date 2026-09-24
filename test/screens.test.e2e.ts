@@ -67,6 +67,54 @@ describe('redirects land on the URL that rendered', () => {
   })
 })
 
+// Pre-fill waits on Client Hints; a later Client Hints call in the page
+// resolves after the Editor's, so the pre-fill has had its chance to apply.
+async function settlePhoneInfo(page: Page) {
+  await page.evaluate(async () => {
+    let data = (
+      navigator as { userAgentData?: { getHighEntropyValues(h: string[]): Promise<unknown> } }
+    ).userAgentData
+    await data?.getHighEntropyValues(['model', 'platformVersion'])
+    await new Promise(requestAnimationFrame)
+  })
+}
+
+describe('New Device pre-fill from Phone info', () => {
+  it('starts with empty Label and Notes in desktop Chromium', async (t) => {
+    let page = await open(t, routes.screens.newDevice.href())
+    await expectScreen(page, strings.editor.titleNew)
+    await settlePhoneInfo(page)
+
+    assert.equal(await page.locator('#device-label').inputValue(), '')
+    assert.equal(await page.locator('#device-notes').inputValue(), '')
+  })
+
+  it('fills Label and Notes from Client Hints on Android Chrome', async (t) => {
+    let page = await t.serve(await createTestServer(router.fetch))
+    let cdp = await page.context().newCDPSession(page)
+    await cdp.send('Emulation.setUserAgentOverride', {
+      userAgent:
+        'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Mobile Safari/537.36',
+      userAgentMetadata: {
+        platform: 'Android',
+        platformVersion: '14.0.0',
+        model: 'Pixel 7',
+        architecture: '',
+        mobile: true,
+      },
+    })
+    await page.goto(routes.screens.newDevice.href())
+    await expectScreen(page, strings.editor.titleNew)
+
+    let label = page.locator('#device-label')
+    await page.waitForFunction(
+      () => (document.querySelector('#device-label') as HTMLInputElement | null)?.value !== '',
+    )
+    assert.equal(await label.inputValue(), 'Pixel 7')
+    assert.equal(await page.locator('#device-notes').inputValue(), '# Pixel 7\nAndroid 14')
+  })
+})
+
 describe('a Device round trip', () => {
   it('creates, survives refresh, and moves through history in one document', async (t) => {
     let page = await open(t, routes.screens.home.href())
