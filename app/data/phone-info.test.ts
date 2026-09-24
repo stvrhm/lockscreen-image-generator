@@ -6,7 +6,6 @@ import {
   phoneInfoLabel,
   phoneInfoItems,
   phoneInfoNotes,
-  prefillFields,
   readPhoneInfo,
 } from './phone-info.ts'
 
@@ -113,35 +112,16 @@ test('the Label is the model, if detected', () => {
   assert.equal(phoneInfoLabel({ os: 'Android 14' }), '')
 })
 
-test('pre-fill fills only fields the user has not typed in', () => {
-  let info = { model: 'Pixel 7', os: 'Android 14' }
-
-  assert.deepEqual(prefillFields(info, { label: false, notes: false }), {
-    label: 'Pixel 7',
-    notes: '# Pixel 7\nAndroid 14',
-  })
-  assert.deepEqual(prefillFields(info, { label: true, notes: false }), {
-    notes: '# Pixel 7\nAndroid 14',
-  })
-  assert.deepEqual(prefillFields(info, { label: false, notes: true }), { label: 'Pixel 7' })
-  assert.deepEqual(prefillFields(info, { label: true, notes: true }), {})
-})
-
-test('pre-fill leaves fields alone when nothing was detected', () => {
-  assert.deepEqual(prefillFields({}, { label: false, notes: false }), {})
-  assert.deepEqual(prefillFields({ os: 'Android 14' }, { label: false, notes: false }), {
-    notes: 'Android 14',
-  })
-})
-
 test('reading from the Host uses Client Hints where available', async () => {
   let requested: string[] = []
   let info = await readPhoneInfo({
-    userAgent: ua.androidChrome,
-    userAgentData: {
-      async getHighEntropyValues(hints) {
-        requested = hints
-        return { model: 'Pixel 7', platformVersion: '14.0.0' }
+    host: {
+      userAgent: ua.androidChrome,
+      userAgentData: {
+        async getHighEntropyValues(hints) {
+          requested = hints
+          return { model: 'Pixel 7', platformVersion: '14.0.0' }
+        },
       },
     },
   })
@@ -152,16 +132,42 @@ test('reading from the Host uses Client Hints where available', async () => {
 
 test('a Client Hints rejection counts as unavailable', async () => {
   let info = await readPhoneInfo({
-    userAgent: ua.androidChrome,
-    userAgentData: { getHighEntropyValues: () => Promise.reject(new Error('denied')) },
+    host: {
+      userAgent: ua.androidChrome,
+      userAgentData: { getHighEntropyValues: () => Promise.reject(new Error('denied')) },
+    },
   })
 
   assert.deepEqual(info, {})
 })
 
 test('reading from a Host without Client Hints uses the user agent alone', async () => {
-  assert.deepEqual(await readPhoneInfo({ userAgent: ua.ios26Safari }), {
+  assert.deepEqual(await readPhoneInfo({ host: { userAgent: ua.ios26Safari } }), {
     model: 'iPhone',
     os: 'iOS 26.0',
   })
+})
+
+test('Client Hints that take too long count as unavailable', async () => {
+  let info = await readPhoneInfo({
+    host: {
+      userAgent: ua.androidChrome,
+      userAgentData: { getHighEntropyValues: () => new Promise(() => {}) },
+    },
+    timeout: 10,
+  })
+
+  assert.deepEqual(info, {})
+})
+
+test('the time limit still leaves the user agent to read', async () => {
+  let info = await readPhoneInfo({
+    host: {
+      userAgent: ua.firefoxAndroid,
+      userAgentData: { getHighEntropyValues: () => new Promise(() => {}) },
+    },
+    timeout: 10,
+  })
+
+  assert.deepEqual(info, { os: 'Android 14' })
 })

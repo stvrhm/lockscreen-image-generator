@@ -13,7 +13,6 @@ import {
   type Platform,
 } from '../../data/devices.ts'
 import { measureHostExportSize } from '../../data/host.ts'
-import { prefillFields, type PhoneInfo } from '../../data/phone-info.ts'
 import { downloadWallpaper, shareWallpaper, type WallpaperOptions } from '../../data/wallpaper.ts'
 import { strings } from '../../strings.ts'
 import { routes } from '../../routes.ts'
@@ -42,26 +41,12 @@ export function Editor(
   handle: Handle<{
     draft: Device
     editingNew: boolean
-    /** Phone info to pre-fill a New Device with, once detection resolves. */
-    phoneInfo?: Promise<PhoneInfo>
   }>,
 ) {
   let draft = handle.props.draft
   let editingNew = handle.props.editingNew
   let platformOverride = false
   let notesRef: HTMLTextAreaElement | null = null
-  // Fields the user has typed in; pre-fill never overwrites them.
-  let edited = { label: false, notes: false }
-
-  handle.props.phoneInfo?.then((info) => {
-    if (handle.signal.aborted) return
-    let patch = prefillFields(info, edited)
-    if (patch.label === undefined && patch.notes === undefined) return
-    draft = { ...draft, ...patch }
-    handle.update()
-    if (patch.notes !== undefined) handle.queueTask(resizeNotes)
-  })
-
   function hostSize() {
     return measureHostExportSize()
   }
@@ -77,15 +62,12 @@ export function Editor(
   }
 
   function patchDraft(patch: Partial<Device>) {
-    if ('label' in patch) edited.label = true
-    if ('notes' in patch) edited.notes = true
     draft = { ...draft, ...patch }
     handle.update()
   }
 
   /** Inserts whole Notes lines at the cursor, then returns focus to Notes. */
   function insertAtCursor(lines: string) {
-    edited.notes = true
     let end = draft.notes.length
     let selection = notesRef
       ? { start: notesRef.selectionStart, end: notesRef.selectionEnd }
@@ -103,7 +85,6 @@ export function Editor(
 
   function applyFormatting(marker: string) {
     if (!notesRef) return
-    edited.notes = true
     let el = notesRef
     let start = el.selectionStart
     let end = el.selectionEnd
@@ -123,7 +104,6 @@ export function Editor(
 
   function applyHeading() {
     if (!notesRef) return
-    edited.notes = true
     let next = cycleHeading({
       text: draft.notes,
       start: notesRef.selectionStart,

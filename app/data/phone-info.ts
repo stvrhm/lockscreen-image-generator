@@ -76,33 +76,36 @@ export function phoneInfoLabel(info: PhoneInfo): string {
 }
 
 /**
- * The New Device pre-fill: detection resolves asynchronously, so it fills
- * only the fields the user has not typed in yet, and only with detected text.
+ * How long to wait for Client Hints. They normally answer within milliseconds;
+ * the limit keeps a slow Host from stalling a New Device or the overlay.
  */
-export function prefillFields(
-  info: PhoneInfo,
-  edited: { label: boolean; notes: boolean },
-): { label?: string; notes?: string } {
-  let patch: { label?: string; notes?: string } = {}
-  let label = phoneInfoLabel(info)
-  let notes = phoneInfoNotes(info)
-  if (label && !edited.label) patch.label = label
-  if (notes && !edited.notes) patch.notes = notes
-  return patch
-}
+const CLIENT_HINTS_TIMEOUT = 300
 
-/** Browser adapter. Never rejects; Client Hints failures count as unavailable. */
-export async function readPhoneInfo(
-  host: PhoneInfoHost | undefined = globalThis.navigator as PhoneInfoHost | undefined,
-): Promise<PhoneInfo> {
+/**
+ * Browser adapter. Never rejects; Client Hints that fail, or that take longer
+ * than `timeout` milliseconds, count as unavailable.
+ */
+export async function readPhoneInfo({
+  host = globalThis.navigator as PhoneInfoHost | undefined,
+  timeout = CLIENT_HINTS_TIMEOUT,
+}: { host?: PhoneInfoHost; timeout?: number } = {}): Promise<PhoneInfo> {
   if (!host?.userAgent) return {}
   let hints: ClientHints | undefined
   try {
-    hints = await host.userAgentData?.getHighEntropyValues(['model', 'platformVersion'])
+    let request = host.userAgentData?.getHighEntropyValues(['model', 'platformVersion'])
+    hints = request && (await withinTimeout(request, timeout))
   } catch {
     hints = undefined
   }
   return detectPhoneInfo(host.userAgent, hints)
+}
+
+function withinTimeout<T>(promise: Promise<T>, ms: number): Promise<T | undefined> {
+  let timer: Parameters<typeof clearTimeout>[0]
+  let expired = new Promise<undefined>((resolve) => {
+    timer = setTimeout(resolve, ms)
+  })
+  return Promise.race([promise, expired]).finally(() => clearTimeout(timer))
 }
 
 function parsedOS(userAgent: string): string | undefined {

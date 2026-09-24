@@ -69,19 +69,19 @@ describe('redirects land on the URL that rendered', () => {
 
 // Pre-fill waits on Client Hints; a later Client Hints call in the page
 // resolves after the Editor's, so the pre-fill has had its chance to apply.
-async function settlePhoneInfo(page: Page) {
-  await page.evaluate(async () => {
-    let data = (
-      navigator as { userAgentData?: { getHighEntropyValues(h: string[]): Promise<unknown> } }
-    ).userAgentData
-    await data?.getHighEntropyValues(['model', 'platformVersion'])
-    await new Promise(requestAnimationFrame)
-  })
-}
-
 // A New Device on an emulated Pixel 7 running Chrome, with Client Hints.
-async function openAndroid(t: TestContext): Promise<Page> {
+// `stallClientHints` makes them never answer, like a slow Host.
+async function openAndroid(t: TestContext, { stallClientHints = false } = {}): Promise<Page> {
   let page = await t.serve(await createTestServer(router.fetch))
+  if (stallClientHints) {
+    await page.addInitScript(() => {
+      let proto = (globalThis as { NavigatorUAData?: { prototype: object } }).NavigatorUAData
+        ?.prototype
+      if (proto) {
+        Object.defineProperty(proto, 'getHighEntropyValues', { value: () => new Promise(() => {}) })
+      }
+    })
+  }
   let cdp = await page.context().newCDPSession(page)
   await cdp.send('Emulation.setUserAgentOverride', {
     userAgent:
@@ -103,7 +103,6 @@ describe('New Device pre-fill from Phone info', () => {
   it('starts with empty Label and Notes in desktop Chromium', async (t) => {
     let page = await open(t, routes.screens.newDevice.href())
     await expectScreen(page, strings.editor.titleNew)
-    await settlePhoneInfo(page)
 
     assert.equal(await page.locator('#device-label').inputValue(), '')
     assert.equal(await page.locator('#device-notes').inputValue(), '')
@@ -112,12 +111,15 @@ describe('New Device pre-fill from Phone info', () => {
   it('fills Label and Notes from Client Hints on Android Chrome', async (t) => {
     let page = await openAndroid(t)
 
-    let label = page.locator('#device-label')
-    await page.waitForFunction(
-      () => (document.querySelector('#device-label') as HTMLInputElement | null)?.value !== '',
-    )
-    assert.equal(await label.inputValue(), 'Pixel 7')
+    assert.equal(await page.locator('#device-label').inputValue(), 'Pixel 7')
     assert.equal(await page.locator('#device-notes').inputValue(), '# Pixel 7\nAndroid 14')
+  })
+
+  it('opens empty when Client Hints do not answer in time', async (t) => {
+    let page = await openAndroid(t, { stallClientHints: true })
+
+    assert.equal(await page.locator('#device-label').inputValue(), '')
+    assert.equal(await page.locator('#device-notes').inputValue(), '')
   })
 })
 
