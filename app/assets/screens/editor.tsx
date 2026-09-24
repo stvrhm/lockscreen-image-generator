@@ -329,7 +329,7 @@ export function Editor(
 
             <div mix={mobilePreviewStyle}>
               <p mix={previewLabelStyle}>{strings.editor.preview}</p>
-              <PhonePreview platform={device.platform} text={previewText} />
+              <PhonePreview platform={device.platform} text={previewText} size={size} />
               <ExportSummary
                 device={device}
                 size={size}
@@ -490,7 +490,7 @@ export function Editor(
 
           <div mix={previewColumnStyle}>
             <p mix={previewLabelStyle}>{strings.editor.preview}</p>
-            <PhonePreview platform={device.platform} text={previewText} />
+            <PhonePreview platform={device.platform} text={previewText} size={size} />
             <ExportSummary
               device={device}
               size={size}

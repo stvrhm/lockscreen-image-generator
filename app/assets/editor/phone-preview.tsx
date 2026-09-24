@@ -1,50 +1,88 @@
-import { css, type Handle, type MixInput } from 'remix/ui'
+import { css, type Handle } from 'remix/ui'
 
-import { theme } from '../../ui/theme.ts'
 import { type Platform } from '../../data/devices.ts'
-import { parseMarkdownLines, type MarkdownSegment } from '../../data/markdown.ts'
+import { parseMarkdownLines } from '../../data/markdown.ts'
+import { measureWithCanvas } from '../../data/wallpaper.ts'
+import {
+  layoutWallpaper,
+  type MeasureText,
+  type WallpaperLine,
+  type WallpaperRun,
+} from '../../data/wallpaper-layout.ts'
 
-export function PhonePreview(handle: Handle<{ platform: Platform; text: string }>) {
+const FRAME_WIDTH = 224
+const FRAME_HEIGHT = 484
+const FRAME_PADDING = 10
+const SCREEN_WIDTH = FRAME_WIDTH - FRAME_PADDING * 2
+const SCREEN_HEIGHT = FRAME_HEIGHT - FRAME_PADDING * 2
+
+// Lays the text out at export size, exactly as the Wallpaper does, then scales
+// the whole Wallpaper down to fit the preview screen.
+export function PhonePreview(
+  handle: Handle<{ platform: Platform; text: string; size: { width: number; height: number } }>,
+) {
+  let measure: MeasureText | undefined
+
   return () => {
-    let { platform, text } = handle.props
-    let lines = parseMarkdownLines(text)
+    let { platform, text, size } = handle.props
+    measure ??= measureWithCanvas(document.createElement('canvas').getContext('2d')!)
+    let layout = layoutWallpaper(parseMarkdownLines(text), size, measure)
+    let scale = Math.min(SCREEN_WIDTH / size.width, SCREEN_HEIGHT / size.height)
     return (
       <div mix={phoneFrameStyle}>
         <div mix={phoneScreenStyle}>
-          {platform === 'ios' ? <div mix={notchStyle} /> : <div mix={punchHoleStyle} />}
-          <div mix={previewTextStyle}>
-            {lines.map((segments, lineIndex) => (
-              <div key={lineIndex}>
-                {segments.every((segment) => segment.text === '')
-                  ? ' '
-                  : segments.map((segment, segmentIndex) => (
-                      <MarkdownSpan key={segmentIndex} segment={segment} />
-                    ))}
-              </div>
-            ))}
+          <div
+            mix={wallpaperStyle}
+            style={{
+              width: `${size.width}px`,
+              height: `${size.height}px`,
+              transform: `translate(-50%, -50%) scale(${scale})`,
+            }}
+          >
+            {layout.lines.map((line, lineIndex) =>
+              line.runs.map((run, runIndex) => (
+                <PreviewRun key={`${lineIndex}-${runIndex}`} line={line} run={run} />
+              )),
+            )}
           </div>
+          {platform === 'ios' ? <div mix={notchStyle} /> : <div mix={punchHoleStyle} />}
         </div>
       </div>
     )
   }
 }
 
-function MarkdownSpan(handle: Handle<{ segment: MarkdownSegment }>) {
+// Mirrors how the canvas renderer draws a run, in export pixels.
+function PreviewRun(handle: Handle<{ line: WallpaperLine; run: WallpaperRun }>) {
   return () => {
-    let { segment } = handle.props
-    let classes: MixInput[] = []
-    if (segment.bold) classes.push(markdownBoldStyle)
-    if (segment.italic) classes.push(markdownItalicStyle)
-    if (segment.strike) classes.push(markdownStrikeStyle)
-    if (segment.code) classes.push(markdownCodeStyle)
-    return <span mix={classes}>{segment.text}</span>
+    let { line, run } = handle.props
+    let { fontSize, y } = line
+    let padding = fontSize * 0.12
+    return (
+      <span
+        mix={[runStyle, run.code && codeRunStyle, run.strike && strikeRunStyle]}
+        style={{
+          left: `${run.x}px`,
+          top: `${y}px`,
+          width: `${run.width}px`,
+          font: run.font,
+          lineHeight: `${fontSize}px`,
+          ...(run.code && {
+            margin: `0 ${-padding}px`,
+            padding: `${padding}px`,
+          }),
+        }}
+      >
+        {run.text}
+      </span>
+    )
   }
 }
 
 const phoneFrameStyle = css({
-  width: '224px',
-  height: '484px',
-  padding: '10px',
+  width: `${FRAME_WIDTH}px`,
+  height: `${FRAME_HEIGHT}px`,
+  padding: `${FRAME_PADDING}px`,
   borderRadius: '48px',
   background: '#0b0c0e',
   boxShadow: '0 24px 50px rgba(0, 0, 0, 0.48), 0 0 0 1px rgba(255, 255, 255, 0.08)',
@@ -57,10 +95,6 @@ const phoneScreenStyle = css({
   borderRadius: '38px',
   overflow: 'hidden',
   background: '#15171b',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  containerType: 'inline-size',
 })
 
 const notchStyle = css({
@@ -85,26 +119,24 @@ const punchHoleStyle = css({
   background: '#000',
 })
 
-const previewTextStyle = css({
-  padding: '8.7cqi 1.7cqi',
+const wallpaperStyle = css({
+  position: 'absolute',
+  top: '50%',
+  left: '50%',
   color: '#fff',
-  fontSize: '4.96cqi',
-  lineHeight: 1.35,
-  fontWeight: theme.fontWeight.semibold,
-  textAlign: 'center',
-  textShadow: '0 2px 8px rgba(0, 0, 0, 0.6)',
+  textShadow: '0 6px 28px rgba(0, 0, 0, 0.6)',
 })
 
-const markdownBoldStyle = css({ fontWeight: 800 })
+const runStyle = css({
+  position: 'absolute',
+  transform: 'translateY(-50%)',
+  whiteSpace: 'pre',
+  boxSizing: 'content-box',
+})
 
-const markdownItalicStyle = css({ fontStyle: 'italic' })
-
-const markdownStrikeStyle = css({ textDecoration: 'line-through' })
-
-const markdownCodeStyle = css({
-  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
-  fontWeight: 400,
+const codeRunStyle = css({
   background: 'rgba(255, 255, 255, 0.16)',
-  borderRadius: '4px',
-  padding: '1px 5px',
+  borderRadius: '6px',
 })
+
+const strikeRunStyle = css({ textDecoration: 'line-through' })
