@@ -166,6 +166,7 @@ export function ToastViewport(handle: Handle) {
             <Button
               variant="accent"
               size="sm"
+              mix={actionButtonStyle}
               disabled={pendingActions.has(item.id)}
               onClick={() => {
                 pendingActions.add(item.id)
@@ -233,6 +234,11 @@ const copyStyle = css({
   flex: '1 1 auto',
   '& strong': { display: 'block', fontWeight: 'var(--font-weight-semibold)' },
   '& p': { margin: '0.2em 0 0', color: 'var(--text-muted)', fontSize: 'var(--font-size-small)' },
+})
+
+const actionButtonStyle = css({
+  flexShrink: 0,
+  whiteSpace: 'nowrap',
 })
 
 const dismissGlyphStyle = css({ flex: '0 0 auto', fontSize: '1.4rem' })
