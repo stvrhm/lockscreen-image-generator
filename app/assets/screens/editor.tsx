@@ -51,7 +51,11 @@ export function Editor(
   let editingNew = handle.props.editingNew
   let platformOverride = false
   let notesRef: HTMLTextAreaElement | null = null
-  let notesSelection = { start: 0, end: 0 }
+  let notesFocused = false
+  // Until Notes has been focused or edited, there is no meaningful cursor to
+  // reflect in the formatting toolbar. Starting at 0 made a prefilled H1 look
+  // pressed as soon as the new-device screen opened.
+  let notesSelection: { start: number; end: number } | null = null
 
   handle.queueTask(() => {
     document.addEventListener(
@@ -60,7 +64,7 @@ export function Editor(
         if (!notesRef || document.activeElement !== notesRef) return
         let start = notesRef.selectionStart
         let end = notesRef.selectionEnd
-        if (start === notesSelection.start && end === notesSelection.end) return
+        if (notesSelection && start === notesSelection.start && end === notesSelection.end) return
         notesSelection = { start, end }
         handle.update()
       },
@@ -117,7 +121,8 @@ export function Editor(
         end: notesRef.selectionEnd,
       }
     }
-    return { text: draft.notes, start: notesSelection.start, end: notesSelection.end }
+    let selection = notesSelection ?? { start: 0, end: 0 }
+    return { text: draft.notes, ...selection }
   }
 
   function applyNotesEdit(next: { text: string; start: number; end: number }) {
@@ -129,6 +134,24 @@ export function Editor(
       notesRef.focus()
       notesRef.setSelectionRange(next.start, next.end)
     })
+  }
+
+  function isHeadingPressed(level: 1 | 2) {
+    return notesFocused && notesSelection !== null && headingPressed(
+      draft.notes,
+      notesSelection.start,
+      notesSelection.end,
+      level,
+    )
+  }
+
+  function isInlineFormatPressed(format: InlineFormat) {
+    return notesFocused && notesSelection !== null && inlineFormatActive(
+      draft.notes,
+      notesSelection.start,
+      notesSelection.end,
+      format,
+    )
   }
 
   function applyFormatting(format: InlineFormat) {
@@ -261,72 +284,42 @@ export function Editor(
                   <FormatButton
                     label={strings.editor.bold}
                     symbol="B"
-                    pressed={inlineFormatActive(
-                      device.notes,
-                      notesSelection.start,
-                      notesSelection.end,
-                      'bold',
-                    )}
+                    pressed={isInlineFormatPressed('bold')}
                     onSelect={() => applyFormatting('bold')}
                     onArm={armNotesSelection}
                   />
                   <FormatButton
                     label={strings.editor.italic}
                     symbol="I"
-                    pressed={inlineFormatActive(
-                      device.notes,
-                      notesSelection.start,
-                      notesSelection.end,
-                      'italic',
-                    )}
+                    pressed={isInlineFormatPressed('italic')}
                     onSelect={() => applyFormatting('italic')}
                     onArm={armNotesSelection}
                   />
                   <FormatButton
                     label={strings.editor.strike}
                     symbol="S"
-                    pressed={inlineFormatActive(
-                      device.notes,
-                      notesSelection.start,
-                      notesSelection.end,
-                      'strike',
-                    )}
+                    pressed={isInlineFormatPressed('strike')}
                     onSelect={() => applyFormatting('strike')}
                     onArm={armNotesSelection}
                   />
                   <FormatButton
                     label={strings.editor.code}
                     symbol="<>"
-                    pressed={inlineFormatActive(
-                      device.notes,
-                      notesSelection.start,
-                      notesSelection.end,
-                      'code',
-                    )}
+                    pressed={isInlineFormatPressed('code')}
                     onSelect={() => applyFormatting('code')}
                     onArm={armNotesSelection}
                   />
                   <FormatButton
                     label={strings.editor.h1}
                     symbol={strings.editor.h1}
-                    pressed={headingPressed(
-                      device.notes,
-                      notesSelection.start,
-                      notesSelection.end,
-                      1,
-                    )}
+                    pressed={isHeadingPressed(1)}
                     onSelect={() => applyHeading(1)}
                     onArm={armNotesSelection}
                   />
                   <FormatButton
                     label={strings.editor.h2}
                     symbol={strings.editor.h2}
-                    pressed={headingPressed(
-                      device.notes,
-                      notesSelection.start,
-                      notesSelection.end,
-                      2,
-                    )}
+                    pressed={isHeadingPressed(2)}
                     onSelect={() => applyHeading(2)}
                     onArm={armNotesSelection}
                   />
@@ -348,7 +341,16 @@ export function Editor(
                       armNotesSelection()
                       handle.queueTask(resizeNotes)
                     }),
-                    on('blur', armNotesSelection),
+                    on('focus', () => {
+                      notesFocused = true
+                      armNotesSelection()
+                      handle.update()
+                    }),
+                    on('blur', () => {
+                      armNotesSelection()
+                      notesFocused = false
+                      handle.update()
+                    }),
                   ]}
                 />
               </div>
