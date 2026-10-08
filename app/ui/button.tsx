@@ -47,6 +47,10 @@ const baseStyle = css({
     outline: '2px solid var(--accent)',
     outlineOffset: '1px',
   },
+  '&:active:not(:disabled):not([aria-disabled="true"])': {
+    transform: 'scale(0.98)',
+    transformOrigin: 'center',
+  },
   '&:disabled, &[aria-disabled="true"]': {
     cursor: 'not-allowed',
     opacity: 0.55,
