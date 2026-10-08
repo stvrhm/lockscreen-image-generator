@@ -270,6 +270,7 @@ export function Editor(
                   on('input', (event) => patchDraft({ label: event.currentTarget.value })),
                 ]}
               />
+              <p mix={mutedStyle}>{strings.editor.labelHint}</p>
             </div>
 
             <div mix={notesFieldStyle}>
@@ -502,7 +503,11 @@ export function Editor(
                 {strings.editor.download}
               </Button>
             </div>
-            <p mix={hintStyle}>{strings.editor.applyHint}</p>
+            <p mix={hintStyle}>
+              {device.platform === 'ios'
+                ? strings.editor.applyHintIOS
+                : strings.editor.applyHintAndroid}
+            </p>
           </div>
 
           <div mix={previewColumnStyle}>

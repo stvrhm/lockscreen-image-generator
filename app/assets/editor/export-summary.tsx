@@ -27,6 +27,7 @@ export function ExportSummary(
         <span>
           {device.encoding === 'quality' ? 'PNG' : 'JPEG'} · {exportStatus}
         </span>
+        {device.exportSizeMode === 'auto' && <span>{strings.editor.exportSizeHelp}</span>}
       </div>
     )
   }
