@@ -554,13 +554,13 @@ export function Editor(
                 : saveState === 'unsaved'
                   ? 'Draft changes not saved yet'
                   : saveState === 'error'
-                  ? 'Could not save Draft. Keep this screen open and try again.'
-                  : 'Draft saved on this phone'}
+                    ? 'Could not save Draft. Keep this screen open and try again.'
+                    : 'Draft saved on this phone'}
             </p>
             <p mix={hintStyle}>
               {device.platform === 'ios'
-                 ? strings.editor.applyHintIOS
-                 : strings.editor.applyHintAndroid}
+                ? strings.editor.applyHintIOS
+                : strings.editor.applyHintAndroid}
             </p>
           </div>
 
