@@ -1,6 +1,10 @@
-import { css, type Handle } from 'remix/ui'
+import { css, type Handle } from 'remix/component'
+import * as popover from '@remix-run/ui/popover'
 
 import { type Platform } from '../../data/devices.ts'
+import { Button } from '../../ui/button.tsx'
+import { strings } from '../../strings.ts'
+import { theme } from '../../ui/theme.ts'
 import { parseMarkdownLines } from '../../data/markdown.ts'
 import { measureWithCanvas } from '../../data/wallpaper.ts'
 import {
@@ -22,6 +26,7 @@ export function PhonePreview(
   handle: Handle<{ platform: Platform; text: string; size: { width: number; height: number } }>,
 ) {
   let measure: MeasureText | undefined
+  let open = false
 
   return () => {
     let { platform, text, size } = handle.props
@@ -29,25 +34,59 @@ export function PhonePreview(
     let layout = layoutWallpaper(parseMarkdownLines(text), size, measure)
     let scale = Math.min(SCREEN_WIDTH / size.width, SCREEN_HEIGHT / size.height)
     return (
-      <div mix={phoneFrameStyle}>
-        <div mix={phoneScreenStyle}>
-          <div
-            mix={wallpaperStyle}
-            style={{
-              width: `${size.width}px`,
-              height: `${size.height}px`,
-              transform: `translate(-50%, -50%) scale(${scale})`,
-            }}
-          >
-            {layout.lines.map((line, lineIndex) =>
-              line.runs.map((run, runIndex) => (
-                <PreviewRun key={`${lineIndex}-${runIndex}`} line={line} run={run} />
-              )),
+      <popover.Context>
+        <div mix={phoneFrameStyle}>
+          <div mix={phoneScreenStyle}>
+            <div
+              mix={wallpaperStyle}
+              style={{
+                width: `${size.width}px`,
+                height: `${size.height}px`,
+                transform: `translate(-50%, -50%) scale(${scale})`,
+              }}
+            >
+              {layout.lines.map((line, lineIndex) =>
+                line.runs.map((run, runIndex) => (
+                  <PreviewRun key={`${lineIndex}-${runIndex}`} line={line} run={run} />
+                )),
+              )}
+            </div>
+            {platform === 'ios' ? <div mix={notchStyle} /> : <div mix={punchHoleStyle} />}
+            {layout.shrink < 1 && (
+              <>
+                <Button
+                  variant="toolbar"
+                  size="icon"
+                  label={strings.editor.textReduced}
+                  mix={[warningStyle, popover.anchor({ placement: 'top-end', offset: 8 })]}
+                  onClick={() => {
+                    open = !open
+                    handle.update()
+                  }}
+                >
+                  ⚠
+                </Button>
+                <div
+                  role="dialog"
+                  aria-label={strings.editor.textReduced}
+                  mix={[
+                    warningPanelStyle,
+                    popover.surface({
+                      open,
+                      onHide: () => {
+                        open = false
+                        handle.update()
+                      },
+                    }),
+                  ]}
+                >
+                  {strings.editor.textReducedHelp}
+                </div>
+              </>
             )}
           </div>
-          {platform === 'ios' ? <div mix={notchStyle} /> : <div mix={punchHoleStyle} />}
         </div>
-      </div>
+      </popover.Context>
     )
   }
 }
@@ -95,6 +134,34 @@ const phoneScreenStyle = css({
   borderRadius: '38px',
   overflow: 'hidden',
   background: '#15171b',
+})
+
+const warningStyle = css({
+  position: 'absolute',
+  zIndex: 2,
+  top: '12px',
+  right: '12px',
+  width: '28px',
+  height: '28px',
+  minHeight: '28px',
+  borderRadius: '50%',
+  color: '#fff',
+  background: 'rgba(180, 83, 9, .9)',
+})
+
+const warningPanelStyle = css({
+  position: 'fixed',
+  inset: 'auto',
+  margin: 0,
+  width: 'min(18rem, calc(100vw - 32px))',
+  padding: theme.space.sm,
+  border: '1px solid var(--border)',
+  borderRadius: theme.radius.md,
+  background: 'var(--surface-3)',
+  color: 'var(--text)',
+  boxShadow: 'var(--shadow-soft)',
+  fontSize: theme.fontSize.small,
+  lineHeight: 1.45,
 })
 
 const notchStyle = css({

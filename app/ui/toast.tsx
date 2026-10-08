@@ -1,7 +1,7 @@
-import { css, type Handle } from 'remix/ui'
+import { css, type Handle } from 'remix/component'
 
 import { Button } from './button.tsx'
-import { animateEntrance, animateExit, animateLayout, spring } from 'remix/ui/animation'
+import { animateEntrance, animateExit, animateLayout, spring } from '@remix-run/ui/animation'
 
 export type ToastVariant = 'default' | 'success' | 'error'
 
@@ -57,12 +57,15 @@ declare global {
 // No service worker mediates releases, so the newest build is whatever the
 // network serves. Reloading is the whole update step.
 function updateToLatest() {
-  window.location.reload()
+  // Assigning the current URL forces a new document request in installed
+  // Safari PWAs, where `location.reload()` can leave the stale client visible.
+  window.location.assign(window.location.href)
 }
 
 export function ToastViewport(handle: Handle) {
   let items: ToastRecord[] = []
   let timers = new Map<string, number>()
+  let pendingActions = new Set<string>()
   let updateToastShown = false
   let reduceMotion = false
 
@@ -163,12 +166,15 @@ export function ToastViewport(handle: Handle) {
             <Button
               variant="accent"
               size="sm"
+              mix={actionButtonStyle}
+              disabled={pendingActions.has(item.id)}
               onClick={() => {
-                dismiss(item.id)
+                pendingActions.add(item.id)
+                handle.update()
                 void item.action?.onClick()
               }}
             >
-              {item.action.label}
+              {pendingActions.has(item.id) ? 'Updating…' : item.action.label}
             </Button>
           ) : null}
           <Button
@@ -228,6 +234,11 @@ const copyStyle = css({
   flex: '1 1 auto',
   '& strong': { display: 'block', fontWeight: 'var(--font-weight-semibold)' },
   '& p': { margin: '0.2em 0 0', color: 'var(--text-muted)', fontSize: 'var(--font-size-small)' },
+})
+
+const actionButtonStyle = css({
+  flexShrink: 0,
+  whiteSpace: 'nowrap',
 })
 
 const dismissGlyphStyle = css({ flex: '0 0 auto', fontSize: '1.4rem' })

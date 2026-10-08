@@ -21,8 +21,9 @@
     "node": ">=24.3.0"
   },
   "dependencies": {
+    "@remix-run/ui": "^0.12.1",
     "bowser": "^2.14.1",
-    "remix": "3.0.0-rc.2"
+    "remix": "^3.0.0"
   },
   "devDependencies": {
     "@types/node": "latest",

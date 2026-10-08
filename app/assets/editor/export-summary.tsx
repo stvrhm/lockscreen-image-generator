@@ -1,4 +1,4 @@
-import { css, type Handle } from 'remix/ui'
+import { css, type Handle } from 'remix/component'
 
 import { theme } from '../../ui/theme.ts'
 import { type Device } from '../../data/devices.ts'
@@ -27,6 +27,7 @@ export function ExportSummary(
         <span>
           {device.encoding === 'quality' ? 'PNG' : 'JPEG'} · {exportStatus}
         </span>
+        {device.exportSizeMode === 'auto' && <span>{strings.editor.exportSizeHelp}</span>}
       </div>
     )
   }

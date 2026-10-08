@@ -1,7 +1,4 @@
-import { css, navigate, on, ref, type Handle } from 'remix/ui'
-import input from 'remix/ui/input'
-import { Option, Select } from 'remix/ui/select'
-import { onSelectChange } from 'remix/ui/select/primitives'
+import { css, navigate, on, ref, type Handle } from 'remix/component'
 
 import { cluster, flow, switcher } from '../../ui/cube/index.ts'
 import { theme } from '../../ui/theme.ts'
@@ -51,7 +48,11 @@ export function Editor(
   let editingNew = handle.props.editingNew
   let platformOverride = false
   let notesRef: HTMLTextAreaElement | null = null
-  let notesSelection = { start: 0, end: 0 }
+  let notesFocused = false
+  // Until Notes has been focused or edited, there is no meaningful cursor to
+  // reflect in the formatting toolbar. Starting at 0 made a prefilled H1 look
+  // pressed as soon as the new-device screen opened.
+  let notesSelection: { start: number; end: number } | null = null
 
   handle.queueTask(() => {
     document.addEventListener(
@@ -60,7 +61,7 @@ export function Editor(
         if (!notesRef || document.activeElement !== notesRef) return
         let start = notesRef.selectionStart
         let end = notesRef.selectionEnd
-        if (start === notesSelection.start && end === notesSelection.end) return
+        if (notesSelection && start === notesSelection.start && end === notesSelection.end) return
         notesSelection = { start, end }
         handle.update()
       },
@@ -117,7 +118,8 @@ export function Editor(
         end: notesRef.selectionEnd,
       }
     }
-    return { text: draft.notes, start: notesSelection.start, end: notesSelection.end }
+    let selection = notesSelection ?? { start: 0, end: 0 }
+    return { text: draft.notes, ...selection }
   }
 
   function applyNotesEdit(next: { text: string; start: number; end: number }) {
@@ -129,6 +131,22 @@ export function Editor(
       notesRef.focus()
       notesRef.setSelectionRange(next.start, next.end)
     })
+  }
+
+  function isHeadingPressed(level: 1 | 2) {
+    return (
+      notesFocused &&
+      notesSelection !== null &&
+      headingPressed(draft.notes, notesSelection.start, notesSelection.end, level)
+    )
+  }
+
+  function isInlineFormatPressed(format: InlineFormat) {
+    return (
+      notesFocused &&
+      notesSelection !== null &&
+      inlineFormatActive(draft.notes, notesSelection.start, notesSelection.end, format)
+    )
   }
 
   function applyFormatting(format: InlineFormat) {
@@ -247,6 +265,7 @@ export function Editor(
                   on('input', (event) => patchDraft({ label: event.currentTarget.value })),
                 ]}
               />
+              <p mix={mutedStyle}>{strings.editor.labelHint}</p>
             </div>
 
             <div mix={notesFieldStyle}>
@@ -261,72 +280,42 @@ export function Editor(
                   <FormatButton
                     label={strings.editor.bold}
                     symbol="B"
-                    pressed={inlineFormatActive(
-                      device.notes,
-                      notesSelection.start,
-                      notesSelection.end,
-                      'bold',
-                    )}
+                    pressed={isInlineFormatPressed('bold')}
                     onSelect={() => applyFormatting('bold')}
                     onArm={armNotesSelection}
                   />
                   <FormatButton
                     label={strings.editor.italic}
                     symbol="I"
-                    pressed={inlineFormatActive(
-                      device.notes,
-                      notesSelection.start,
-                      notesSelection.end,
-                      'italic',
-                    )}
+                    pressed={isInlineFormatPressed('italic')}
                     onSelect={() => applyFormatting('italic')}
                     onArm={armNotesSelection}
                   />
                   <FormatButton
                     label={strings.editor.strike}
                     symbol="S"
-                    pressed={inlineFormatActive(
-                      device.notes,
-                      notesSelection.start,
-                      notesSelection.end,
-                      'strike',
-                    )}
+                    pressed={isInlineFormatPressed('strike')}
                     onSelect={() => applyFormatting('strike')}
                     onArm={armNotesSelection}
                   />
                   <FormatButton
                     label={strings.editor.code}
                     symbol="<>"
-                    pressed={inlineFormatActive(
-                      device.notes,
-                      notesSelection.start,
-                      notesSelection.end,
-                      'code',
-                    )}
+                    pressed={isInlineFormatPressed('code')}
                     onSelect={() => applyFormatting('code')}
                     onArm={armNotesSelection}
                   />
                   <FormatButton
                     label={strings.editor.h1}
                     symbol={strings.editor.h1}
-                    pressed={headingPressed(
-                      device.notes,
-                      notesSelection.start,
-                      notesSelection.end,
-                      1,
-                    )}
+                    pressed={isHeadingPressed(1)}
                     onSelect={() => applyHeading(1)}
                     onArm={armNotesSelection}
                   />
                   <FormatButton
                     label={strings.editor.h2}
                     symbol={strings.editor.h2}
-                    pressed={headingPressed(
-                      device.notes,
-                      notesSelection.start,
-                      notesSelection.end,
-                      2,
-                    )}
+                    pressed={isHeadingPressed(2)}
                     onSelect={() => applyHeading(2)}
                     onArm={armNotesSelection}
                   />
@@ -348,7 +337,16 @@ export function Editor(
                       armNotesSelection()
                       handle.queueTask(resizeNotes)
                     }),
-                    on('blur', armNotesSelection),
+                    on('focus', () => {
+                      notesFocused = true
+                      armNotesSelection()
+                      handle.update()
+                    }),
+                    on('blur', () => {
+                      armNotesSelection()
+                      notesFocused = false
+                      handle.update()
+                    }),
                   ]}
                 />
               </div>
@@ -371,23 +369,19 @@ export function Editor(
                   <span mix={fieldLabelStyle}>{strings.editor.platform}</span>
                   <p mix={mutedStyle}>{strings.editor.platformInferred}</p>
                   {platformOverride ? (
-                    <Select
-                      defaultLabel={device.platform === 'ios' ? 'iOS' : 'Android'}
-                      defaultValue={device.platform}
+                    <select
+                      aria-label={strings.editor.platform}
+                      value={device.platform}
                       mix={[
                         platformSelectStyle,
-                        onSelectChange((event) =>
-                          patchDraft({ platform: event.value as Platform }),
+                        on('change', (event) =>
+                          patchDraft({ platform: event.currentTarget.value as Platform }),
                         ),
                       ]}
                     >
-                      <Option label="iOS" value="ios">
-                        iOS
-                      </Option>
-                      <Option label="Android" value="android">
-                        Android
-                      </Option>
-                    </Select>
+                      <option value="ios">iOS</option>
+                      <option value="android">Android</option>
+                    </select>
                   ) : (
                     <Button
                       variant="link"
@@ -435,7 +429,6 @@ export function Editor(
                           min={1}
                           value={device.customWidth}
                           mix={[
-                            input(),
                             inputStyle,
                             on('input', (event) =>
                               patchDraft({
@@ -452,7 +445,6 @@ export function Editor(
                           min={1}
                           value={device.customHeight}
                           mix={[
-                            input(),
                             inputStyle,
                             on('input', (event) =>
                               patchDraft({
@@ -500,7 +492,11 @@ export function Editor(
                 {strings.editor.download}
               </Button>
             </div>
-            <p mix={hintStyle}>{strings.editor.applyHint}</p>
+            <p mix={hintStyle}>
+              {device.platform === 'ios'
+                ? strings.editor.applyHintIOS
+                : strings.editor.applyHintAndroid}
+            </p>
           </div>
 
           <div mix={previewColumnStyle}>
@@ -536,13 +532,13 @@ const formStyle = [
   flow({ flowSpace: theme.space.lg }),
   css({
     minWidth: '260px',
-    paddingBlock: theme.space.xs,
+    paddingBlock: theme.space['sm-md'],
   }),
 ]
 
 const fieldStyle = [flow({ flowSpace: theme.space.xs })]
 
-const notesFieldStyle = [flow({ flowSpace: theme.space.sm })]
+const notesFieldStyle = [flow({ flowSpace: theme.space.xs })]
 
 const notesLabelStyle = cluster({ gutter: theme.space['2xs'], alignment: 'center' })
 
@@ -664,7 +660,34 @@ const mobilePreviewStyle = css({
 const advancedStyle = css({
   borderBlock: '1px solid var(--border-subtle)',
   paddingBlock: theme.space.xs,
-  '&[open] summary': { marginBottom: theme.space.sm },
+  '& summary': {
+    marginBlockEnd: 0,
+    transition: 'margin-block-end 180ms cubic-bezier(0.19, 1, 0.22, 1)',
+  },
+  '&[open] summary': { marginBlockEnd: theme.space.sm },
+  '&::details-content': {
+    display: 'grid',
+    gridTemplateRows: '0fr',
+    opacity: 0,
+    transform: 'translateY(-4px)',
+    transformOrigin: 'top center',
+    transition:
+      'grid-template-rows 180ms cubic-bezier(0.19, 1, 0.22, 1), opacity 160ms cubic-bezier(0.19, 1, 0.22, 1), transform 180ms cubic-bezier(0.19, 1, 0.22, 1), content-visibility 180ms ease-out',
+    transitionBehavior: 'allow-discrete',
+  },
+  '&::details-content > *': {
+    minHeight: 0,
+    overflow: 'hidden',
+  },
+  '&[open]::details-content': {
+    gridTemplateRows: '1fr',
+    opacity: 1,
+    transform: 'translateY(0)',
+  },
+  '@media (prefers-reduced-motion: reduce)': {
+    '&::details-content': { transform: 'none' },
+    '&[open]::details-content': { transform: 'none' },
+  },
 })
 
 const advancedContentStyle = [flow({ flowSpace: theme.space.lg }), css({ paddingInline: '2px' })]

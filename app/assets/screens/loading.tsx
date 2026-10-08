@@ -1,4 +1,4 @@
-import { css } from 'remix/ui'
+import { css } from 'remix/component'
 
 import { flow, wrapper } from '../../ui/cube/index.ts'
 import { theme } from '../../ui/theme.ts'

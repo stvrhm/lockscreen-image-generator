@@ -1,4 +1,4 @@
-import { css, on, type Handle, type RemixNode } from 'remix/ui'
+import { css, on, type Handle, type RemixNode } from 'remix/component'
 
 import { theme } from './theme.ts'
 
@@ -46,6 +46,10 @@ const baseStyle = css({
   '&:focus-visible': {
     outline: '2px solid var(--accent)',
     outlineOffset: '1px',
+  },
+  '&:active:not(:disabled):not([aria-disabled="true"])': {
+    transform: 'scale(0.98)',
+    transformOrigin: 'center',
   },
   '&:disabled, &[aria-disabled="true"]': {
     cursor: 'not-allowed',
