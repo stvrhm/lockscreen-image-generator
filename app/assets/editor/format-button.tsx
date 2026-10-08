@@ -1,5 +1,5 @@
-import { attrs, css, on, ref, type Handle } from 'remix/ui'
-import * as popover from 'remix/ui/popover'
+import { attrs, css, on, ref, type Handle } from 'remix/component'
+import * as popover from '@remix-run/ui/popover'
 
 import { Button } from '../../ui/button.tsx'
 import { theme } from '../../ui/theme.ts'

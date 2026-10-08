@@ -1,4 +1,4 @@
-import { css, type Handle } from 'remix/ui'
+import { css, type Handle } from 'remix/component'
 
 import { Button } from '../ui/button.tsx'
 import { flow, repel } from '../ui/cube/index.ts'

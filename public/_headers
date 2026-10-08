@@ -11,3 +11,8 @@
 # /assets is a JavaScript module.
 /assets/*
   Content-Type: application/javascript; charset=utf-8
+
+# The Remix asset server exposes this stylesheet beside browser modules. Keep
+# its real MIME type so browsers apply its global box-sizing reset.
+/assets/:buildId/app/ui/public/reset.css
+  Content-Type: text/css; charset=utf-8

@@ -1,5 +1,5 @@
 import { createAssetServer } from 'remix/assets'
-import { uiHmr } from 'remix/ui-hmr/assets'
+import { componentHmr } from 'remix/component-hmr/assets'
 
 const rootDir = process.cwd()
 const nodeEnv = process.env.NODE_ENV ?? 'development'
@@ -19,7 +19,7 @@ export const assetServer = createAssetServer({
   // `app/router.ts`, and this file are server-only and simply absent from the
   // allow list rather than recovered afterwards by deny rules.
   allowFiles: ['app/assets/**', 'app/data/**', 'app/ui/**', 'app/routes.ts', 'app/strings.ts'],
-  allowPackages: ['remix', 'bowser'],
+  allowPackages: ['remix', '@remix-run/ui', 'bowser'],
   denyFiles: ['app/**/*.server.*', 'app/**/*.test.*', 'app/assets.ts'],
   sourceMaps: isDevelopment ? 'external' : undefined,
   minify: !isDevelopment,
@@ -34,10 +34,11 @@ export const assetServer = createAssetServer({
     define: {
       'process.env.NODE_ENV': JSON.stringify(nodeEnv),
     },
-    loaders: isHmr ? [uiHmr()] : undefined,
+    loaders: isHmr ? [componentHmr()] : undefined,
   },
 })
 
 const entry = 'app/assets/entry.tsx'
 
 export const scriptEntry = await assetServer.getScriptEntry(entry)
+export const resetStylesheetHref = await assetServer.getHref('app/ui/public/reset.css')
