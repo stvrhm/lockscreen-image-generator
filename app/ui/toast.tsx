@@ -57,12 +57,15 @@ declare global {
 // No service worker mediates releases, so the newest build is whatever the
 // network serves. Reloading is the whole update step.
 function updateToLatest() {
-  window.location.reload()
+  // Assigning the current URL forces a new document request in installed
+  // Safari PWAs, where `location.reload()` can leave the stale client visible.
+  window.location.assign(window.location.href)
 }
 
 export function ToastViewport(handle: Handle) {
   let items: ToastRecord[] = []
   let timers = new Map<string, number>()
+  let pendingActions = new Set<string>()
   let updateToastShown = false
   let reduceMotion = false
 
@@ -163,12 +166,14 @@ export function ToastViewport(handle: Handle) {
             <Button
               variant="accent"
               size="sm"
+              disabled={pendingActions.has(item.id)}
               onClick={() => {
-                dismiss(item.id)
+                pendingActions.add(item.id)
+                handle.update()
                 void item.action?.onClick()
               }}
             >
-              {item.action.label}
+              {pendingActions.has(item.id) ? 'Updating…' : item.action.label}
             </Button>
           ) : null}
           <Button
