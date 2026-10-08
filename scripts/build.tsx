@@ -4,7 +4,7 @@ import { cpSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { renderToStream } from 'remix/ui/server'
+import { renderToStream } from 'remix/component/server'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const DIST = join(ROOT, 'dist')
@@ -24,7 +24,7 @@ const { Document } = await import('../app/ui/document.tsx')
 // One entry now. Screens are plain modules reached through the browser router
 // rather than separately hydrated islands, so the entry's import graph already
 // covers everything the browser needs.
-const CLIENT_ENTRIES = ['app/assets/entry.tsx']
+const CLIENT_ENTRIES = ['app/assets/entry.tsx', 'app/ui/public/reset.css']
 
 async function renderIndexHtml(): Promise<string> {
   // A neutral shell with an empty body. The SPA router fills it in from the

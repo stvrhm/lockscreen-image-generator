@@ -1,10 +1,12 @@
-import { css, navigate, type Handle } from 'remix/ui'
+import { css, navigate, type Handle } from 'remix/component'
 
 import { flow } from '../../ui/cube/index.ts'
 import { theme } from '../../ui/theme.ts'
 import { deleteDevice, duplicateDevice, listDevices, type Device } from '../../data/devices.ts'
 import { strings } from '../../strings.ts'
 import { routes } from '../../routes.ts'
+import { measureHostExportSize } from '../../data/host.ts'
+import { PhonePreview } from '../editor/phone-preview.tsx'
 import { Button } from '../../ui/button.tsx'
 import {
   mutedStyle,
@@ -53,6 +55,28 @@ export function BrowseDevices(handle: Handle<{ devices: Device[] }>) {
                   <span mix={mutedStyle}>
                     {device.platform.toUpperCase()} · {new Date(device.updatedAt).toLocaleString()}
                   </span>
+                </div>
+                <div
+                  aria-hidden="true"
+                  style={{
+                    width: '67px',
+                    height: '145px',
+                    overflow: 'hidden',
+                    flex: '0 0 auto',
+                    borderRadius: '12px',
+                  }}
+                >
+                  <div style={{ transform: 'scale(.3)', transformOrigin: 'top left' }}>
+                    <PhonePreview
+                      platform={device.platform}
+                      text={device.notes.trim() || device.label || 'Notes preview'}
+                      size={
+                        device.exportSizeMode === 'custom'
+                          ? { width: device.customWidth, height: device.customHeight }
+                          : measureHostExportSize()
+                      }
+                    />
+                  </div>
                 </div>
                 <div mix={actionsRowStyle}>
                   <Button

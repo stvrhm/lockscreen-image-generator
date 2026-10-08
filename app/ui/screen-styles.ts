@@ -1,4 +1,4 @@
-import { css } from 'remix/ui'
+import { css } from 'remix/component'
 
 import { cluster, flow, region, wrapper } from './cube/index.ts'
 import { theme } from './theme.ts'
@@ -6,7 +6,7 @@ import { theme } from './theme.ts'
 export const pageStyle = [
   wrapper({ gutter: theme.space.lg, maxWidth: '76rem' }),
   region(theme.space.lg),
-  flow({ flowSpace: '24px' }),
+  flow({ flowSpace: theme.space['lg-xl'] }),
 ]
 
 export const headingStyle = css({

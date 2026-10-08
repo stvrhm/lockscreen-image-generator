@@ -1,5 +1,5 @@
-import { attrs, css, type Handle } from 'remix/ui'
-import * as popover from 'remix/ui/popover'
+import { attrs, css, type Handle } from 'remix/component'
+import * as popover from '@remix-run/ui/popover'
 
 import {
   phoneInfoItems,
