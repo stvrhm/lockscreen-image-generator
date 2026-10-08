@@ -1,7 +1,4 @@
-import { css, navigate, on, ref, type Handle } from 'remix/ui'
-import input from 'remix/ui/input'
-import { Option, Select } from 'remix/ui/select'
-import { onSelectChange } from 'remix/ui/select/primitives'
+import { css, navigate, on, ref, type Handle } from 'remix/component'
 
 import { cluster, flow, switcher } from '../../ui/cube/index.ts'
 import { theme } from '../../ui/theme.ts'
@@ -137,20 +134,18 @@ export function Editor(
   }
 
   function isHeadingPressed(level: 1 | 2) {
-    return notesFocused && notesSelection !== null && headingPressed(
-      draft.notes,
-      notesSelection.start,
-      notesSelection.end,
-      level,
+    return (
+      notesFocused &&
+      notesSelection !== null &&
+      headingPressed(draft.notes, notesSelection.start, notesSelection.end, level)
     )
   }
 
   function isInlineFormatPressed(format: InlineFormat) {
-    return notesFocused && notesSelection !== null && inlineFormatActive(
-      draft.notes,
-      notesSelection.start,
-      notesSelection.end,
-      format,
+    return (
+      notesFocused &&
+      notesSelection !== null &&
+      inlineFormatActive(draft.notes, notesSelection.start, notesSelection.end, format)
     )
   }
 
@@ -374,23 +369,19 @@ export function Editor(
                   <span mix={fieldLabelStyle}>{strings.editor.platform}</span>
                   <p mix={mutedStyle}>{strings.editor.platformInferred}</p>
                   {platformOverride ? (
-                    <Select
-                      defaultLabel={device.platform === 'ios' ? 'iOS' : 'Android'}
-                      defaultValue={device.platform}
+                    <select
+                      aria-label={strings.editor.platform}
+                      value={device.platform}
                       mix={[
                         platformSelectStyle,
-                        onSelectChange((event) =>
-                          patchDraft({ platform: event.value as Platform }),
+                        on('change', (event) =>
+                          patchDraft({ platform: event.currentTarget.value as Platform }),
                         ),
                       ]}
                     >
-                      <Option label="iOS" value="ios">
-                        iOS
-                      </Option>
-                      <Option label="Android" value="android">
-                        Android
-                      </Option>
-                    </Select>
+                      <option value="ios">iOS</option>
+                      <option value="android">Android</option>
+                    </select>
                   ) : (
                     <Button
                       variant="link"
@@ -438,7 +429,6 @@ export function Editor(
                           min={1}
                           value={device.customWidth}
                           mix={[
-                            input(),
                             inputStyle,
                             on('input', (event) =>
                               patchDraft({
@@ -455,7 +445,6 @@ export function Editor(
                           min={1}
                           value={device.customHeight}
                           mix={[
-                            input(),
                             inputStyle,
                             on('input', (event) =>
                               patchDraft({

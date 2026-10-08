@@ -1,4 +1,4 @@
-import { css, navigate, type Handle } from 'remix/ui'
+import { css, navigate, type Handle } from 'remix/component'
 
 import { flow } from '../../ui/cube/index.ts'
 import { theme } from '../../ui/theme.ts'
@@ -70,9 +70,11 @@ export function BrowseDevices(handle: Handle<{ devices: Device[] }>) {
                     <PhonePreview
                       platform={device.platform}
                       text={device.notes.trim() || device.label || 'Notes preview'}
-                      size={device.exportSizeMode === 'custom'
-                        ? { width: device.customWidth, height: device.customHeight }
-                        : measureHostExportSize()}
+                      size={
+                        device.exportSizeMode === 'custom'
+                          ? { width: device.customWidth, height: device.customHeight }
+                          : measureHostExportSize()
+                      }
                     />
                   </div>
                 </div>

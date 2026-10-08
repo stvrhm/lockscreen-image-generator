@@ -1,4 +1,4 @@
-import { attrs, css, type ElementProps, type MixInput } from 'remix/ui'
+import { attrs, css, type ElementProps, type MixInput } from 'remix/component'
 
 export type CubeMix = MixInput<Element>
 export type CubeValue = string | number

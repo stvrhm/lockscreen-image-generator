@@ -1,4 +1,4 @@
-import { css, type MixInput } from 'remix/ui'
+import { css, type MixInput } from 'remix/component'
 
 import { cubeVars, dataAttrs, type CubeValue } from './helpers.ts'
 

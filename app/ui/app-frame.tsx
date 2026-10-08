@@ -1,4 +1,4 @@
-import { type Handle, type RemixNode } from 'remix/ui'
+import { type Handle, type RemixNode } from 'remix/component'
 
 import { InstallHint } from '../assets/install-hint.tsx'
 import { ToastViewport } from './toast.tsx'

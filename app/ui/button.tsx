@@ -1,4 +1,4 @@
-import { css, on, type Handle, type RemixNode } from 'remix/ui'
+import { css, on, type Handle, type RemixNode } from 'remix/component'
 
 import { theme } from './theme.ts'
 

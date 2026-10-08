@@ -1,4 +1,4 @@
-import { css, type MixInput } from 'remix/ui'
+import { css, type MixInput } from 'remix/component'
 
 type CubeMix = MixInput<Element>
 const regionStyle = css({ paddingBlock: 'var(--region-space, var(--space-xl))' })

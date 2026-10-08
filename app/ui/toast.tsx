@@ -1,7 +1,7 @@
-import { css, type Handle } from 'remix/ui'
+import { css, type Handle } from 'remix/component'
 
 import { Button } from './button.tsx'
-import { animateEntrance, animateExit, animateLayout, spring } from 'remix/ui/animation'
+import { animateEntrance, animateExit, animateLayout, spring } from '@remix-run/ui/animation'
 
 export type ToastVariant = 'default' | 'success' | 'error'
 

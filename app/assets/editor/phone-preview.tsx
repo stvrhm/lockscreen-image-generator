@@ -1,5 +1,5 @@
-import { css, type Handle } from 'remix/ui'
-import * as popover from 'remix/ui/popover'
+import { css, type Handle } from 'remix/component'
+import * as popover from '@remix-run/ui/popover'
 
 import { type Platform } from '../../data/devices.ts'
 import { Button } from '../../ui/button.tsx'
@@ -59,14 +59,26 @@ export function PhonePreview(
                   size="icon"
                   label={strings.editor.textReduced}
                   mix={[warningStyle, popover.anchor({ placement: 'top-end', offset: 8 })]}
-                  onClick={() => { open = !open; handle.update() }}
+                  onClick={() => {
+                    open = !open
+                    handle.update()
+                  }}
                 >
                   ⚠
                 </Button>
                 <div
                   role="dialog"
                   aria-label={strings.editor.textReduced}
-                  mix={[warningPanelStyle, popover.surface({ open, onHide: () => { open = false; handle.update() } })]}
+                  mix={[
+                    warningPanelStyle,
+                    popover.surface({
+                      open,
+                      onHide: () => {
+                        open = false
+                        handle.update()
+                      },
+                    }),
+                  ]}
                 >
                   {strings.editor.textReducedHelp}
                 </div>
