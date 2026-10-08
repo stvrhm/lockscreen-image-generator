@@ -52,8 +52,19 @@ export function Editor(
   let platformOverride = false
   let notesRef: HTMLTextAreaElement | null = null
   let notesSelection = { start: 0, end: 0 }
+  let saveState: 'saved' | 'unsaved' | 'saving' | 'error' = 'saved'
+  let saveTimer: number | undefined
+  let revision = 0
+  let saveInFlight = false
 
   handle.queueTask(() => {
+    handle.signal.addEventListener('abort', () => {
+      if (saveTimer !== undefined) {
+        window.clearTimeout(saveTimer)
+        saveTimer = undefined
+        void autosave()
+      }
+    })
     document.addEventListener(
       'selectionchange',
       () => {
@@ -83,7 +94,46 @@ export function Editor(
 
   function patchDraft(patch: Partial<Device>) {
     draft = { ...draft, ...patch }
+    revision++
+    saveState = 'unsaved'
     handle.update()
+    scheduleAutosave()
+  }
+
+  function scheduleAutosave() {
+    if (saveTimer !== undefined) window.clearTimeout(saveTimer)
+    saveTimer = window.setTimeout(() => {
+      saveTimer = undefined
+      void autosave()
+    }, 600)
+  }
+
+  async function autosave() {
+    if (saveInFlight) return
+    saveInFlight = true
+    saveState = 'saving'
+    handle.update()
+    let savingRevision = revision
+    let wasNew = editingNew
+    let snapshot = { ...draft }
+    try {
+      let saved = await saveDevice(snapshot)
+      if (savingRevision === revision) draft = saved
+      if (wasNew) {
+        editingNew = false
+        navigate(routes.screens.editDevice.href({ id: saved.id }), {
+          history: 'replace',
+          resetScroll: false,
+        })
+      }
+      saveState = savingRevision === revision ? 'saved' : 'unsaved'
+    } catch {
+      saveState = 'error'
+    } finally {
+      saveInFlight = false
+      handle.update()
+      if (savingRevision !== revision) scheduleAutosave()
+    }
   }
 
   /** Inserts whole Notes lines at the cursor, then returns focus to Notes. */
@@ -153,9 +203,15 @@ export function Editor(
   }
 
   async function storeDevice() {
+    if (saveTimer !== undefined) {
+      window.clearTimeout(saveTimer)
+      saveTimer = undefined
+    }
     let wasNew = editingNew
     draft = await saveDevice({ ...draft, label: draft.label.trim() })
     editingNew = false
+    saveState = 'saved'
+    handle.update()
 
     // A new Device only gets its id once saved, so move to its canonical URL.
     // It is still the same screen to the user, so keep their scroll position.
@@ -500,6 +556,15 @@ export function Editor(
                 {strings.editor.download}
               </Button>
             </div>
+            <p mix={hintStyle} aria-live="polite">
+              {saveState === 'saving'
+                ? 'Saving Draft…'
+                : saveState === 'unsaved'
+                  ? 'Draft changes not saved yet'
+                  : saveState === 'error'
+                    ? 'Could not save Draft. Keep this screen open and try again.'
+                    : 'Draft saved on this phone'}
+            </p>
             <p mix={hintStyle}>{strings.editor.applyHint}</p>
           </div>
 
