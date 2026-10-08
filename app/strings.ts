@@ -32,6 +32,10 @@ export const strings = {
   browse: {
     title: 'On this phone',
     empty: 'No devices yet. Start a new one.',
+    import: 'Import Device',
+    export: 'Export to share',
+    imported: 'Device imported',
+    importFailed: 'Could not import Device',
     edit: 'Edit',
     duplicate: 'Duplicate',
     delete: 'Delete',
