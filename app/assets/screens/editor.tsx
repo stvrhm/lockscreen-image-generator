@@ -664,7 +664,34 @@ const mobilePreviewStyle = css({
 const advancedStyle = css({
   borderBlock: '1px solid var(--border-subtle)',
   paddingBlock: theme.space.xs,
-  '&[open] summary': { marginBottom: theme.space.sm },
+  '& summary': {
+    marginBlockEnd: 0,
+    transition: 'margin-block-end 180ms cubic-bezier(0.19, 1, 0.22, 1)',
+  },
+  '&[open] summary': { marginBlockEnd: theme.space.sm },
+  '&::details-content': {
+    display: 'grid',
+    gridTemplateRows: '0fr',
+    opacity: 0,
+    transform: 'translateY(-4px)',
+    transformOrigin: 'top center',
+    transition:
+      'grid-template-rows 180ms cubic-bezier(0.19, 1, 0.22, 1), opacity 160ms cubic-bezier(0.19, 1, 0.22, 1), transform 180ms cubic-bezier(0.19, 1, 0.22, 1), content-visibility 180ms ease-out',
+    transitionBehavior: 'allow-discrete',
+  },
+  '&::details-content > *': {
+    minHeight: 0,
+    overflow: 'hidden',
+  },
+  '&[open]::details-content': {
+    gridTemplateRows: '1fr',
+    opacity: 1,
+    transform: 'translateY(0)',
+  },
+  '@media (prefers-reduced-motion: reduce)': {
+    '&::details-content': { transform: 'none' },
+    '&[open]::details-content': { transform: 'none' },
+  },
 })
 
 const advancedContentStyle = [flow({ flowSpace: theme.space.lg }), css({ paddingInline: '2px' })]
