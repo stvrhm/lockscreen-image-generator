@@ -1,13 +1,25 @@
-import { css, navigate, type Handle } from 'remix/component'
+import { css, navigate, on, ref, type Handle } from 'remix/component'
 
 import { flow } from '../../ui/cube/index.ts'
 import { theme } from '../../ui/theme.ts'
-import { deleteDevice, duplicateDevice, listDevices, type Device } from '../../data/devices.ts'
+import {
+  deleteDevice,
+  duplicateDevice,
+  listDevices,
+  saveDevice,
+  type Device,
+} from '../../data/devices.ts'
+import {
+  DeviceFileDimensionError,
+  downloadDeviceFile,
+  readDeviceFile,
+} from '../../data/device-file.ts'
 import { strings } from '../../strings.ts'
 import { routes } from '../../routes.ts'
 import { measureHostExportSize } from '../../data/host.ts'
 import { PhonePreview } from '../editor/phone-preview.tsx'
 import { Button } from '../../ui/button.tsx'
+import { toast } from '../../ui/toast.tsx'
 import {
   mutedStyle,
   pageStyle,
@@ -18,6 +30,7 @@ import {
 
 export function BrowseDevices(handle: Handle<{ devices: Device[] }>) {
   let devices = handle.props.devices
+  let importInput: HTMLInputElement | null = null
 
   async function refresh() {
     devices = await listDevices()
@@ -35,6 +48,26 @@ export function BrowseDevices(handle: Handle<{ devices: Device[] }>) {
     await refresh()
   }
 
+  async function onImport(file: File) {
+    try {
+      let device = await readDeviceFile(file)
+      await saveDevice(device)
+      await refresh()
+      toast({ title: strings.browse.imported, variant: 'success' })
+    } catch (error) {
+      toast({
+        title: strings.browse.importFailed,
+        description:
+          error instanceof DeviceFileDimensionError
+            ? strings.editor.dimensionIssues[error.issue]
+            : error instanceof Error
+              ? error.message
+              : undefined,
+        variant: 'error',
+      })
+    }
+  }
+
   return () => {
     return (
       <div mix={pageStyle}>
@@ -43,6 +76,26 @@ export function BrowseDevices(handle: Handle<{ devices: Device[] }>) {
             {strings.browse.back}
           </Button>
           <h1 mix={headingStyle}>{strings.browse.title}</h1>
+          <Button variant="secondary" onClick={() => importInput?.click()}>
+            {strings.browse.import}
+          </Button>
+          <input
+            type="file"
+            accept="application/json,.json"
+            aria-label={strings.browse.import}
+            style={{ display: 'none' }}
+            mix={[
+              ref((node) => {
+                importInput = node as HTMLInputElement | null
+              }),
+              on('change', (event) => {
+                let input = event.currentTarget
+                let file = input.files?.[0]
+                input.value = ''
+                if (file) void onImport(file)
+              }),
+            ]}
+          />
         </header>
         {devices.length === 0 ? (
           <p mix={mutedStyle}>{strings.browse.empty}</p>
@@ -79,6 +132,9 @@ export function BrowseDevices(handle: Handle<{ devices: Device[] }>) {
                   </div>
                 </div>
                 <div mix={actionsRowStyle}>
+                  <Button variant="secondary" onClick={() => downloadDeviceFile(device)}>
+                    {strings.browse.export}
+                  </Button>
                   <Button
                     href={routes.screens.editDevice.href({ id: device.id })}
                     variant="secondary"

@@ -5,7 +5,7 @@ Internal tool for labeling a test phone with an identifying lockscreen wallpaper
 ## Language
 
 **Device**:
-A saved wallpaper project on the Host (identity, label, platform, notes, export settings). Typically one active Device per Host; Browse holds revisions and duplicates, not a team inventory. Devices can be deleted from Browse; with none left, Continue is hidden.
+A saved wallpaper project on the Host (identity, label, platform, notes, export settings). Typically one active Device per Host; Browse holds revisions and duplicates, not a team inventory. Devices can be exported as project files to share and imported as new local Devices. Devices can be deleted from Browse; with none left, Continue is hidden.
 _Avoid_: Phone (alone), handset, unit, server record
 
 **Host**:

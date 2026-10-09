@@ -32,6 +32,10 @@ export const strings = {
   browse: {
     title: 'On this phone',
     empty: 'No devices yet. Start a new one.',
+    import: 'Import Device',
+    export: 'Export to share',
+    imported: 'Device imported',
+    importFailed: 'Could not import Device',
     edit: 'Edit',
     duplicate: 'Duplicate',
     delete: 'Delete',
@@ -47,6 +51,8 @@ export const strings = {
     keepEditing: 'Keep editing',
     discardChanges: 'Discard changes',
     labelConflict: 'A saved Device already uses this Label.',
+    labelHint:
+      'Identifies this saved Device and its download filename. Notes are the text shown on the Wallpaper.',
     notes: 'Notes',
     formatting: 'Formatting',
     formattingHelp: 'Formatting help',
@@ -77,6 +83,11 @@ export const strings = {
     platformInferred: 'Inferred from this phone',
     platformOverride: 'Override',
     exportSize: 'Export size',
+    dimensionIssues: {
+      'positive-integers': 'Width and height must be positive whole numbers.',
+      'side-limit': 'Each custom dimension must be 4096 pixels or less.',
+      'pixel-limit': 'Custom Wallpaper dimensions must total 12,000,000 pixels or less.',
+    },
     exportSizeAuto: 'Auto',
     exportSizeCustom: 'Custom',
     customizeExport: 'Customize export',

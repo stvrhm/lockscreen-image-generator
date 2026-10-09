@@ -21,7 +21,7 @@ test('the shell preloads the JSX runtime for the browser entry', async () => {
   const response = await fetchScreen(routes.screens.home.href())
   const html = await response.text()
 
-  assert.match(html, /\/assets\/npm\/%40remix-run\/component\/dist\/runtime\/jsx\.js/)
+  assert.match(html, /href="\/assets\/npm\/%40remix-run\/component\/dist\/runtime\/jsx\.js"/)
 })
 
 test('every screen URL is served the same shell', async () => {
