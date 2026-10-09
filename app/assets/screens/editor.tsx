@@ -1,6 +1,6 @@
 import { css, navigate, on, ref, type Handle } from 'remix/component'
 
-import { cluster, flow, switcher } from '../../ui/cube/index.ts'
+import { cluster, flow, repel, switcher } from '../../ui/cube/index.ts'
 import { theme } from '../../ui/theme.ts'
 import {
   saveDevice,
@@ -398,7 +398,7 @@ export function Editor(
     return (
       <div mix={pageStyle}>
         <header mix={editorHeaderStyle}>
-          <div mix={headerActionsStyle}>
+          <div mix={headerRowStyle}>
             <Button variant="ghost" onClick={requestLeave}>
               {strings.editor.back}
             </Button>
@@ -726,7 +726,7 @@ const editorHeaderStyle = [
   }),
 ]
 
-const headerActionsStyle = cluster({ gutter: theme.space.xs, alignment: 'center' })
+const headerRowStyle = repel({ gutter: theme.space.xs, alignment: 'center' })
 
 const draftPillStyle = css({
   display: 'inline-flex',
