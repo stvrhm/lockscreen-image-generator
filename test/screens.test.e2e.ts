@@ -123,6 +123,32 @@ describe('New Device pre-fill from Phone info', () => {
   })
 })
 
+describe('Draft save status', () => {
+  it('does not claim a new Draft is saved before the first edit', async (t) => {
+    let page = await open(t, routes.screens.newDevice.href())
+    await expectScreen(page, strings.editor.titleNew)
+
+    assert.equal(await page.getByText('Draft saved on this phone', { exact: true }).count(), 0)
+  })
+
+  it('autosaves Notes formatting changes', async (t) => {
+    let page = await open(t, routes.screens.newDevice.href())
+    await expectScreen(page, strings.editor.titleNew)
+    let notes = page.locator('#device-notes')
+
+    await notes.fill('abc')
+    await page.waitForURL(/\/devices\/[^/]+\/edit$/)
+    await notes.evaluate((el: HTMLTextAreaElement) => el.setSelectionRange(0, 3))
+    await page.getByRole('button', { name: strings.editor.bold, exact: true }).tap()
+
+    await page.getByText('Draft changes not saved yet', { exact: true }).waitFor({ timeout: 5_000 })
+    await page.getByText('Draft saved on this phone', { exact: true }).waitFor()
+    await page.reload()
+
+    assert.equal(await page.locator('#device-notes').inputValue(), '**abc**')
+  })
+})
+
 describe('the Notes toolbar', () => {
   it('formats with a single tap on each button', async (t) => {
     let page = await open(t, routes.screens.newDevice.href())
@@ -168,6 +194,12 @@ describe('the Notes toolbar', () => {
     await notes.evaluate((el: HTMLTextAreaElement) => el.setSelectionRange(0, 3))
     await bold.tap()
     assert.equal(await notes.inputValue(), '**abc**')
+    await page.waitForFunction(
+      (name) =>
+        document.querySelector(`button[aria-label="${name}"]`)?.getAttribute('aria-pressed') ===
+        'true',
+      strings.editor.bold,
+    )
     assert.equal(await bold.getAttribute('aria-pressed'), 'true')
   })
 
@@ -179,7 +211,7 @@ describe('the Notes toolbar', () => {
     await page.keyboard.press('Tab')
     let tooltip = page.getByRole('tooltip', { name: strings.editor.italic })
     await tooltip.waitFor()
-    assert.match(await tooltip.getAttribute('data-anchor-placement') ?? '', /^(top|bottom)$/)
+    assert.match((await tooltip.getAttribute('data-anchor-placement')) ?? '', /^(top|bottom)$/)
   })
 
   it('names the Heading controls H1 and H2', async (t) => {
@@ -221,7 +253,7 @@ describe('Formatting help', () => {
     await trigger.click()
     let dialog = page.getByRole('dialog', { name: strings.editor.formattingHelp })
     await dialog.waitFor()
-    assert.match(await dialog.getAttribute('data-anchor-placement') ?? '', /^(top|bottom)$/)
+    assert.match((await dialog.getAttribute('data-anchor-placement')) ?? '', /^(top|bottom)$/)
     for (let rule of strings.editor.formattingHelpRules) {
       await dialog.getByText(rule, { exact: true }).waitFor()
     }
@@ -260,7 +292,7 @@ describe('the Phone info overlay', () => {
     await trigger.click()
     let overlay = page.getByRole('dialog', { name: strings.editor.phoneInfo })
     await overlay.getByText(strings.editor.phoneInfoEmpty).waitFor()
-    assert.match(await overlay.getAttribute('data-anchor-placement') ?? '', /^(top|bottom)-end$/)
+    assert.match((await overlay.getAttribute('data-anchor-placement')) ?? '', /^(top|bottom)-end$/)
     assert.equal(await overlay.getByRole('button').count(), 0, 'the empty state offers Add actions')
 
     await page.keyboard.press('Escape')

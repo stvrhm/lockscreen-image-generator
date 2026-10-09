@@ -53,7 +53,7 @@ export function Editor(
   // reflect in the formatting toolbar. Starting at 0 made a prefilled H1 look
   // pressed as soon as the new-device screen opened.
   let notesSelection: { start: number; end: number } | null = null
-  let saveState: 'saved' | 'unsaved' | 'saving' | 'error' = 'saved'
+  let saveState: 'idle' | 'saved' | 'unsaved' | 'saving' | 'error' = editingNew ? 'idle' : 'saved'
   let saveTimer: number | undefined
   let revision = 0
   let saveInFlight = false
@@ -144,9 +144,8 @@ export function Editor(
       ? { start: notesRef.selectionStart, end: notesRef.selectionEnd }
       : { start: end, end }
     let next = insertLines({ text: draft.notes, ...selection }, lines)
-    draft = { ...draft, notes: next.text }
+    patchDraft({ notes: next.text })
     notesSelection = { start: next.start, end: next.end }
-    handle.update()
     handle.queueTask(() => {
       resizeNotes()
       if (!notesRef) return
@@ -173,9 +172,8 @@ export function Editor(
   }
 
   function applyNotesEdit(next: { text: string; start: number; end: number }) {
-    draft = { ...draft, notes: next.text }
+    patchDraft({ notes: next.text })
     notesSelection = { start: next.start, end: next.end }
-    handle.update()
     handle.queueTask(() => {
       if (!notesRef) return
       notesRef.focus()
@@ -291,9 +289,11 @@ export function Editor(
     let device = draft
     let size = resolvedSize(device)
     let previewText = device.notes.trim() || device.label.trim() || 'Notes preview'
-    let saveStatus = 'Draft saved on this phone'
+    let saveStatus: string | undefined
 
-    if (saveState === 'saving') {
+    if (saveState === 'saved') {
+      saveStatus = 'Draft saved on this phone'
+    } else if (saveState === 'saving') {
       saveStatus = 'Saving Draft…'
     } else if (saveState === 'unsaved') {
       saveStatus = 'Draft changes not saved yet'
@@ -557,9 +557,11 @@ export function Editor(
                 {strings.editor.download}
               </Button>
             </div>
-            <p mix={hintStyle} aria-live="polite">
-              {saveStatus}
-            </p>
+            {saveStatus && (
+              <p mix={hintStyle} aria-live="polite">
+                {saveStatus}
+              </p>
+            )}
             <p mix={hintStyle}>
               {device.platform === 'ios'
                 ? strings.editor.applyHintIOS
