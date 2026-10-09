@@ -199,9 +199,21 @@ export function Button(
   return () => {
     let { children, variant, size, shape, href, type, pressed, disabled, label, onClick, mix } =
       handle.props
+    let additionalStyles = []
+    if (Array.isArray(mix)) {
+      additionalStyles = mix
+    } else if (mix != null) {
+      additionalStyles = [mix]
+    }
+    let ariaPressed: 'true' | 'false' | undefined
+    if (pressed === true) {
+      ariaPressed = 'true'
+    } else if (pressed === false) {
+      ariaPressed = 'false'
+    }
     let styles = [
       buttonVariants({ variant, size, shape }),
-      ...(Array.isArray(mix) ? mix : mix == null ? [] : [mix]),
+      ...additionalStyles,
       onClick ? on<HTMLElement>('click', onClick) : null,
     ]
     if (href) {
@@ -216,7 +228,7 @@ export function Button(
         type={type ?? 'button'}
         disabled={disabled}
         aria-label={label}
-        aria-pressed={pressed === undefined ? undefined : pressed ? 'true' : 'false'}
+        aria-pressed={ariaPressed}
         mix={styles}
       >
         {children}

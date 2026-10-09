@@ -291,6 +291,15 @@ export function Editor(
     let device = draft
     let size = resolvedSize(device)
     let previewText = device.notes.trim() || device.label.trim() || 'Notes preview'
+    let saveStatus = 'Draft saved on this phone'
+
+    if (saveState === 'saving') {
+      saveStatus = 'Saving Draft…'
+    } else if (saveState === 'unsaved') {
+      saveStatus = 'Draft changes not saved yet'
+    } else if (saveState === 'error') {
+      saveStatus = 'Could not save Draft. Keep this screen open and try again.'
+    }
 
     return (
       <div mix={pageStyle}>
@@ -549,13 +558,7 @@ export function Editor(
               </Button>
             </div>
             <p mix={hintStyle} aria-live="polite">
-              {saveState === 'saving'
-                ? 'Saving Draft…'
-                : saveState === 'unsaved'
-                  ? 'Draft changes not saved yet'
-                  : saveState === 'error'
-                    ? 'Could not save Draft. Keep this screen open and try again.'
-                    : 'Draft saved on this phone'}
+              {saveStatus}
             </p>
             <p mix={hintStyle}>
               {device.platform === 'ios'

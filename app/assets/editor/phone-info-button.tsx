@@ -1,4 +1,4 @@
-import { attrs, css, type Handle } from 'remix/component'
+import { attrs, css, type Handle, type RemixNode } from 'remix/component'
 import * as popover from '@remix-run/ui/popover'
 
 import {
@@ -50,6 +50,47 @@ export function PhoneInfoButton(handle: Handle<{ onAdd: (lines: string) => void 
   return () => {
     let items = info ? rows(info) : []
     let allLines = info ? phoneInfoNotes(info) : ''
+    let infoContent: RemixNode
+
+    if (!info) {
+      infoContent = <p mix={[mutedStyle, stackGapStyle]}>{strings.editor.phoneInfoDetecting}</p>
+    } else if (items.length === 0) {
+      infoContent = <p mix={[mutedStyle, stackGapStyle]}>{strings.editor.phoneInfoEmpty}</p>
+    } else {
+      infoContent = (
+        <>
+          <ul mix={[listStyle, stackGapStyle]}>
+            {items.map((item) => (
+              <li key={item.name} mix={rowStyle}>
+                <span mix={rowTextStyle}>
+                  <span mix={mutedStyle}>{item.name}</span>
+                  <span mix={valueStyle}>{item.value}</span>
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  shape="pill"
+                  label={`${strings.editor.phoneInfoAdd} ${item.name}`}
+                  onClick={() => add(item.line)}
+                >
+                  {strings.editor.phoneInfoAdd}
+                </Button>
+              </li>
+            ))}
+          </ul>
+          <Button
+            variant="outline"
+            size="sm"
+            shape="pill"
+            mix={[addAllStyle, stackGapStyle]}
+            onClick={() => add(allLines)}
+          >
+            {strings.editor.phoneInfoAddAll}
+          </Button>
+        </>
+      )
+    }
+
     return (
       <popover.Context>
         <Button
@@ -84,42 +125,7 @@ export function PhoneInfoButton(handle: Handle<{ onAdd: (lines: string) => void 
           <p id="phone-info-title" mix={titleStyle}>
             {strings.editor.phoneInfo}
           </p>
-          {!info ? (
-            <p mix={[mutedStyle, stackGapStyle]}>{strings.editor.phoneInfoDetecting}</p>
-          ) : items.length === 0 ? (
-            <p mix={[mutedStyle, stackGapStyle]}>{strings.editor.phoneInfoEmpty}</p>
-          ) : (
-            <>
-              <ul mix={[listStyle, stackGapStyle]}>
-                {items.map((item) => (
-                  <li key={item.name} mix={rowStyle}>
-                    <span mix={rowTextStyle}>
-                      <span mix={mutedStyle}>{item.name}</span>
-                      <span mix={valueStyle}>{item.value}</span>
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      shape="pill"
-                      label={`${strings.editor.phoneInfoAdd} ${item.name}`}
-                      onClick={() => add(item.line)}
-                    >
-                      {strings.editor.phoneInfoAdd}
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-              <Button
-                variant="outline"
-                size="sm"
-                shape="pill"
-                mix={[addAllStyle, stackGapStyle]}
-                onClick={() => add(allLines)}
-              >
-                {strings.editor.phoneInfoAddAll}
-              </Button>
-            </>
-          )}
+          {infoContent}
         </div>
       </popover.Context>
     )

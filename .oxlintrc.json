@@ -1,4 +1,7 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "ignorePatterns": ["dist", "node_modules"]
+  "ignorePatterns": ["dist", "node_modules"],
+  "rules": {
+    "no-nested-ternary": "error"
+  }
 }

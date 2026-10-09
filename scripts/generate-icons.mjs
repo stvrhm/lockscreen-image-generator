@@ -10,7 +10,7 @@ const BG = [0x15, 0x17, 0x1b]
 const PHONE = [0x5e, 0xb8, 0xff]
 const SCREEN = [0x2a, 0x30, 0x38]
 
-const clamp01 = (x) => (x < 0 ? 0 : x > 1 ? 1 : x)
+const clamp01 = (x) => Math.max(0, Math.min(1, x))
 
 function roundedRectSD(px, py, x0, y0, x1, y1, r) {
   const cx = (x0 + x1) / 2
