@@ -32,6 +32,10 @@ export const strings = {
   browse: {
     title: 'On this phone',
     empty: 'No devices yet. Start a new one.',
+    import: 'Import Device',
+    export: 'Export to share',
+    imported: 'Device imported',
+    importFailed: 'Could not import Device',
     edit: 'Edit',
     duplicate: 'Duplicate',
     delete: 'Delete',
@@ -43,7 +47,8 @@ export const strings = {
     titleNew: 'New device',
     titleEdit: 'Edit device',
     label: 'Label',
-    labelHint: 'Identifies this saved Device and its download filename. Notes are the text shown on the Wallpaper.',
+    labelHint:
+      'Identifies this saved Device and its download filename. Notes are the text shown on the Wallpaper.',
     notes: 'Notes',
     formatting: 'Formatting',
     formattingHelp: 'Formatting help',
@@ -74,6 +79,11 @@ export const strings = {
     platformInferred: 'Inferred from this phone',
     platformOverride: 'Override',
     exportSize: 'Export size',
+    dimensionIssues: {
+      'positive-integers': 'Width and height must be positive whole numbers.',
+      'side-limit': 'Each custom dimension must be 4096 pixels or less.',
+      'pixel-limit': 'Custom Wallpaper dimensions must total 12,000,000 pixels or less.',
+    },
     exportSizeAuto: 'Auto',
     exportSizeCustom: 'Custom',
     customizeExport: 'Customize export',
@@ -90,12 +100,16 @@ export const strings = {
     saveToPhotos: 'Save to Photos',
     saveDevice: 'Save Device',
     download: 'Download',
-    applyHintIOS: 'After saving, open the image in Photos, tap Share, then choose Use as Wallpaper.',
-    applyHintAndroid: 'After saving, open the image in Photos or Gallery, then choose Set as wallpaper.',
+    applyHintIOS:
+      'After saving, open the image in Photos, tap Share, then choose Use as Wallpaper.',
+    applyHintAndroid:
+      'After saving, open the image in Photos or Gallery, then choose Set as wallpaper.',
     preview: 'Live preview',
     textReduced: 'Text reduced to fit',
-    textReducedHelp: 'The Notes are too tall for this wallpaper, so all text was scaled down. Shorten the Notes to make them larger.',
-    exportSizeHelp: 'Automatic size uses this phone’s screen dimensions and pixel ratio. Choose a custom size if you need specific wallpaper dimensions.',
+    textReducedHelp:
+      'The Notes are too tall for this wallpaper, so all text was scaled down. Shorten the Notes to make them larger.',
+    exportSizeHelp:
+      'Automatic size uses this phone’s screen dimensions and pixel ratio. Choose a custom size if you need specific wallpaper dimensions.',
     back: 'Back',
     labelRequired: 'Label is required',
     deviceSaved: 'Device saved',

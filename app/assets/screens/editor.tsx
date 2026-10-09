@@ -9,6 +9,12 @@ import {
   type ExportSizeMode,
   type Platform,
 } from '../../data/devices.ts'
+import {
+  MAX_CUSTOM_DIMENSION,
+  customDimensionIssue,
+  safePreviewDimensions,
+  type CustomDimensionIssue,
+} from '../../data/device-dimensions.ts'
 import { measureHostExportSize } from '../../data/host.ts'
 import { downloadWallpaper, shareWallpaper, type WallpaperOptions } from '../../data/wallpaper.ts'
 import { strings } from '../../strings.ts'
@@ -74,12 +80,27 @@ export function Editor(
 
   function resolvedSize(device: Device) {
     if (device.exportSizeMode === 'custom') {
+      if (customDimensionIssue(device.customWidth, device.customHeight)) {
+        return safePreviewDimensions(hostSize())
+      }
       return {
-        width: Math.max(1, device.customWidth || 1),
-        height: Math.max(1, device.customHeight || 1),
+        width: device.customWidth,
+        height: device.customHeight,
       }
     }
     return hostSize()
+  }
+
+  function dimensionIssueMessage(issue: CustomDimensionIssue): string {
+    return strings.editor.dimensionIssues[issue]
+  }
+
+  function dimensionInputValue(value: string) {
+    return value === '' ? Number.NaN : Number(value)
+  }
+
+  function customDimensionsValid() {
+    return customDimensionIssue(draft.customWidth, draft.customHeight) === null
   }
 
   function patchDraft(patch: Partial<Device>) {
@@ -197,12 +218,14 @@ export function Editor(
   }
 
   async function onSaveDevice() {
+    if (!customDimensionsValid()) return
     if (!hasLabel()) return
     await storeDevice()
     toast({ title: strings.editor.deviceSaved, variant: 'success' })
   }
 
   async function onSaveToPhotos() {
+    if (!customDimensionsValid()) return
     if (!hasLabel()) return
     let options = wallpaperOptions()
     // Share before touching IndexedDB: the share sheet needs the tap's user
@@ -227,12 +250,14 @@ export function Editor(
   }
 
   async function onDownload() {
+    if (!customDimensionsValid()) return
     let downloaded = await downloadWallpaper(wallpaperOptions())
     if (!downloaded) toast({ title: strings.editor.imageFailed, variant: 'error' })
   }
 
   return () => {
     let device = draft
+    let dimensionIssue = customDimensionIssue(device.customWidth, device.customHeight)
     let size = resolvedSize(device)
     let previewText = device.notes.trim() || device.label.trim() || 'Notes preview'
 
@@ -416,23 +441,25 @@ export function Editor(
                       }}
                     />
                   </div>
-                  {device.exportSizeMode === 'auto' ? (
+                  {device.exportSizeMode === 'auto' && (
                     <p mix={mutedStyle}>
                       {size.width} × {size.height}px
                     </p>
-                  ) : (
+                  )}
+                  {(device.exportSizeMode === 'custom' || dimensionIssue !== null) && (
                     <div mix={sizeInputsStyle}>
                       <label mix={inlineFieldStyle}>
                         {strings.editor.width}
                         <input
                           type="number"
                           min={1}
+                          max={MAX_CUSTOM_DIMENSION}
                           value={device.customWidth}
                           mix={[
                             inputStyle,
                             on('input', (event) =>
                               patchDraft({
-                                customWidth: Number.parseInt(event.currentTarget.value, 10) || 1,
+                                customWidth: dimensionInputValue(event.currentTarget.value),
                               }),
                             ),
                           ]}
@@ -443,18 +470,24 @@ export function Editor(
                         <input
                           type="number"
                           min={1}
+                          max={MAX_CUSTOM_DIMENSION}
                           value={device.customHeight}
                           mix={[
                             inputStyle,
                             on('input', (event) =>
                               patchDraft({
-                                customHeight: Number.parseInt(event.currentTarget.value, 10) || 1,
+                                customHeight: dimensionInputValue(event.currentTarget.value),
                               }),
                             ),
                           ]}
                         />
                       </label>
                     </div>
+                  )}
+                  {dimensionIssue !== null && (
+                    <p role="alert" mix={mutedStyle}>
+                      {dimensionIssueMessage(dimensionIssue)}
+                    </p>
                   )}
                 </div>
 
@@ -482,13 +515,25 @@ export function Editor(
             </details>
 
             <div mix={actionsRowStyle}>
-              <Button variant="primary" onClick={() => void onSaveToPhotos()}>
+              <Button
+                variant="primary"
+                disabled={dimensionIssue !== null}
+                onClick={() => void onSaveToPhotos()}
+              >
                 {strings.editor.saveToPhotos}
               </Button>
-              <Button variant="secondary" onClick={() => void onSaveDevice()}>
+              <Button
+                variant="secondary"
+                disabled={dimensionIssue !== null}
+                onClick={() => void onSaveDevice()}
+              >
                 {strings.editor.saveDevice}
               </Button>
-              <Button variant="secondary" onClick={() => void onDownload()}>
+              <Button
+                variant="secondary"
+                disabled={dimensionIssue !== null}
+                onClick={() => void onDownload()}
+              >
                 {strings.editor.download}
               </Button>
             </div>

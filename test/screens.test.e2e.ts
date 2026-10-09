@@ -371,3 +371,203 @@ describe('a Device round trip', () => {
     assert.equal(await labels.count(), 1)
   })
 })
+
+describe('custom Wallpaper dimension limits', () => {
+  it('keeps invalid editor dimensions visible while blocking save and export', async (t) => {
+    let page = await open(t, routes.screens.newDevice.href())
+    await expectScreen(page, strings.editor.titleNew)
+    await page.getByLabel(/label/i).first().fill('Dimension boundary')
+    await page.getByText(strings.editor.customizeExport, { exact: true }).click()
+    await page.getByRole('button', { name: strings.editor.exportSizeCustom, exact: true }).click()
+    let exportSummary = page.locator('strong').filter({ hasText: /\d+ × \d+ px/ }).first()
+    let safePreviewSize = await exportSummary.innerText()
+
+    let width = page.getByLabel(strings.editor.width)
+    let height = page.getByLabel(strings.editor.height)
+    await width.fill('4000')
+    await height.fill('3001')
+
+    let sizeError = page.getByText(strings.editor.dimensionIssues['pixel-limit'], { exact: true })
+    await sizeError.waitFor()
+    assert.equal(await width.inputValue(), '4000')
+    assert.equal(await height.inputValue(), '3001')
+    assert.equal(await page.getByRole('button', { name: strings.editor.saveDevice }).isDisabled(), true)
+    assert.equal(await page.getByRole('button', { name: strings.editor.saveToPhotos }).isDisabled(), true)
+    assert.equal(await page.getByRole('button', { name: strings.editor.download }).isDisabled(), true)
+    assert.equal(await page.getByText(strings.editor.preview, { exact: true }).first().isVisible(), true)
+    assert.equal(await exportSummary.innerText(), safePreviewSize)
+
+    await width.fill('2.5')
+    let integerError = page.getByText(
+      strings.editor.dimensionIssues['positive-integers'],
+      { exact: true },
+    )
+    await integerError.waitFor()
+    assert.equal(await width.inputValue(), '2.5')
+    assert.equal(await page.getByRole('button', { name: strings.editor.saveDevice }).isDisabled(), true)
+
+    await width.fill('0')
+    assert.equal(await width.inputValue(), '0')
+    await width.fill('')
+    assert.equal(await width.inputValue(), '')
+    await integerError.waitFor()
+
+    await width.fill('4097')
+    await height.fill('1')
+    let sideError = page.getByText(strings.editor.dimensionIssues['side-limit'], { exact: true })
+    await sideError.waitFor()
+    assert.equal(await width.inputValue(), '4097')
+
+    await width.fill('4096')
+    await sideError.waitFor({ state: 'hidden' })
+    assert.equal(await page.getByRole('button', { name: strings.editor.saveDevice }).isDisabled(), false)
+    await width.fill('3000')
+    await height.fill('4000')
+    await sizeError.waitFor({ state: 'hidden' })
+    assert.equal(await page.getByRole('button', { name: strings.editor.saveDevice }).isDisabled(), false)
+  })
+
+  it('rejects an imported project whose saved custom dimensions exceed a limit', async (t) => {
+    let page = await open(t, routes.screens.browseDevices.href())
+    let project = {
+      type: 'test-device-lockscreen',
+      version: 1,
+      device: {
+        label: 'Too large',
+        platform: 'ios',
+        notes: '',
+        exportSizeMode: 'auto',
+        customWidth: 4097,
+        customHeight: 1,
+        encoding: 'quality',
+      },
+    }
+
+    let [chooser] = await Promise.all([
+      page.waitForEvent('filechooser'),
+      page.getByRole('button', { name: strings.browse.import, exact: true }).click(),
+    ])
+    await chooser.setFiles({
+      name: 'too-large.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify(project)),
+    })
+
+    let notification = page.getByLabel('Notifications').locator('article')
+    await notification.waitFor()
+    assert.match(await notification.innerText(), new RegExp(strings.browse.importFailed))
+    assert.match(await notification.innerText(), /4096/)
+    await page.getByText(strings.browse.empty, { exact: true }).waitFor()
+    assert.equal(await page.locator('li').count(), 0)
+  })
+
+  it('rejects excessive total pixels even when imported in Auto mode', async (t) => {
+    let page = await open(t, routes.screens.browseDevices.href())
+    let project = {
+      type: 'test-device-lockscreen',
+      version: 1,
+      device: {
+        label: 'Too many pixels',
+        platform: 'ios',
+        notes: '',
+        exportSizeMode: 'auto',
+        customWidth: 3000,
+        customHeight: 4001,
+        encoding: 'quality',
+      },
+    }
+    let [chooser] = await Promise.all([
+      page.waitForEvent('filechooser'),
+      page.getByRole('button', { name: strings.browse.import, exact: true }).click(),
+    ])
+    await chooser.setFiles({
+      name: 'too-many-pixels.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify(project)),
+    })
+
+    let notification = page.getByLabel('Notifications').locator('article')
+    await notification.waitFor()
+    assert.match(await notification.innerText(), new RegExp(strings.browse.importFailed))
+    assert.match(await notification.innerText(), /12,000,000/)
+    assert.equal(await page.locator('li').count(), 0)
+  })
+
+  it('imports the inclusive total-pixel boundary', async (t) => {
+    let page = await open(t, routes.screens.browseDevices.href())
+    let project = {
+      type: 'test-device-lockscreen',
+      version: 1,
+      device: {
+        label: 'Boundary size',
+        platform: 'ios',
+        notes: '',
+        exportSizeMode: 'auto',
+        customWidth: 3000,
+        customHeight: 4000,
+        encoding: 'quality',
+      },
+    }
+    let [chooser] = await Promise.all([
+      page.waitForEvent('filechooser'),
+      page.getByRole('button', { name: strings.browse.import, exact: true }).click(),
+    ])
+    await chooser.setFiles({
+      name: 'boundary-size.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify(project)),
+    })
+
+    await page.getByLabel('Notifications').getByText(strings.browse.imported).waitFor()
+    await page.locator('li strong').getByText('Boundary size', { exact: true }).waitFor()
+  })
+
+  it('imports the inclusive per-side boundary', async (t) => {
+    let page = await open(t, routes.screens.browseDevices.href())
+    let project = {
+      type: 'test-device-lockscreen',
+      version: 1,
+      device: {
+        label: 'Boundary side',
+        platform: 'ios',
+        notes: '',
+        exportSizeMode: 'auto',
+        customWidth: 4096,
+        customHeight: 1,
+        encoding: 'quality',
+      },
+    }
+    let [chooser] = await Promise.all([
+      page.waitForEvent('filechooser'),
+      page.getByRole('button', { name: strings.browse.import, exact: true }).click(),
+    ])
+    await chooser.setFiles({
+      name: 'boundary-side.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify(project)),
+    })
+
+    await page.getByLabel('Notifications').getByText(strings.browse.imported).waitFor()
+    await page.locator('li strong').getByText('Boundary side', { exact: true }).waitFor()
+  })
+
+  it('keeps the fallback preview within the limits when Host metrics are large', async (t) => {
+    let page = await t.serve(await createTestServer(router.fetch))
+    await page.addInitScript(() => {
+      Object.defineProperty(window, 'devicePixelRatio', { configurable: true, get: () => 16 })
+    })
+    await page.goto(routes.screens.newDevice.href())
+    await expectScreen(page, strings.editor.titleNew)
+    await page.getByText(strings.editor.customizeExport, { exact: true }).click()
+    await page.getByRole('button', { name: strings.editor.exportSizeCustom, exact: true }).click()
+
+    let summary = page.locator('strong').filter({ hasText: /\d+ × \d+ px/ }).first()
+    let match = (await summary.innerText()).match(/(\d+) × (\d+) px/)
+    assert.ok(match, 'preview dimensions are not visible')
+    let width = Number(match[1])
+    let height = Number(match[2])
+    assert.ok(width <= 4096)
+    assert.ok(height <= 4096)
+    assert.ok(width * height <= 12_000_000)
+  })
+})
