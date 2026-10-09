@@ -427,6 +427,19 @@ export function Editor(
               aria-describedby={labelError ? 'device-label-error' : undefined}
               value={device.label}
               autoComplete="off"
+              style={{
+                appearance: 'none',
+                width: '100%',
+                minWidth: '10ch',
+                padding: 0,
+                border: 0,
+                borderRadius: 0,
+                background: 'transparent',
+                color: 'inherit',
+                font: 'inherit',
+                lineHeight: 'inherit',
+                boxShadow: 'none',
+              }}
               mix={[
                 ref((node) => {
                   labelRef = node as HTMLInputElement | null
@@ -752,22 +765,6 @@ const editableHeadlineStyle = css({
   ':focus-visible': {
     outline: '2px solid var(--accent-strong)',
     outlineOffset: '4px',
-  },
-  '& > input': {
-    appearance: 'none',
-    width: '100%',
-    minWidth: '10ch',
-    padding: 0,
-    border: 0,
-    borderRadius: 0,
-    background: 'transparent',
-    color: 'inherit',
-    font: 'inherit',
-    lineHeight: 'inherit',
-    outline: 'none',
-    boxShadow: 'none',
-    ':focus': { outline: 'none', boxShadow: 'none' },
-    ':focus-visible': { outline: 'none', boxShadow: '0 2px 0 var(--accent)' },
   },
 })
 
