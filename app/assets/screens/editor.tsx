@@ -1,6 +1,6 @@
 import { css, navigate, on, ref, type Handle } from 'remix/component'
 
-import { cluster, flow, switcher } from '../../ui/cube/index.ts'
+import { cluster, flow, repel, switcher } from '../../ui/cube/index.ts'
 import { theme } from '../../ui/theme.ts'
 import {
   saveDevice,
@@ -66,6 +66,7 @@ export function Editor(
   let pendingNavigation: PendingNavigation | null = null
   let dialogReturnFocus: HTMLElement | null = null
   let navigationGuard: ReturnType<typeof guardEditorNavigation> | null = null
+  let headingRef: HTMLHeadingElement | null = null
   let labelRef: HTMLInputElement | null = null
   let platformOverride = false
   let notesRef: HTMLTextAreaElement | null = null
@@ -99,6 +100,7 @@ export function Editor(
   }
 
   handle.queueTask(() => {
+    headingRef?.focus()
     navigationGuard = guardEditorNavigation({
       isDirty,
       onRequest(destination) {
@@ -398,13 +400,23 @@ export function Editor(
     return (
       <div mix={pageStyle}>
         <header mix={editorHeaderStyle}>
-          <div mix={headerActionsStyle}>
+          <div mix={headerRowStyle}>
             <Button variant="ghost" onClick={requestLeave}>
               {strings.editor.back}
             </Button>
             {editingNew ? <span mix={draftPillStyle}>{strings.editor.draft}</span> : null}
           </div>
-          <h1 mix={headingStyle}>
+          <h1
+            aria-label={device.label}
+            tabIndex={-1}
+            mix={[
+              headingStyle,
+              editorHeadingFocusStyle,
+              ref((node) => {
+                headingRef = node as HTMLHeadingElement | null
+              }),
+            ]}
+          >
             <input
               id="device-label"
               name="label"
@@ -413,7 +425,6 @@ export function Editor(
               aria-invalid={labelError ? 'true' : undefined}
               aria-describedby={labelError ? 'device-label-error' : undefined}
               value={device.label}
-              autoFocus={editingNew}
               autoComplete="off"
               mix={[
                 headlineInputStyle,
@@ -726,7 +737,14 @@ const editorHeaderStyle = [
   }),
 ]
 
-const headerActionsStyle = cluster({ gutter: theme.space.xs, alignment: 'center' })
+const headerRowStyle = repel({ gutter: theme.space.xs, alignment: 'center' })
+
+const editorHeadingFocusStyle = css({
+  ':focus-visible': {
+    outline: '2px solid var(--accent-strong)',
+    outlineOffset: '4px',
+  },
+})
 
 const draftPillStyle = css({
   display: 'inline-flex',
