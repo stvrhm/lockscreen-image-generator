@@ -66,7 +66,9 @@ export function Editor(
   let pendingNavigation: PendingNavigation | null = null
   let dialogReturnFocus: HTMLElement | null = null
   let navigationGuard: ReturnType<typeof guardEditorNavigation> | null = null
+  let headingRef: HTMLHeadingElement | null = null
   let labelRef: HTMLInputElement | null = null
+  let selectLabelOnPointerFocus = false
   let platformOverride = false
   let notesRef: HTMLTextAreaElement | null = null
   let notesFocused = false
@@ -99,6 +101,7 @@ export function Editor(
   }
 
   handle.queueTask(() => {
+    headingRef?.focus()
     navigationGuard = guardEditorNavigation({
       isDirty,
       onRequest(destination) {
@@ -404,7 +407,17 @@ export function Editor(
             </Button>
             {editingNew ? <span mix={draftPillStyle}>{strings.editor.draft}</span> : null}
           </div>
-          <h1 mix={headingStyle}>
+          <h1
+            aria-label={device.label}
+            tabIndex={-1}
+            mix={[
+              headingStyle,
+              editableHeadlineStyle,
+              ref((node) => {
+                headingRef = node as HTMLHeadingElement | null
+              }),
+            ]}
+          >
             <input
               id="device-label"
               name="label"
@@ -413,14 +426,20 @@ export function Editor(
               aria-invalid={labelError ? 'true' : undefined}
               aria-describedby={labelError ? 'device-label-error' : undefined}
               value={device.label}
-              autoFocus={editingNew}
               autoComplete="off"
               mix={[
-                headlineInputStyle,
                 ref((node) => {
                   labelRef = node as HTMLInputElement | null
                 }),
                 on('input', (event) => patchDraft({ label: event.currentTarget.value })),
+                on('pointerdown', (event) => {
+                  selectLabelOnPointerFocus = document.activeElement !== event.currentTarget
+                }),
+                on('focus', (event) => {
+                  if (!selectLabelOnPointerFocus) return
+                  selectLabelOnPointerFocus = false
+                  event.currentTarget.select()
+                }),
               ]}
             />
           </h1>
@@ -728,6 +747,30 @@ const editorHeaderStyle = [
 
 const headerRowStyle = repel({ gutter: theme.space.xs, alignment: 'center' })
 
+const editableHeadlineStyle = css({
+  outline: 'none',
+  ':focus-visible': {
+    outline: '2px solid var(--accent-strong)',
+    outlineOffset: '4px',
+  },
+  '& > input': {
+    appearance: 'none',
+    width: '100%',
+    minWidth: '10ch',
+    padding: 0,
+    border: 0,
+    borderRadius: 0,
+    background: 'transparent',
+    color: 'inherit',
+    font: 'inherit',
+    lineHeight: 'inherit',
+    outline: 'none',
+    boxShadow: 'none',
+    ':focus': { outline: 'none', boxShadow: 'none' },
+    ':focus-visible': { outline: 'none', boxShadow: '0 2px 0 var(--accent)' },
+  },
+})
+
 const draftPillStyle = css({
   display: 'inline-flex',
   alignItems: 'center',
@@ -739,23 +782,6 @@ const draftPillStyle = css({
   fontWeight: theme.fontWeight.semibold,
   textTransform: 'uppercase',
   letterSpacing: '0.06em',
-})
-
-const headlineInputStyle = css({
-  width: '100%',
-  minWidth: '10ch',
-  padding: 0,
-  border: 0,
-  borderRadius: 0,
-  background: 'transparent',
-  color: 'inherit',
-  font: 'inherit',
-  fontWeight: 'inherit',
-  lineHeight: 'inherit',
-  outline: 'none',
-  boxShadow: 'none',
-  ':focus': { outline: 'none', boxShadow: 'none' },
-  ':focus-visible': { outline: 'none', boxShadow: '0 2px 0 var(--accent)' },
 })
 
 const labelErrorStyle = css({ color: 'var(--danger)', margin: 0 })
