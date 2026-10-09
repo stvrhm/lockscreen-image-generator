@@ -30,6 +30,35 @@ const DB_NAME = 'tdl-devices'
 const DB_VERSION = 1
 const STORE = 'devices'
 const LAST_DRAFT_KEY = 'tdl:last-draft-id'
+const DEVICE_CHANGE_CHANNEL = 'tdl:device-changes'
+
+export class DeviceLabelConflictError extends Error {
+  constructor() {
+    super('A saved Device already uses this Label')
+    this.name = 'DeviceLabelConflictError'
+  }
+}
+
+export function subscribeToDeviceChanges(onChange: () => void): () => void {
+  let channel =
+    typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel(DEVICE_CHANGE_CHANNEL)
+  window.addEventListener('tdl:devices-changed', onChange)
+  channel?.addEventListener('message', onChange)
+  return () => {
+    window.removeEventListener('tdl:devices-changed', onChange)
+    channel?.removeEventListener('message', onChange)
+    channel?.close()
+  }
+}
+
+function announceDeviceChange() {
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('tdl:devices-changed'))
+  if (typeof BroadcastChannel !== 'undefined') {
+    let channel = new BroadcastChannel(DEVICE_CHANGE_CHANNEL)
+    channel.postMessage(null)
+    channel.close()
+  }
+}
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -79,6 +108,32 @@ export function blankDevice(platform: Platform, width: number, height: number): 
   }
 }
 
+/** Compare Labels the same way users expect visually equivalent names to compare. */
+export function normalizeDeviceLabel(label: string): string {
+  return label.trim().toLowerCase()
+}
+
+/** First available default name among saved Devices. Drafts never enter this list. */
+export function nextDeviceLabel(devices: Device[]): string {
+  let used = new Set(devices.map((device) => normalizeDeviceLabel(device.label)))
+  if (!used.has('new device')) return 'New Device'
+  for (let number = 2; ; number++) {
+    let label = `New Device ${number}`
+    if (!used.has(normalizeDeviceLabel(label))) return label
+  }
+}
+
+/** Preserve the Browse copy convention while choosing a unique saved Label. */
+export function nextCopyLabel(sourceLabel: string, devices: Device[]): string {
+  let used = new Set(devices.map((device) => normalizeDeviceLabel(device.label)))
+  let base = sourceLabel.trim() ? `Copy of ${sourceLabel.trim()}` : 'New Device'
+  if (!used.has(normalizeDeviceLabel(base))) return base
+  for (let number = 2; ; number++) {
+    let label = `${base} ${number}`
+    if (!used.has(normalizeDeviceLabel(label))) return label
+  }
+}
+
 export async function listDevices(): Promise<Device[]> {
   let db = await openDb()
   try {
@@ -102,21 +157,43 @@ export async function findDevice(id: string): Promise<Device | undefined> {
   }
 }
 
-export async function saveDevice(device: Device): Promise<Device> {
+export async function saveDevice(
+  device: Device,
+  { allowUnchangedDuplicate = false }: { allowUnchangedDuplicate?: boolean } = {},
+): Promise<Device> {
   let next: Device = { ...device, updatedAt: new Date().toISOString() }
   let db = await openDb()
   try {
     let tx = db.transaction(STORE, 'readwrite')
     let store = tx.objectStore(STORE)
-    await idbRequest(store.put(next))
     await new Promise<void>((resolve, reject) => {
+      let lookup = store.getAll() as IDBRequest<Device[]>
+      lookup.onsuccess = () => {
+        let conflict = lookup.result.some(
+          (saved) =>
+            saved.id !== next.id &&
+            normalizeDeviceLabel(saved.label) === normalizeDeviceLabel(next.label),
+        )
+        let existing = lookup.result.find((saved) => saved.id === next.id)
+        let mayKeepLegacyDuplicate =
+          allowUnchangedDuplicate && existing?.label === next.label && Boolean(conflict)
+        if (conflict && !mayKeepLegacyDuplicate) {
+          reject(new DeviceLabelConflictError())
+          tx.abort()
+          return
+        }
+        store.put(next)
+      }
+      lookup.onerror = () => reject(lookup.error ?? new Error('IndexedDB read failed'))
       tx.oncomplete = () => resolve()
       tx.onerror = () => reject(tx.error ?? new Error('IndexedDB write failed'))
+      tx.onabort = () => reject(tx.error ?? new Error('IndexedDB write aborted'))
     })
   } finally {
     db.close()
   }
   setLastDraftId(next.id)
+  announceDeviceChange()
   return next
 }
 
@@ -136,18 +213,26 @@ export async function deleteDevice(id: string): Promise<void> {
   if (getLastDraftId() === id) {
     clearLastDraftId()
   }
+  announceDeviceChange()
 }
 
 export async function duplicateDevice(source: Device): Promise<Device> {
   let now = new Date().toISOString()
-  let copy: Device = {
-    ...source,
-    id: createId(),
-    label: source.label.trim() ? `Copy of ${source.label.trim()}` : '',
-    createdAt: now,
-    updatedAt: now,
+  while (true) {
+    let devices = await listDevices()
+    let copy: Device = {
+      ...source,
+      id: createId(),
+      label: nextCopyLabel(source.label, devices),
+      createdAt: now,
+      updatedAt: now,
+    }
+    try {
+      return await saveDevice(copy)
+    } catch (error) {
+      if (!(error instanceof DeviceLabelConflictError)) throw error
+    }
   }
-  return saveDevice(copy)
 }
 
 export function getLastDraftId(): string | null {

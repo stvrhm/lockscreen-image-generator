@@ -1,9 +1,9 @@
 import { redirect } from 'remix/response/redirect'
 import { createController } from 'remix/router'
 
-import { blankDevice } from '../data/devices.ts'
+import { blankDevice, nextDeviceLabel } from '../data/devices.ts'
 import { inferPlatform, measureHostExportSize } from '../data/host.ts'
-import { phoneInfoLabel, phoneInfoNotes, readPhoneInfo } from '../data/phone-info.ts'
+import { phoneInfoNotes, readPhoneInfo } from '../data/phone-info.ts'
 import { routes } from '../routes.ts'
 import { DeviceStore } from './device-store.ts'
 import { BrowseDevices } from './screens/browse-devices.tsx'
@@ -29,23 +29,24 @@ export default createController(routes.screens, {
       return render(<Home hasDraft={Boolean(draft)} />)
     },
 
-    async newDevice({ render }) {
+    async newDevice({ get, render }) {
       let size = measureHostExportSize()
       // Detection is near-instant and time-limited, so waiting for it keeps
       // the New Device complete on first render.
-      let info = await readPhoneInfo()
+      let [info, devices] = await Promise.all([readPhoneInfo(), get(DeviceStore).listDevices()])
       let draft = {
         ...blankDevice(inferPlatform(), size.width, size.height),
-        label: phoneInfoLabel(info),
+        label: nextDeviceLabel(devices),
         notes: phoneInfoNotes(info),
       }
-      return render(<Editor draft={draft} editingNew />)
+      return render(<Editor draft={draft} devices={devices} editingNew />)
     },
 
     async continueDevice({ get, render }) {
-      let draft = await get(DeviceStore).getLastDraft()
+      let store = get(DeviceStore)
+      let [draft, devices] = await Promise.all([store.getLastDraft(), store.listDevices()])
       if (!draft) return redirect(routes.screens.home.href())
-      return render(<Editor draft={draft} editingNew={false} />)
+      return render(<Editor draft={draft} devices={devices} editingNew={false} />)
     },
 
     async browseDevices({ get, render }) {
@@ -54,9 +55,10 @@ export default createController(routes.screens, {
     },
 
     async editDevice({ get, params, render }) {
-      let draft = await get(DeviceStore).findDevice(params.id)
+      let store = get(DeviceStore)
+      let [draft, devices] = await Promise.all([store.findDevice(params.id), store.listDevices()])
       if (!draft) return redirect(routes.screens.browseDevices.href())
-      return render(<Editor draft={draft} editingNew={false} />)
+      return render(<Editor draft={draft} devices={devices} editingNew={false} />)
     },
   },
 })

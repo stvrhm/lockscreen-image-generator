@@ -1,9 +1,13 @@
 import { css, navigate, on, ref, type Handle } from 'remix/component'
 
-import { cluster, flow, switcher } from '../../ui/cube/index.ts'
+import { cluster, flow, repel, switcher } from '../../ui/cube/index.ts'
 import { theme } from '../../ui/theme.ts'
 import {
   saveDevice,
+  listDevices,
+  normalizeDeviceLabel,
+  subscribeToDeviceChanges,
+  DeviceLabelConflictError,
   type Device,
   type ExportEncoding,
   type ExportSizeMode,
@@ -21,6 +25,7 @@ import { strings } from '../../strings.ts'
 import { routes } from '../../routes.ts'
 import { Button } from '../../ui/button.tsx'
 import { toast } from '../../ui/toast.tsx'
+import { ConfirmationDialog } from '../../ui/confirmation-dialog.tsx'
 import {
   inlineFormatActive,
   toggleInlineFormat,
@@ -31,6 +36,7 @@ import { ExportSummary } from '../editor/export-summary.tsx'
 import { FormatButton } from '../editor/format-button.tsx'
 import { FormattingHelpButton } from '../editor/formatting-help-button.tsx'
 import { insertLines } from '../editor/insert-lines.ts'
+import { guardEditorNavigation, type PendingNavigation } from '../editor/navigation-guard.ts'
 import { PhoneInfoButton } from '../editor/phone-info-button.tsx'
 import { PhonePreview } from '../editor/phone-preview.tsx'
 import { SegmentButton } from '../editor/segment-button.tsx'
@@ -47,11 +53,22 @@ const NOTES_MAX_HEIGHT = 260
 export function Editor(
   handle: Handle<{
     draft: Device
+    devices: Device[]
     editingNew: boolean
   }>,
 ) {
   let draft = handle.props.draft
+  let savedDevices = handle.props.devices
   let editingNew = handle.props.editingNew
+  let baseline: Device = { ...draft }
+  let labelError = ''
+  let leaveDialogOpen = false
+  let pendingNavigation: PendingNavigation | null = null
+  let dialogReturnFocus: HTMLElement | null = null
+  let navigationGuard: ReturnType<typeof guardEditorNavigation> | null = null
+  let headingRef: HTMLHeadingElement | null = null
+  let labelRef: HTMLInputElement | null = null
+  let selectLabelOnPointerFocus = false
   let platformOverride = false
   let notesRef: HTMLTextAreaElement | null = null
   let notesFocused = false
@@ -59,6 +76,59 @@ export function Editor(
   // reflect in the formatting toolbar. Starting at 0 made a prefilled H1 look
   // pressed as soon as the new-device screen opened.
   let notesSelection: { start: number; end: number } | null = null
+
+  function isDirty() {
+    return (
+      draft.label !== baseline.label ||
+      draft.platform !== baseline.platform ||
+      draft.notes !== baseline.notes ||
+      draft.exportSizeMode !== baseline.exportSizeMode ||
+      draft.customWidth !== baseline.customWidth ||
+      draft.customHeight !== baseline.customHeight ||
+      draft.encoding !== baseline.encoding
+    )
+  }
+
+  function requestLeave() {
+    if (!isDirty()) {
+      navigate(routes.screens.home.href())
+      return
+    }
+    dialogReturnFocus = document.activeElement as HTMLElement | null
+    pendingNavigation = { url: routes.screens.home.href(), key: '', type: 'push' }
+    leaveDialogOpen = true
+    handle.update()
+  }
+
+  handle.queueTask(() => {
+    headingRef?.focus()
+    navigationGuard = guardEditorNavigation({
+      isDirty,
+      onRequest(destination) {
+        dialogReturnFocus = document.activeElement as HTMLElement | null
+        pendingNavigation = destination
+        leaveDialogOpen = true
+        handle.update()
+      },
+    })
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!isDirty()) return
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    let unsubscribeDeviceChanges = subscribeToDeviceChanges(() => {
+      void listDevices().then((devices) => {
+        savedDevices = devices
+        handle.update()
+      })
+    })
+    handle.signal.addEventListener('abort', () => {
+      navigationGuard?.dispose()
+      window.removeEventListener('beforeunload', onBeforeUnload)
+      unsubscribeDeviceChanges()
+    })
+  })
 
   handle.queueTask(() => {
     document.addEventListener(
@@ -105,6 +175,7 @@ export function Editor(
 
   function patchDraft(patch: Partial<Device>) {
     draft = { ...draft, ...patch }
+    if (patch.label !== undefined) labelError = ''
     handle.update()
   }
 
@@ -146,6 +217,7 @@ export function Editor(
   function applyNotesEdit(next: { text: string; start: number; end: number }) {
     draft = { ...draft, notes: next.text }
     notesSelection = { start: next.start, end: next.end }
+    notesFocused = true
     handle.update()
     handle.queueTask(() => {
       if (!notesRef) return
@@ -185,25 +257,56 @@ export function Editor(
     notesRef.style.overflowY = notesRef.scrollHeight > NOTES_MAX_HEIGHT ? 'auto' : 'hidden'
   }
 
-  function hasLabel() {
-    if (draft.label.trim()) return true
-    toast({ title: strings.editor.labelRequired, variant: 'error' })
+  function validateLabel() {
+    let label = draft.label.trim()
+    let normalized = normalizeDeviceLabel(label)
+    if (!normalized) {
+      labelError = strings.editor.labelRequired
+    } else {
+      let conflict = savedDevices.some(
+        (device) => device.id !== draft.id && normalizeDeviceLabel(device.label) === normalized,
+      )
+      let unchangedLegacyDuplicate = !editingNew && draft.label === baseline.label
+      labelError = conflict && !unchangedLegacyDuplicate ? strings.editor.labelConflict : ''
+    }
+    if (!labelError) return true
+    handle.update()
+    handle.queueTask(() => labelRef?.focus())
     return false
   }
 
   async function storeDevice() {
     let wasNew = editingNew
-    draft = await saveDevice({ ...draft, label: draft.label.trim() })
+    let savedLabel =
+      !editingNew && draft.label === baseline.label ? draft.label : draft.label.trim()
+    try {
+      draft = await saveDevice(
+        { ...draft, label: savedLabel },
+        { allowUnchangedDuplicate: !editingNew && draft.label === baseline.label },
+      )
+    } catch (error) {
+      if (!(error instanceof DeviceLabelConflictError)) throw error
+      labelError = strings.editor.labelConflict
+      handle.update()
+      handle.queueTask(() => labelRef?.focus())
+      return false
+    }
+    savedDevices = [draft, ...savedDevices.filter((device) => device.id !== draft.id)]
+    baseline = { ...draft }
     editingNew = false
+    handle.update()
 
     // A new Device only gets its id once saved, so move to its canonical URL.
     // It is still the same screen to the user, so keep their scroll position.
     if (wasNew) {
-      navigate(routes.screens.editDevice.href({ id: draft.id }), {
+      let href = routes.screens.editDevice.href({ id: draft.id })
+      navigationGuard?.updateCurrentUrl(href)
+      navigate(href, {
         history: 'replace',
         resetScroll: false,
       })
     }
+    return true
   }
 
   function wallpaperOptions(): WallpaperOptions {
@@ -219,14 +322,14 @@ export function Editor(
 
   async function onSaveDevice() {
     if (!customDimensionsValid()) return
-    if (!hasLabel()) return
-    await storeDevice()
+    if (!validateLabel()) return
+    if (!(await storeDevice())) return
     toast({ title: strings.editor.deviceSaved, variant: 'success' })
   }
 
   async function onSaveToPhotos() {
     if (!customDimensionsValid()) return
-    if (!hasLabel()) return
+    if (!validateLabel()) return
     let options = wallpaperOptions()
     // Share before touching IndexedDB: the share sheet needs the tap's user
     // activation, and Safari drops it if other async work runs first.
@@ -234,7 +337,7 @@ export function Editor(
     // Dismissing the share sheet backs out of the whole action.
     if (result === 'cancelled') return
     let downloaded = result === 'unsupported' && (await downloadWallpaper(options))
-    await storeDevice()
+    if (!(await storeDevice())) return
 
     if (downloaded) {
       toast({
@@ -255,6 +358,40 @@ export function Editor(
     if (!downloaded) toast({ title: strings.editor.imageFailed, variant: 'error' })
   }
 
+  async function resolveLeave(decision: 'stay' | 'discard' | 'save') {
+    if (decision === 'stay') {
+      leaveDialogOpen = false
+      pendingNavigation = null
+      handle.update()
+      handle.queueTask(() => dialogReturnFocus?.focus())
+      return
+    }
+    if (decision === 'save' && !validateLabel()) {
+      leaveDialogOpen = false
+      pendingNavigation = null
+      handle.update()
+      return
+    }
+    if (decision === 'save' && !(await storeDevice())) {
+      leaveDialogOpen = false
+      pendingNavigation = null
+      handle.update()
+      return
+    } else baseline = { ...draft }
+    let destination = pendingNavigation
+    leaveDialogOpen = false
+    pendingNavigation = null
+    handle.update()
+    if (!destination) return
+    if (destination.type === 'traverse' && destination.key && window.navigation) {
+      window.navigation.traverseTo(destination.key)
+    } else if (destination.type === 'fallback-back') {
+      history.back()
+    } else {
+      navigate(destination.url)
+    }
+  }
+
   return () => {
     let device = draft
     let dimensionIssue = customDimensionIssue(device.customWidth, device.customHeight)
@@ -264,34 +401,70 @@ export function Editor(
     return (
       <div mix={pageStyle}>
         <header mix={editorHeaderStyle}>
-          <Button href={routes.screens.home.href()} variant="ghost">
-            {strings.editor.back}
-          </Button>
-          <h1 mix={headingStyle}>
-            {editingNew ? strings.editor.titleNew : strings.editor.titleEdit}
+          <div mix={headerRowStyle}>
+            <Button variant="ghost" onClick={requestLeave}>
+              {strings.editor.back}
+            </Button>
+            {editingNew ? <span mix={draftPillStyle}>{strings.editor.draft}</span> : null}
+          </div>
+          <h1
+            aria-label={device.label}
+            tabIndex={-1}
+            mix={[
+              headingStyle,
+              editableHeadlineStyle,
+              ref((node) => {
+                headingRef = node as HTMLHeadingElement | null
+              }),
+            ]}
+          >
+            <input
+              id="device-label"
+              name="label"
+              type="text"
+              aria-label={strings.editor.label}
+              aria-invalid={labelError ? 'true' : undefined}
+              aria-describedby={labelError ? 'device-label-error' : undefined}
+              value={device.label}
+              autoComplete="off"
+              style={{
+                appearance: 'none',
+                width: '100%',
+                minWidth: '10ch',
+                padding: 0,
+                border: 0,
+                borderRadius: 0,
+                background: 'transparent',
+                color: 'inherit',
+                font: 'inherit',
+                lineHeight: 'inherit',
+                boxShadow: 'none',
+              }}
+              mix={[
+                ref((node) => {
+                  labelRef = node as HTMLInputElement | null
+                }),
+                on('input', (event) => patchDraft({ label: event.currentTarget.value })),
+                on('pointerdown', (event) => {
+                  selectLabelOnPointerFocus = document.activeElement !== event.currentTarget
+                }),
+                on('focus', (event) => {
+                  if (!selectLabelOnPointerFocus) return
+                  selectLabelOnPointerFocus = false
+                  event.currentTarget.select()
+                }),
+              ]}
+            />
           </h1>
         </header>
 
         <div mix={editorLayoutStyle}>
           <div mix={formStyle}>
-            <div mix={fieldStyle}>
-              <label htmlFor="device-label" mix={fieldLabelStyle}>
-                {strings.editor.label}
-              </label>
-              <input
-                id="device-label"
-                name="label"
-                type="text"
-                value={device.label}
-                autoFocus={editingNew}
-                autoComplete="off"
-                mix={[
-                  inputStyle,
-                  on('input', (event) => patchDraft({ label: event.currentTarget.value })),
-                ]}
-              />
-              <p mix={mutedStyle}>{strings.editor.labelHint}</p>
-            </div>
+            {labelError ? (
+              <p id="device-label-error" role="alert" mix={labelErrorStyle}>
+                {labelError}
+              </p>
+            ) : null}
 
             <div mix={notesFieldStyle}>
               <div mix={notesLabelStyle}>
@@ -554,6 +727,23 @@ export function Editor(
             />
           </div>
         </div>
+        <ConfirmationDialog
+          id="leave-confirmation"
+          open={leaveDialogOpen}
+          title={strings.editor.leaveTitle}
+          description={strings.editor.leaveDescription}
+          onDismiss={() => void resolveLeave('stay')}
+        >
+          <Button variant="secondary" onClick={() => void resolveLeave('stay')}>
+            {strings.editor.keepEditing}
+          </Button>
+          <Button variant="destructive" onClick={() => void resolveLeave('discard')}>
+            {strings.editor.discardChanges}
+          </Button>
+          <Button variant="primary" onClick={() => void resolveLeave('save')}>
+            {strings.editor.saveDevice}
+          </Button>
+        </ConfirmationDialog>
       </div>
     )
   }
@@ -567,6 +757,31 @@ const editorHeaderStyle = [
     paddingBottom: '12px',
   }),
 ]
+
+const headerRowStyle = repel({ gutter: theme.space.xs, alignment: 'center' })
+
+const editableHeadlineStyle = css({
+  outline: 'none',
+  ':focus-visible': {
+    outline: '2px solid var(--accent-strong)',
+    outlineOffset: '4px',
+  },
+})
+
+const draftPillStyle = css({
+  display: 'inline-flex',
+  alignItems: 'center',
+  border: '1px solid var(--border)',
+  borderRadius: theme.radius.full,
+  padding: '0.2em 0.65em',
+  color: 'var(--text-muted)',
+  fontSize: theme.fontSize.small,
+  fontWeight: theme.fontWeight.semibold,
+  textTransform: 'uppercase',
+  letterSpacing: '0.06em',
+})
+
+const labelErrorStyle = css({ color: 'var(--danger)', margin: 0 })
 
 const editorLayoutStyle = switcher({
   gutter: theme.space.xl,

@@ -17,7 +17,7 @@ function fetchScreen(href: string) {
   return router.fetch(new Request(`http://test.local${href}`))
 }
 
-test('the shell resolves JSX runtime imports for the browser entry', async () => {
+test('the shell preloads the JSX runtime for the browser entry', async () => {
   const response = await fetchScreen(routes.screens.home.href())
   const html = await response.text()
 

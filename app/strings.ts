@@ -44,9 +44,13 @@ export const strings = {
   },
 
   editor: {
-    titleNew: 'New device',
-    titleEdit: 'Edit device',
     label: 'Label',
+    draft: 'Draft',
+    leaveTitle: 'Unsaved changes',
+    leaveDescription: 'Save your Device before leaving, or discard your changes.',
+    keepEditing: 'Keep editing',
+    discardChanges: 'Discard changes',
+    labelConflict: 'A saved Device already uses this Label.',
     labelHint:
       'Identifies this saved Device and its download filename. Notes are the text shown on the Wallpaper.',
     notes: 'Notes',
