@@ -5,7 +5,7 @@ Internal tool for labeling a test phone with an identifying lockscreen wallpaper
 ## Language
 
 **Device**:
-A labeled wallpaper project stored on the Host (identity, label, platform, notes, export settings). Typically one active Device per Host; Browse holds revisions and duplicates, not a team inventory. Devices can be deleted from Browse; with none left, Continue is hidden.
+A saved wallpaper project on the Host (identity, label, platform, notes, export settings). Typically one active Device per Host; Browse holds revisions and duplicates, not a team inventory. Devices can be deleted from Browse; with none left, Continue is hidden.
 _Avoid_: Phone (alone), handset, unit, server record
 
 **Host**:
@@ -13,11 +13,11 @@ The phone currently running the installed app — usually the same physical phon
 _Avoid_: Client, browser, device (for this meaning)
 
 **Draft**:
-In-progress Device state on this Host. Continue always resumes the last Draft here with no network round trip.
+Unsaved editor work: a new Device before its first save, or changes to a saved Device. Discarding a Draft leaves any saved Device unchanged.
 _Avoid_: Unsaved session, temporary file
 
 **Label**:
-The Device’s stable display name — used in Browse, duplicate naming, and download filenames. It appears on the Wallpaper only when Notes are empty; identity text on the Wallpaper is written in Notes (typically as a Heading). Distinct from Notes.
+The Device’s non-empty display name, edited from the editor headline and used in Browse, duplicate naming, and download filenames. Saved Labels are unique after trimming surrounding spaces and ignoring capitalization; a new Device defaults to “New Device,” or the first available numbered variant if that Label is already saved. Labels used for this numbering come from saved Devices, not Drafts. A Label appears on the Wallpaper only when Notes are empty; identity text on the Wallpaper is written in Notes (typically as a Heading), distinct from the Label.
 _Avoid_: Title, name (alone), heading
 
 **Notes**:
@@ -61,5 +61,5 @@ The downloadable or shareable lockscreen image produced from Label/Notes under f
 _Avoid_: Lockscreen (alone), PNG (as the concept), screenshot
 
 **Start options**:
-Home entry choices: **New** (fresh Device, Label and Notes pre-filled from Phone info), **Continue** (last Draft on this Host; hidden if none), **Browse** (Devices on this Host only — edit, duplicate, or delete). Duplicate creates a new Device with copied Notes, platform, and export settings, a new id, and a distinct label (e.g. `Copy of …` or empty).
+Home entry choices: **New** (fresh Device with a default Label and Notes pre-filled from Phone info), **Continue** (last saved Device on this Host; hidden if none), **Browse** (Devices on this Host only — edit, duplicate, or delete). Duplicate creates a new Device with copied Notes, platform, and export settings, a new id, and a Label such as `Copy of …` (or a blank Label when the source has none).
 _Avoid_: Dashboard, home feed, team library

@@ -40,10 +40,13 @@ export const strings = {
   },
 
   editor: {
-    titleNew: 'New device',
-    titleEdit: 'Edit device',
     label: 'Label',
-    labelHint: 'Identifies this saved Device and its download filename. Notes are the text shown on the Wallpaper.',
+    draft: 'Draft',
+    leaveTitle: 'Unsaved changes',
+    leaveDescription: 'Save your Device before leaving, or discard your changes.',
+    keepEditing: 'Keep editing',
+    discardChanges: 'Discard changes',
+    labelConflict: 'A saved Device already uses this Label.',
     notes: 'Notes',
     formatting: 'Formatting',
     formattingHelp: 'Formatting help',
@@ -90,12 +93,16 @@ export const strings = {
     saveToPhotos: 'Save to Photos',
     saveDevice: 'Save Device',
     download: 'Download',
-    applyHintIOS: 'After saving, open the image in Photos, tap Share, then choose Use as Wallpaper.',
-    applyHintAndroid: 'After saving, open the image in Photos or Gallery, then choose Set as wallpaper.',
+    applyHintIOS:
+      'After saving, open the image in Photos, tap Share, then choose Use as Wallpaper.',
+    applyHintAndroid:
+      'After saving, open the image in Photos or Gallery, then choose Set as wallpaper.',
     preview: 'Live preview',
     textReduced: 'Text reduced to fit',
-    textReducedHelp: 'The Notes are too tall for this wallpaper, so all text was scaled down. Shorten the Notes to make them larger.',
-    exportSizeHelp: 'Automatic size uses this phone’s screen dimensions and pixel ratio. Choose a custom size if you need specific wallpaper dimensions.',
+    textReducedHelp:
+      'The Notes are too tall for this wallpaper, so all text was scaled down. Shorten the Notes to make them larger.',
+    exportSizeHelp:
+      'Automatic size uses this phone’s screen dimensions and pixel ratio. Choose a custom size if you need specific wallpaper dimensions.',
     back: 'Back',
     labelRequired: 'Label is required',
     deviceSaved: 'Device saved',

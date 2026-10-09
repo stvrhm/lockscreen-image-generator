@@ -21,6 +21,12 @@ async function expectScreen(page: Page, heading: string) {
   assert.deepEqual(await page.locator('h1').allInnerTexts(), [heading])
 }
 
+async function expectEditor(page: Page, label = 'New Device') {
+  await page.getByRole('textbox', { name: strings.editor.label }).waitFor()
+  assert.equal(await page.getByRole('textbox', { name: strings.editor.label }).inputValue(), label)
+  assert.equal(await page.getByRole('heading').count(), 1)
+}
+
 function pathname(page: Page): string {
   return new URL(page.url()).pathname
 }
@@ -38,7 +44,7 @@ async function isSameDocument(page: Page): Promise<boolean> {
 describe('direct URLs render exactly one screen', () => {
   let cases: [string, string][] = [
     [routes.screens.home.href(), strings.start.title],
-    [routes.screens.newDevice.href(), strings.editor.titleNew],
+    [routes.screens.newDevice.href(), 'New Device'],
     [routes.screens.browseDevices.href(), strings.browse.title],
     ['/no-such-screen', strings.notFound.title],
   ]
@@ -46,7 +52,8 @@ describe('direct URLs render exactly one screen', () => {
   for (let [href, heading] of cases) {
     it(href, async (t) => {
       let page = await open(t, href)
-      await expectScreen(page, heading)
+      if (href === routes.screens.newDevice.href()) await expectEditor(page)
+      else await expectScreen(page, heading)
     })
   }
 })
@@ -95,38 +102,232 @@ async function openAndroid(t: TestContext, { stallClientHints = false } = {}): P
     },
   })
   await page.goto(routes.screens.newDevice.href())
-  await expectScreen(page, strings.editor.titleNew)
+  await expectEditor(page)
   return page
 }
 
-describe('New Device pre-fill from Phone info', () => {
-  it('starts with empty Label and Notes in desktop Chromium', async (t) => {
+describe('New Device defaults', () => {
+  it('uses an editable headline and keeps Phone info in Notes', async (t) => {
     let page = await open(t, routes.screens.newDevice.href())
-    await expectScreen(page, strings.editor.titleNew)
+    await expectEditor(page)
 
-    assert.equal(await page.locator('#device-label').inputValue(), '')
+    assert.equal(await page.locator('#device-label').inputValue(), 'New Device')
     assert.equal(await page.locator('#device-notes').inputValue(), '')
   })
 
-  it('fills Label and Notes from Client Hints on Android Chrome', async (t) => {
+  it('keeps Client Hints in Notes on Android Chrome', async (t) => {
     let page = await openAndroid(t)
 
-    assert.equal(await page.locator('#device-label').inputValue(), 'Pixel 7')
+    assert.equal(await page.locator('#device-label').inputValue(), 'New Device')
     assert.equal(await page.locator('#device-notes').inputValue(), '# Pixel 7\nAndroid 14')
   })
 
   it('opens empty when Client Hints do not answer in time', async (t) => {
     let page = await openAndroid(t, { stallClientHints: true })
 
-    assert.equal(await page.locator('#device-label').inputValue(), '')
+    assert.equal(await page.locator('#device-label').inputValue(), 'New Device')
     assert.equal(await page.locator('#device-notes').inputValue(), '')
+  })
+
+  it('numbers the default from saved Devices and removes Draft after saving', async (t) => {
+    let page = await open(t, routes.screens.newDevice.href())
+    assert.equal(await page.getByText(strings.editor.draft, { exact: true }).count(), 1)
+    await page.evaluate(() => {
+      let link = document.createElement('a')
+      link.id = 'second-editor-tab'
+      link.href = location.href
+      link.target = '_blank'
+      link.textContent = 'Open another Editor tab'
+      document.body.append(link)
+    })
+    let popupPromise = page.waitForEvent('popup')
+    await page.getByRole('link', { name: 'Open another Editor tab' }).click()
+    let secondTab = await popupPromise
+    await expectEditor(secondTab, 'New Device')
+
+    await page.getByRole('button', { name: strings.editor.saveDevice }).click()
+    await page.waitForURL(/\/devices\/[^/]+\/edit$/)
+    assert.equal(await page.getByText(strings.editor.draft, { exact: true }).count(), 0)
+    await secondTab.getByRole('button', { name: strings.editor.saveDevice }).click()
+    await secondTab.getByRole('alert').getByText(strings.editor.labelConflict).waitFor()
+    assert.equal(new URL(secondTab.url()).pathname, routes.screens.newDevice.href())
+    await secondTab.close()
+
+    await page.goto(routes.screens.newDevice.href())
+    await expectEditor(page, 'New Device 2')
+    await page.getByRole('button', { name: strings.editor.saveDevice }).click()
+    await page.waitForURL(/\/devices\/[^/]+\/edit$/)
+    let savedToast = page.getByLabel('Notifications').getByText(strings.editor.deviceSaved)
+    await savedToast.waitFor()
+    await page.getByRole('button', { name: 'Dismiss notification' }).click()
+    await savedToast.waitFor({ state: 'detached' })
+    await page.getByRole('textbox', { name: strings.editor.label }).fill('New Device 3')
+    await page.getByRole('button', { name: strings.editor.saveDevice }).click()
+    await savedToast.waitFor()
+
+    await page.goto(routes.screens.browseDevices.href())
+    let savedLabels = await page.locator('li strong').allInnerTexts()
+    assert.equal(JSON.stringify(savedLabels.sort()), JSON.stringify(['New Device', 'New Device 3']))
+    await page.goto(routes.screens.newDevice.href())
+    await expectEditor(page, 'New Device 2')
+  })
+
+  it('rejects a case and whitespace normalized Label conflict accessibly', async (t) => {
+    let page = await open(t, routes.screens.newDevice.href())
+    let label = page.getByRole('textbox', { name: strings.editor.label })
+    await label.fill('Alpha')
+    await page.getByRole('button', { name: strings.editor.saveDevice }).click()
+    await page.waitForURL(/\/edit$/)
+
+    await page.goto(routes.screens.newDevice.href())
+    label = page.getByRole('textbox', { name: strings.editor.label })
+    await label.fill(' alpha ')
+    await page.getByRole('button', { name: strings.editor.saveDevice }).click()
+    await page.getByRole('alert').getByText(strings.editor.labelConflict).waitFor()
+    assert.equal(await page.evaluate(() => document.activeElement?.id), 'device-label')
+    assert.equal(await page.getAttribute('#device-label', 'aria-invalid'), 'true')
+    assert.equal(pathname(page), routes.screens.newDevice.href())
+    await page.getByRole('button', { name: strings.editor.saveToPhotos }).click()
+    await page.getByRole('alert').getByText(strings.editor.labelConflict).waitFor()
+    assert.equal(pathname(page), routes.screens.newDevice.href())
+  })
+})
+
+describe('unsaved Editor changes', () => {
+  it('guards same-origin links when the Navigation API is unavailable', async (t) => {
+    let page = await t.serve(await createTestServer(router.fetch))
+    await page.addInitScript(() => {
+      Object.defineProperty(window, 'navigation', { configurable: true, value: undefined })
+    })
+    await page.goto(routes.screens.newDevice.href())
+    await expectEditor(page)
+    await page.locator('#device-notes').fill('Unsaved')
+    await page.evaluate((href) => {
+      let link = document.createElement('a')
+      link.href = href
+      link.textContent = 'Test destination'
+      document.body.append(link)
+    }, routes.screens.home.href())
+    await page.getByRole('link', { name: 'Test destination' }).click()
+    await page.getByRole('dialog', { name: strings.editor.leaveTitle }).waitFor()
+    assert.equal(pathname(page), routes.screens.newDevice.href())
+  })
+
+  it('leaves clean and reverted Editors without a warning', async (t) => {
+    let page = await open(t, routes.screens.newDevice.href())
+    await page.getByRole('button', { name: strings.editor.back }).click()
+    await expectScreen(page, strings.start.title)
+
+    await page.getByRole('link', { name: strings.start.new }).click()
+    await expectEditor(page)
+    let label = page.getByRole('textbox', { name: strings.editor.label })
+    await label.fill('Temporary')
+    await label.fill('New Device')
+    await page.getByRole('button', { name: strings.editor.back }).click()
+    await expectScreen(page, strings.start.title)
+  })
+
+  it('lets the user keep editing or discard before Back navigation', async (t) => {
+    let page = await open(t, routes.screens.newDevice.href())
+    await page.locator('#device-notes').fill('Unsaved note')
+    await page.getByRole('button', { name: strings.editor.back }).click()
+    let dialog = page.getByRole('dialog', { name: strings.editor.leaveTitle })
+    await dialog.waitFor()
+    await dialog.getByRole('button', { name: strings.editor.keepEditing }).click()
+    await dialog.waitFor({ state: 'detached' })
+    await expectEditor(page)
+    assert.equal(
+      await page.evaluate(() => document.activeElement?.textContent?.trim()),
+      strings.editor.back,
+      'focus did not return to the Back action',
+    )
+
+    await page.getByRole('button', { name: strings.editor.back }).click()
+    await page
+      .getByRole('dialog', { name: strings.editor.leaveTitle })
+      .getByRole('button', { name: strings.editor.discardChanges })
+      .click()
+    await expectScreen(page, strings.start.title)
+  })
+
+  it('saves before completing the pending navigation', async (t) => {
+    let page = await open(t, routes.screens.newDevice.href())
+    await page.locator('#device-notes').fill('Keep this note')
+    await page.getByRole('button', { name: strings.editor.back }).click()
+    await page
+      .getByRole('dialog', { name: strings.editor.leaveTitle })
+      .getByRole('button', { name: strings.editor.saveDevice })
+      .click()
+    await expectScreen(page, strings.start.title)
+
+    await page.getByRole('link', { name: strings.start.browse }).click()
+    await page.getByText('New Device', { exact: true }).waitFor()
+  })
+
+  it('guards browser Back while editing a saved Device', async (t) => {
+    let page = await open(t, routes.screens.home.href())
+    await page.getByRole('link', { name: strings.start.new }).click()
+    await expectEditor(page)
+    await page.getByRole('textbox', { name: strings.editor.label }).fill('History guard')
+    await page.getByRole('button', { name: strings.editor.saveDevice }).click()
+    await page.waitForURL(/\/edit$/)
+    let editPath = pathname(page)
+    await page.locator('#device-notes').fill('Unsaved edit')
+    await page.evaluate(() => history.back())
+
+    let dialog = page.getByRole('dialog', { name: strings.editor.leaveTitle })
+    await dialog.waitFor()
+    await dialog.getByRole('button', { name: strings.editor.keepEditing }).click()
+    await dialog.waitFor({ state: 'detached' })
+    assert.equal(pathname(page), editPath)
+    assert.equal(await page.locator('#device-notes').inputValue(), 'Unsaved edit')
+  })
+
+  it('focuses and announces the Label error when Save Device from the dialog conflicts', async (t) => {
+    let page = await open(t, routes.screens.newDevice.href())
+    await page.getByRole('textbox', { name: strings.editor.label }).fill('Occupied')
+    await page.getByRole('button', { name: strings.editor.saveDevice }).click()
+    await page.waitForURL(/\/edit$/)
+
+    await page.goto(routes.screens.newDevice.href())
+    await page.getByRole('textbox', { name: strings.editor.label }).fill('occupied')
+    await page.locator('#device-notes').fill('Unsaved')
+    await page.getByRole('button', { name: strings.editor.back }).click()
+    await page
+      .getByRole('dialog', { name: strings.editor.leaveTitle })
+      .getByRole('button', { name: strings.editor.saveDevice })
+      .click()
+    await page.getByRole('alert').getByText(strings.editor.labelConflict).waitFor()
+    assert.equal(await page.evaluate(() => document.activeElement?.id), 'device-label')
+    assert.equal(pathname(page), routes.screens.newDevice.href())
+  })
+
+  it('uses the browser warning for refresh and allows staying on the Editor', async (t) => {
+    let page = await open(t, routes.screens.newDevice.href())
+    await page.locator('#device-notes').fill('Unsaved before refresh')
+    let warning = new Promise<void>((resolve, reject) => {
+      page.once('dialog', async (dialog) => {
+        try {
+          assert.equal(dialog.type(), 'beforeunload')
+          await dialog.dismiss()
+          resolve()
+        } catch (error) {
+          reject(error)
+        }
+      })
+    })
+    let reload = page.reload({ timeout: 2000 }).catch(() => {})
+    await warning
+    await reload
+    assert.equal(pathname(page), routes.screens.newDevice.href())
+    assert.equal(await page.locator('#device-notes').inputValue(), 'Unsaved before refresh')
   })
 })
 
 describe('the Notes toolbar', () => {
   it('formats with a single tap on each button', async (t) => {
     let page = await open(t, routes.screens.newDevice.href())
-    await expectScreen(page, strings.editor.titleNew)
+    await expectEditor(page)
     let notes = page.locator('#device-notes')
 
     for (let [label, expected] of [
@@ -147,7 +348,7 @@ describe('the Notes toolbar', () => {
 
   it('reflects the selected formatting and toggles it off', async (t) => {
     let page = await open(t, routes.screens.newDevice.href())
-    await expectScreen(page, strings.editor.titleNew)
+    await expectEditor(page)
     let notes = page.locator('#device-notes')
     let bold = page.getByRole('button', { name: strings.editor.bold, exact: true })
 
@@ -168,23 +369,29 @@ describe('the Notes toolbar', () => {
     await notes.evaluate((el: HTMLTextAreaElement) => el.setSelectionRange(0, 3))
     await bold.tap()
     assert.equal(await notes.inputValue(), '**abc**')
+    await page.waitForFunction(
+      (name) =>
+        document.querySelector(`button[aria-label="${name}"]`)?.getAttribute('aria-pressed') ===
+        'true',
+      strings.editor.bold,
+    )
     assert.equal(await bold.getAttribute('aria-pressed'), 'true')
   })
 
   it('shows a button tooltip on keyboard focus', async (t) => {
     let page = await open(t, routes.screens.newDevice.href())
-    await expectScreen(page, strings.editor.titleNew)
+    await expectEditor(page)
 
     await page.getByRole('button', { name: strings.editor.bold, exact: true }).focus()
     await page.keyboard.press('Tab')
     let tooltip = page.getByRole('tooltip', { name: strings.editor.italic })
     await tooltip.waitFor()
-    assert.match(await tooltip.getAttribute('data-anchor-placement') ?? '', /^(top|bottom)$/)
+    assert.match((await tooltip.getAttribute('data-anchor-placement')) ?? '', /^(top|bottom)$/)
   })
 
   it('names the Heading controls H1 and H2', async (t) => {
     let page = await open(t, routes.screens.newDevice.href())
-    await expectScreen(page, strings.editor.titleNew)
+    await expectEditor(page)
 
     for (let name of [strings.editor.h1, strings.editor.h2]) {
       assert.equal(
@@ -199,7 +406,7 @@ describe('the Notes toolbar', () => {
 describe('Formatting help', () => {
   it('explains authoring from an icon beside the Notes label', async (t) => {
     let page = await open(t, routes.screens.newDevice.href())
-    await expectScreen(page, strings.editor.titleNew)
+    await expectEditor(page)
 
     assert.equal(await page.getByText(/Start a line with #/).count(), 0)
     assert.equal(await page.locator('#notes-hint').count(), 0)
@@ -221,11 +428,12 @@ describe('Formatting help', () => {
     await trigger.click()
     let dialog = page.getByRole('dialog', { name: strings.editor.formattingHelp })
     await dialog.waitFor()
-    assert.match(await dialog.getAttribute('data-anchor-placement') ?? '', /^(top|bottom)$/)
+    assert.match((await dialog.getAttribute('data-anchor-placement')) ?? '', /^(top|bottom)$/)
     for (let rule of strings.editor.formattingHelpRules) {
       await dialog.getByText(rule, { exact: true }).waitFor()
     }
 
+    await dialog.focus()
     await page.keyboard.press('Escape')
     await expectPopoverClosed(page, 'formatting-help')
     await page.waitForFunction(
@@ -250,7 +458,7 @@ function expectPopoverClosed(page: Page, id: string) {
 describe('the Phone info overlay', () => {
   it('shows the empty state in desktop Chromium, and no Shortcut chips exist', async (t) => {
     let page = await open(t, routes.screens.newDevice.href())
-    await expectScreen(page, strings.editor.titleNew)
+    await expectEditor(page)
 
     for (let chip of ['Canvas size', 'Pixel density', 'Detected OS', 'Insert from Device']) {
       assert.equal(await page.getByText(chip, { exact: true }).count(), 0, `${chip} is still shown`)
@@ -260,7 +468,7 @@ describe('the Phone info overlay', () => {
     await trigger.click()
     let overlay = page.getByRole('dialog', { name: strings.editor.phoneInfo })
     await overlay.getByText(strings.editor.phoneInfoEmpty).waitFor()
-    assert.match(await overlay.getAttribute('data-anchor-placement') ?? '', /^(top|bottom)-end$/)
+    assert.match((await overlay.getAttribute('data-anchor-placement')) ?? '', /^(top|bottom)-end$/)
     assert.equal(await overlay.getByRole('button').count(), 0, 'the empty state offers Add actions')
 
     await page.keyboard.press('Escape')
@@ -300,31 +508,73 @@ describe('the Phone info overlay', () => {
 })
 
 describe('a Device round trip', () => {
+  it('allows a non-Label edit to preserve an unchanged legacy duplicate Label', async (t) => {
+    let page = await open(t, routes.screens.newDevice.href())
+    let label = page.getByRole('textbox', { name: strings.editor.label })
+    await label.fill('Legacy duplicate')
+    await page.getByRole('button', { name: strings.editor.saveDevice }).click()
+    await page.waitForURL(/\/edit$/)
+    let first = await page.evaluate(async () => {
+      let db = await new Promise<IDBDatabase>((resolve, reject) => {
+        let request = indexedDB.open('tdl-devices', 1)
+        request.onsuccess = () => resolve(request.result)
+        request.onerror = () => reject(request.error)
+      })
+      let tx = db.transaction('devices', 'readonly')
+      let records = await new Promise<Record<string, unknown>[]>((resolve, reject) => {
+        let request = tx.objectStore('devices').getAll()
+        request.onsuccess = () => resolve(request.result)
+        request.onerror = () => reject(request.error)
+      })
+      db.close()
+      return records[0]
+    })
+    await page.evaluate(async (record) => {
+      let db = await new Promise<IDBDatabase>((resolve, reject) => {
+        let request = indexedDB.open('tdl-devices', 1)
+        request.onsuccess = () => resolve(request.result)
+        request.onerror = () => reject(request.error)
+      })
+      let copy = { ...record, id: crypto.randomUUID() }
+      let tx = db.transaction('devices', 'readwrite')
+      tx.objectStore('devices').put(copy)
+      await new Promise<void>((resolve, reject) => {
+        tx.oncomplete = () => resolve()
+        tx.onerror = () => reject(tx.error)
+      })
+      db.close()
+    }, first)
+    await page.locator('#device-notes').fill('Updated notes')
+    await page.getByRole('button', { name: strings.editor.saveDevice }).click()
+    await page.getByLabel('Notifications').getByText(strings.editor.deviceSaved).waitFor()
+    assert.equal(await page.locator('#device-notes').inputValue(), 'Updated notes')
+  })
+
   it('creates, survives refresh, and moves through history in one document', async (t) => {
     let page = await open(t, routes.screens.home.href())
     await markDocument(page)
 
     await page.getByRole('link', { name: strings.start.new }).click()
-    await expectScreen(page, strings.editor.titleNew)
+    await expectEditor(page)
 
-    await page.getByLabel(/label/i).first().fill('Pixel 9 QA')
+    await page.getByRole('textbox', { name: strings.editor.label }).fill('Pixel 9 QA')
     await page.getByRole('button', { name: strings.editor.saveDevice }).click()
     await page.waitForURL(/\/devices\/[^/]+\/edit$/)
     let editPath = pathname(page)
-    await expectScreen(page, strings.editor.titleEdit)
+    await expectEditor(page, 'Pixel 9 QA')
     assert.ok(await isSameDocument(page), 'creating a Device reloaded the document')
 
     await page.reload()
     assert.equal(pathname(page), editPath)
-    await expectScreen(page, strings.editor.titleEdit)
+    await expectEditor(page, 'Pixel 9 QA')
     await markDocument(page)
 
-    await page.getByRole('link', { name: strings.editor.back }).click()
+    await page.getByRole('button', { name: strings.editor.back }).click()
     await expectScreen(page, strings.start.title)
 
     await page.goBack()
     await page.waitForURL((url) => url.pathname === editPath)
-    await expectScreen(page, strings.editor.titleEdit)
+    await expectEditor(page, 'Pixel 9 QA')
 
     await page.goForward()
     await page.waitForURL((url) => url.pathname === routes.screens.home.href())
@@ -332,12 +582,12 @@ describe('a Device round trip', () => {
     assert.ok(await isSameDocument(page), 'history navigation reloaded the document')
 
     await page.getByRole('link', { name: strings.start.continue }).click()
-    await expectScreen(page, strings.editor.titleEdit)
+    await expectEditor(page, 'Pixel 9 QA')
   })
 
   it('saving a new Device keeps the scroll position and confirms with a toast', async (t) => {
     let page = await open(t, routes.screens.newDevice.href())
-    await page.getByLabel(/label/i).first().fill('Pixel 9 QA')
+    await page.getByRole('textbox', { name: strings.editor.label }).fill('Pixel 9 QA')
     let save = page.getByRole('button', { name: strings.editor.saveDevice })
     await save.scrollIntoViewIfNeeded()
     let scrollBefore = await page.evaluate(() => window.scrollY)
@@ -345,14 +595,17 @@ describe('a Device round trip', () => {
 
     await save.click()
     await page.waitForURL(/\/edit$/)
-    await expectScreen(page, strings.editor.titleEdit)
+    await expectEditor(page, 'Pixel 9 QA')
     await page.getByLabel('Notifications').getByText(strings.editor.deviceSaved).waitFor()
-    assert.equal(await page.evaluate(() => window.scrollY), scrollBefore)
+    assert.ok(
+      Math.abs((await page.evaluate(() => window.scrollY)) - scrollBefore) < 24,
+      'saving shifted the viewport more than the removed Label field changes document height',
+    )
   })
 
   it('duplicates and deletes from Browse', async (t) => {
     let page = await open(t, routes.screens.newDevice.href())
-    await page.getByLabel(/label/i).first().fill('Pixel 9 QA')
+    await page.getByRole('textbox', { name: strings.editor.label }).fill('Pixel 9 QA')
     await page.getByRole('button', { name: strings.editor.saveDevice }).click()
     await page.waitForURL(/\/edit$/)
 
@@ -361,13 +614,22 @@ describe('a Device round trip', () => {
     await page.waitForURL(/\/edit$/)
 
     await page.goto(routes.screens.browseDevices.href())
+    let original = page.locator('li').filter({ has: page.getByText('Pixel 9 QA', { exact: true }) })
+    await original.getByRole('button', { name: strings.browse.duplicate }).click()
+    await page.waitForURL(/\/edit$/)
+
+    await page.goto(routes.screens.browseDevices.href())
     let labels = page.locator('li strong')
-    await labels.nth(1).waitFor()
-    assert.deepEqual((await labels.allInnerTexts()).sort(), ['Copy of Pixel 9 QA', 'Pixel 9 QA'])
+    await labels.nth(2).waitFor()
+    assert.deepEqual((await labels.allInnerTexts()).sort(), [
+      'Copy of Pixel 9 QA',
+      'Copy of Pixel 9 QA 2',
+      'Pixel 9 QA',
+    ])
 
     page.once('dialog', (dialog) => void dialog.accept())
     await page.getByRole('button', { name: strings.browse.delete }).first().click()
-    await labels.nth(1).waitFor({ state: 'detached' })
-    assert.equal(await labels.count(), 1)
+    await labels.nth(2).waitFor({ state: 'detached' })
+    assert.equal(await labels.count(), 2)
   })
 })

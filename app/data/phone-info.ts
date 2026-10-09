@@ -70,11 +70,6 @@ export function phoneInfoNotes(info: PhoneInfo): string {
     .join('\n')
 }
 
-/** Label for a New Device: the model, if detected. */
-export function phoneInfoLabel(info: PhoneInfo): string {
-  return info.model ?? ''
-}
-
 /**
  * How long to wait for Client Hints. They normally answer within milliseconds;
  * the limit keeps a slow Host from stalling a New Device or the overlay.

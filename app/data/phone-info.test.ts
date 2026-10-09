@@ -1,13 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import {
-  detectPhoneInfo,
-  phoneInfoLabel,
-  phoneInfoItems,
-  phoneInfoNotes,
-  readPhoneInfo,
-} from './phone-info.ts'
+import { detectPhoneInfo, phoneInfoItems, phoneInfoNotes, readPhoneInfo } from './phone-info.ts'
 
 const ua = {
   ios26Safari:
@@ -105,11 +99,6 @@ test('Notes omit undetected items', () => {
   assert.equal(phoneInfoNotes({ model: 'iPhone' }), '# iPhone')
   assert.equal(phoneInfoNotes({ os: 'Android 14' }), 'Android 14')
   assert.equal(phoneInfoNotes({}), '')
-})
-
-test('the Label is the model, if detected', () => {
-  assert.equal(phoneInfoLabel({ model: 'SM-S911B', os: 'Android 15' }), 'SM-S911B')
-  assert.equal(phoneInfoLabel({ os: 'Android 14' }), '')
 })
 
 test('reading from the Host uses Client Hints where available', async () => {
