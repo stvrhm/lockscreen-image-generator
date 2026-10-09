@@ -9,7 +9,11 @@ import {
   saveDevice,
   type Device,
 } from '../../data/devices.ts'
-import { downloadDeviceFile, readDeviceFile } from '../../data/device-file.ts'
+import {
+  DeviceFileDimensionError,
+  downloadDeviceFile,
+  readDeviceFile,
+} from '../../data/device-file.ts'
 import { strings } from '../../strings.ts'
 import { routes } from '../../routes.ts'
 import { measureHostExportSize } from '../../data/host.ts'
@@ -53,7 +57,12 @@ export function BrowseDevices(handle: Handle<{ devices: Device[] }>) {
     } catch (error) {
       toast({
         title: strings.browse.importFailed,
-        description: error instanceof Error ? error.message : undefined,
+        description:
+          error instanceof DeviceFileDimensionError
+            ? strings.editor.dimensionIssues[error.issue]
+            : error instanceof Error
+              ? error.message
+              : undefined,
         variant: 'error',
       })
     }

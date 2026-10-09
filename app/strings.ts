@@ -79,6 +79,11 @@ export const strings = {
     platformInferred: 'Inferred from this phone',
     platformOverride: 'Override',
     exportSize: 'Export size',
+    dimensionIssues: {
+      'positive-integers': 'Width and height must be positive whole numbers.',
+      'side-limit': 'Each custom dimension must be 4096 pixels or less.',
+      'pixel-limit': 'Custom Wallpaper dimensions must total 12,000,000 pixels or less.',
+    },
     exportSizeAuto: 'Auto',
     exportSizeCustom: 'Custom',
     customizeExport: 'Customize export',

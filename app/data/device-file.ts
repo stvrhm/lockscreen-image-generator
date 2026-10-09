@@ -5,6 +5,7 @@ import {
   type ExportSizeMode,
   type Platform,
 } from './devices.ts'
+import { customDimensionIssue, type CustomDimensionIssue } from './device-dimensions.ts'
 
 const FILE_TYPE = 'test-device-lockscreen'
 const FILE_VERSION = 1
@@ -52,11 +53,13 @@ export async function readDeviceFile(file: File): Promise<Device> {
     !isPlatform(value.platform) ||
     !isExportSizeMode(value.exportSizeMode) ||
     !isExportEncoding(value.encoding) ||
-    !isPositiveInteger(value.customWidth) ||
-    !isPositiveInteger(value.customHeight)
+    typeof value.customWidth !== 'number' ||
+    typeof value.customHeight !== 'number'
   ) {
     throw new Error('The Device file is missing valid project details.')
   }
+  let dimensionIssue = customDimensionIssue(value.customWidth, value.customHeight)
+  if (dimensionIssue) throw new DeviceFileDimensionError(dimensionIssue)
   let now = new Date().toISOString()
   return {
     id: createId(),
@@ -69,6 +72,13 @@ export async function readDeviceFile(file: File): Promise<Device> {
     encoding: value.encoding,
     createdAt: now,
     updatedAt: now,
+  }
+}
+
+export class DeviceFileDimensionError extends Error {
+  constructor(readonly issue: CustomDimensionIssue) {
+    super('The Device file has unsupported custom Wallpaper dimensions.')
+    this.name = 'DeviceFileDimensionError'
   }
 }
 
@@ -86,10 +96,6 @@ function isExportSizeMode(value: unknown): value is ExportSizeMode {
 
 function isExportEncoding(value: unknown): value is ExportEncoding {
   return value === 'quality' || value === 'size'
-}
-
-function isPositiveInteger(value: unknown): value is number {
-  return typeof value === 'number' && Number.isSafeInteger(value) && value > 0
 }
 
 function slug(value: string): string {
