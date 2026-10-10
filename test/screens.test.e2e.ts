@@ -107,6 +107,32 @@ async function openAndroid(t: TestContext, { stallClientHints = false } = {}): P
 }
 
 describe('New Device defaults', () => {
+  it('lets the Notes component styles override the global form defaults', async (t) => {
+    let page = await open(t, routes.screens.newDevice.href())
+    await expectEditor(page)
+
+    let notesStyle = await page.locator('#device-notes').evaluate((element) => {
+      let style = getComputedStyle(element)
+      return {
+        backgroundColor: style.backgroundColor,
+        borderTopWidth: style.borderTopWidth,
+        borderRightWidth: style.borderRightWidth,
+        borderBottomWidth: style.borderBottomWidth,
+        borderLeftWidth: style.borderLeftWidth,
+      }
+    })
+    assert.equal(notesStyle.backgroundColor, 'rgba(0, 0, 0, 0)')
+    assert.deepEqual(
+      [
+        notesStyle.borderTopWidth,
+        notesStyle.borderRightWidth,
+        notesStyle.borderBottomWidth,
+        notesStyle.borderLeftWidth,
+      ],
+      ['1px', '0px', '0px', '0px'],
+    )
+  })
+
   it('uses an editable headline and keeps Phone info in Notes', async (t) => {
     let page = await open(t, routes.screens.newDevice.href())
     await expectEditor(page)
@@ -587,6 +613,7 @@ describe('a Device round trip', () => {
 
   it('saving a new Device keeps the scroll position and confirms with a toast', async (t) => {
     let page = await open(t, routes.screens.newDevice.href())
+    await page.setViewportSize({ width: 390, height: 600 })
     await page.getByRole('textbox', { name: strings.editor.label }).fill('Pixel 9 QA')
     let save = page.getByRole('button', { name: strings.editor.saveDevice })
     await save.scrollIntoViewIfNeeded()

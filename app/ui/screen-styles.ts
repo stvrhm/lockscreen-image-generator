@@ -6,7 +6,7 @@ import { theme } from './theme.ts'
 export const pageStyle = [
   wrapper({ gutter: theme.space.lg, maxWidth: '76rem' }),
   region(theme.space.lg),
-  flow({ flowSpace: theme.space['lg-xl'] }),
+  flow({ flowSpace: theme.space['md-lg'] }),
 ]
 
 export const headingStyle = css({
@@ -29,7 +29,7 @@ export const headerRowStyle = [
   cluster({ gutter: theme.space.md }),
   css({
     alignItems: 'baseline',
-    borderBottom: '1px solid var(--border-subtle)',
+    borderBottom: '1px solid var(--border)',
     paddingBottom: '12px',
   }),
 ]

@@ -131,7 +131,7 @@ const variantStyle = {
     fontWeight: theme.fontWeight.bold,
   }),
   segment: css({
-    '--button-bg': 'var(--surface)',
+    '--button-bg': 'transparent',
     '--button-fg': 'var(--text-muted)',
     '--button-fg-hover': 'var(--text)',
     '--button-bg-pressed': 'var(--surface-3)',

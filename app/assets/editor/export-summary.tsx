@@ -20,7 +20,7 @@ export function ExportSummary(
           : strings.editor.autoSize
         : strings.editor.customized
     return (
-      <div mix={exportSummaryStyle}>
+      <p mix={exportSummaryStyle}>
         <strong>
           {device.platform === 'ios' ? 'iOS' : 'Android'} · {size.width} × {size.height} px
         </strong>
@@ -28,7 +28,7 @@ export function ExportSummary(
           {device.encoding === 'quality' ? 'PNG' : 'JPEG'} · {exportStatus}
         </span>
         {device.exportSizeMode === 'auto' && <span>{strings.editor.exportSizeHelp}</span>}
-      </div>
+      </p>
     )
   }
 }

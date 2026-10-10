@@ -1,6 +1,6 @@
 import { css, navigate, on, ref, type Handle } from 'remix/component'
 
-import { cluster, flow, repel, switcher } from '../../ui/cube/index.ts'
+import { cluster, flow, repel } from '../../ui/cube/index.ts'
 import { theme } from '../../ui/theme.ts'
 import {
   saveDevice,
@@ -23,6 +23,7 @@ import { measureHostExportSize } from '../../data/host.ts'
 import { downloadWallpaper, shareWallpaper, type WallpaperOptions } from '../../data/wallpaper.ts'
 import { strings } from '../../strings.ts'
 import { routes } from '../../routes.ts'
+import { Badge } from '../../ui/badge.tsx'
 import { Button } from '../../ui/button.tsx'
 import { toast } from '../../ui/toast.tsx'
 import { ConfirmationDialog } from '../../ui/confirmation-dialog.tsx'
@@ -400,12 +401,12 @@ export function Editor(
 
     return (
       <div mix={pageStyle}>
-        <header mix={editorHeaderStyle}>
+        <header mix={flow({ flowSpace: theme.space.sm })}>
           <div mix={headerRowStyle}>
             <Button variant="ghost" onClick={requestLeave}>
               {strings.editor.back}
             </Button>
-            {editingNew ? <span mix={draftPillStyle}>{strings.editor.draft}</span> : null}
+            {editingNew ? <Badge>{strings.editor.draft}</Badge> : null}
           </div>
           <h1
             aria-label={device.label}
@@ -459,7 +460,7 @@ export function Editor(
         </header>
 
         <div mix={editorLayoutStyle}>
-          <div mix={formStyle}>
+          <div mix={flow({ flowSpace: theme.space.md })}>
             {labelError ? (
               <p id="device-label-error" role="alert" mix={labelErrorStyle}>
                 {labelError}
@@ -550,16 +551,6 @@ export function Editor(
               </div>
             </div>
 
-            <div mix={mobilePreviewStyle}>
-              <p mix={previewLabelStyle}>{strings.editor.preview}</p>
-              <PhonePreview platform={device.platform} text={previewText} size={size} />
-              <ExportSummary
-                device={device}
-                size={size}
-                automatic={editingNew && !platformOverride}
-              />
-            </div>
-
             <details mix={advancedStyle}>
               <summary>{strings.editor.customizeExport}</summary>
               <div mix={advancedContentStyle}>
@@ -570,6 +561,7 @@ export function Editor(
                     <select
                       aria-label={strings.editor.platform}
                       value={device.platform}
+                      style={{ background: 'transparent' }}
                       mix={[
                         platformSelectStyle,
                         on('change', (event) =>
@@ -628,6 +620,7 @@ export function Editor(
                           min={1}
                           max={MAX_CUSTOM_DIMENSION}
                           value={device.customWidth}
+                          style={{ background: 'transparent' }}
                           mix={[
                             inputStyle,
                             on('input', (event) =>
@@ -645,6 +638,7 @@ export function Editor(
                           min={1}
                           max={MAX_CUSTOM_DIMENSION}
                           value={device.customHeight}
+                          style={{ background: 'transparent' }}
                           mix={[
                             inputStyle,
                             on('input', (event) =>
@@ -749,15 +743,6 @@ export function Editor(
   }
 }
 
-const editorHeaderStyle = [
-  flow({ flowSpace: theme.space.sm }),
-  css({
-    alignItems: 'flex-start',
-    borderBottom: '1px solid var(--border-subtle)',
-    paddingBottom: '12px',
-  }),
-]
-
 const headerRowStyle = repel({ gutter: theme.space.xs, alignment: 'center' })
 
 const editableHeadlineStyle = css({
@@ -768,33 +753,18 @@ const editableHeadlineStyle = css({
   },
 })
 
-const draftPillStyle = css({
-  display: 'inline-flex',
-  alignItems: 'center',
-  border: '1px solid var(--border)',
-  borderRadius: theme.radius.full,
-  padding: '0.2em 0.65em',
-  color: 'var(--text-muted)',
-  fontSize: theme.fontSize.small,
-  fontWeight: theme.fontWeight.semibold,
-  textTransform: 'uppercase',
-  letterSpacing: '0.06em',
-})
-
 const labelErrorStyle = css({ color: 'var(--danger)', margin: 0 })
 
-const editorLayoutStyle = switcher({
-  gutter: theme.space.xl,
-  targetWidth: '52rem',
+const editorLayoutStyle = css({
+  display: 'grid',
+  gridTemplateColumns: 'minmax(0, 1fr)',
+  gap: theme.space.xl,
+  '& > *': { minWidth: 0 },
+  '@media (min-width: 68rem)': {
+    gridTemplateColumns: 'minmax(0, 1.15fr) minmax(22rem, 0.85fr)',
+    alignItems: 'start',
+  },
 })
-
-const formStyle = [
-  flow({ flowSpace: theme.space.lg }),
-  css({
-    minWidth: '260px',
-    paddingBlock: theme.space['sm-md'],
-  }),
-]
 
 const fieldStyle = [flow({ flowSpace: theme.space.xs })]
 
@@ -803,8 +773,6 @@ const notesFieldStyle = [flow({ flowSpace: theme.space.xs })]
 const notesLabelStyle = cluster({ gutter: theme.space['2xs'], alignment: 'center' })
 
 const fieldLabelStyle = css({
-  display: 'block',
-  fontSize: theme.fontSize.small,
   fontWeight: theme.fontWeight.semibold,
   color: 'var(--text)',
 })
@@ -813,10 +781,9 @@ const inputStyle = css({
   padding: `${theme.space.xs} ${theme.space.xs}`,
   borderRadius: theme.radius.sm,
   border: '1px solid var(--border)',
-  background: 'rgba(10, 10, 11, 0.72)',
   color: 'var(--text)',
   transition: 'border-color 140ms ease, box-shadow 140ms ease',
-  ':focus': {
+  ':focus-visible': {
     borderColor: 'var(--accent-strong)',
     boxShadow: '0 0 0 3px rgba(56, 189, 248, 0.14)',
   },
@@ -829,7 +796,6 @@ const platformSelectStyle = css({
   padding: `${theme.space.xs} ${theme.space.xs}`,
   borderRadius: theme.radius.sm,
   border: '1px solid var(--border)',
-  background: 'rgba(10, 10, 11, 0.72)',
   color: 'var(--text)',
   fontWeight: theme.fontWeight.medium,
   textAlign: 'start',
@@ -844,18 +810,15 @@ const textareaStyle = css({
   padding: `${theme.space.xs} ${theme.space.xs}`,
   border: 0,
   borderTop: '1px solid var(--border)',
-  borderRadius: 0,
+  borderRadius: `0 0 calc(${theme.radius.md} - 1px) calc(${theme.radius.md} - 1px)`,
   background: 'transparent',
   color: 'var(--text)',
   lineHeight: 1.55,
-  outline: 'none',
 })
 
 const composerStyle = css({
-  overflow: 'hidden',
   border: '1px solid var(--border)',
   borderRadius: theme.radius.md,
-  background: 'rgba(10, 10, 11, 0.72)',
   ':focus-within': {
     borderColor: 'var(--accent-strong)',
     boxShadow: '0 0 0 3px rgba(56, 189, 248, 0.14)',
@@ -865,7 +828,10 @@ const composerStyle = css({
 const toolbarStyle = [
   cluster({ gutter: '2px', alignment: 'center' }),
   // One row even on narrow phones: the buttons shrink instead of wrapping.
-  css({ flexWrap: 'nowrap', padding: '6px', background: 'rgba(255, 255, 255, 0.035)' }),
+  css({
+    flexWrap: 'nowrap',
+    padding: '6px',
+  }),
 ]
 
 const segmentStyle = css({
@@ -873,9 +839,15 @@ const segmentStyle = css({
   gap: '0',
   border: '1px solid var(--border)',
   borderRadius: '10px',
-  background: 'var(--surface)',
-  overflow: 'hidden',
   width: 'fit-content',
+  '& > :first-child': {
+    borderTopLeftRadius: '9px',
+    borderBottomLeftRadius: '9px',
+  },
+  '& > :last-child': {
+    borderTopRightRadius: '9px',
+    borderBottomRightRadius: '9px',
+  },
 })
 
 const sizeInputsStyle = cluster({ gutter: '12px', alignment: 'stretch' })
@@ -897,28 +869,18 @@ const previewColumnStyle = [
     flexDirection: 'column',
     alignItems: 'center',
     gap: '16px',
-    flex: '0 0 auto',
-    alignSelf: 'flex-start',
-    position: 'sticky',
-    top: '24px',
+    minWidth: 0,
     padding: '8px 0 0',
-    '@media (max-width: 52rem)': { display: 'none', position: 'static' },
+    '@media (min-width: 68rem) and (min-height: 42rem)': {
+      position: 'sticky',
+      alignSelf: 'start',
+      top: '24px',
+    },
   }),
 ]
 
-const mobilePreviewStyle = css({
-  display: 'none',
-  '@media (max-width: 52rem)': {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: theme.space.xs,
-    paddingBlock: theme.space['3xs'] + ' ' + theme.space.xs,
-  },
-})
-
 const advancedStyle = css({
-  borderBlock: '1px solid var(--border-subtle)',
+  borderBlock: '1px solid var(--border)',
   paddingBlock: theme.space.xs,
   '& summary': {
     marginBlockEnd: 0,
