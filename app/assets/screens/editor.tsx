@@ -23,6 +23,7 @@ import { measureHostExportSize } from '../../data/host.ts'
 import { downloadWallpaper, shareWallpaper, type WallpaperOptions } from '../../data/wallpaper.ts'
 import { strings } from '../../strings.ts'
 import { routes } from '../../routes.ts'
+import { Badge } from '../../ui/badge.tsx'
 import { Button } from '../../ui/button.tsx'
 import { toast } from '../../ui/toast.tsx'
 import { ConfirmationDialog } from '../../ui/confirmation-dialog.tsx'
@@ -405,7 +406,7 @@ export function Editor(
             <Button variant="ghost" onClick={requestLeave}>
               {strings.editor.back}
             </Button>
-            {editingNew ? <span mix={draftPillStyle}>{strings.editor.draft}</span> : null}
+            {editingNew ? <Badge>{strings.editor.draft}</Badge> : null}
           </div>
           <h1
             aria-label={device.label}
@@ -525,6 +526,16 @@ export function Editor(
                   rows={7}
                   value={device.notes}
                   aria-labelledby="notes-label"
+                  style={{
+                    // Inline values override the unlayered global form-control reset.
+                    padding: `${theme.space.xs} ${theme.space.xs}`,
+                    border: 0,
+                    borderTop: '1px solid var(--border)',
+                    borderRadius: `0 0 calc(${theme.radius.md} - 1px) calc(${theme.radius.md} - 1px)`,
+                    background: 'transparent',
+                    color: 'var(--text)',
+                    lineHeight: 1.55,
+                  }}
                   mix={[
                     textareaStyle,
                     ref((node) => {
@@ -570,6 +581,7 @@ export function Editor(
                     <select
                       aria-label={strings.editor.platform}
                       value={device.platform}
+                      style={{ background: 'transparent' }}
                       mix={[
                         platformSelectStyle,
                         on('change', (event) =>
@@ -628,6 +640,7 @@ export function Editor(
                           min={1}
                           max={MAX_CUSTOM_DIMENSION}
                           value={device.customWidth}
+                          style={{ background: 'transparent' }}
                           mix={[
                             inputStyle,
                             on('input', (event) =>
@@ -645,6 +658,7 @@ export function Editor(
                           min={1}
                           max={MAX_CUSTOM_DIMENSION}
                           value={device.customHeight}
+                          style={{ background: 'transparent' }}
                           mix={[
                             inputStyle,
                             on('input', (event) =>
@@ -768,19 +782,6 @@ const editableHeadlineStyle = css({
   },
 })
 
-const draftPillStyle = css({
-  display: 'inline-flex',
-  alignItems: 'center',
-  border: '1px solid var(--border)',
-  borderRadius: theme.radius.full,
-  padding: '0.2em 0.65em',
-  color: 'var(--text-muted)',
-  fontSize: theme.fontSize.small,
-  fontWeight: theme.fontWeight.semibold,
-  textTransform: 'uppercase',
-  letterSpacing: '0.06em',
-})
-
 const labelErrorStyle = css({ color: 'var(--danger)', margin: 0 })
 
 const editorLayoutStyle = switcher({
@@ -813,10 +814,9 @@ const inputStyle = css({
   padding: `${theme.space.xs} ${theme.space.xs}`,
   borderRadius: theme.radius.sm,
   border: '1px solid var(--border)',
-  background: 'rgba(10, 10, 11, 0.72)',
   color: 'var(--text)',
   transition: 'border-color 140ms ease, box-shadow 140ms ease',
-  ':focus': {
+  ':focus-visible': {
     borderColor: 'var(--accent-strong)',
     boxShadow: '0 0 0 3px rgba(56, 189, 248, 0.14)',
   },
@@ -829,7 +829,6 @@ const platformSelectStyle = css({
   padding: `${theme.space.xs} ${theme.space.xs}`,
   borderRadius: theme.radius.sm,
   border: '1px solid var(--border)',
-  background: 'rgba(10, 10, 11, 0.72)',
   color: 'var(--text)',
   fontWeight: theme.fontWeight.medium,
   textAlign: 'start',
@@ -841,21 +840,11 @@ const textareaStyle = css({
   minHeight: '5.75rem',
   maxHeight: `${NOTES_MAX_HEIGHT}px`,
   width: '100%',
-  padding: `${theme.space.xs} ${theme.space.xs}`,
-  border: 0,
-  borderTop: '1px solid var(--border)',
-  borderRadius: 0,
-  background: 'transparent',
-  color: 'var(--text)',
-  lineHeight: 1.55,
-  outline: 'none',
 })
 
 const composerStyle = css({
-  overflow: 'hidden',
   border: '1px solid var(--border)',
   borderRadius: theme.radius.md,
-  background: 'rgba(10, 10, 11, 0.72)',
   ':focus-within': {
     borderColor: 'var(--accent-strong)',
     boxShadow: '0 0 0 3px rgba(56, 189, 248, 0.14)',
@@ -865,7 +854,10 @@ const composerStyle = css({
 const toolbarStyle = [
   cluster({ gutter: '2px', alignment: 'center' }),
   // One row even on narrow phones: the buttons shrink instead of wrapping.
-  css({ flexWrap: 'nowrap', padding: '6px', background: 'rgba(255, 255, 255, 0.035)' }),
+  css({
+    flexWrap: 'nowrap',
+    padding: '6px',
+  }),
 ]
 
 const segmentStyle = css({
@@ -873,9 +865,15 @@ const segmentStyle = css({
   gap: '0',
   border: '1px solid var(--border)',
   borderRadius: '10px',
-  background: 'var(--surface)',
-  overflow: 'hidden',
   width: 'fit-content',
+  '& > :first-child': {
+    borderTopLeftRadius: '9px',
+    borderBottomLeftRadius: '9px',
+  },
+  '& > :last-child': {
+    borderTopRightRadius: '9px',
+    borderBottomRightRadius: '9px',
+  },
 })
 
 const sizeInputsStyle = cluster({ gutter: '12px', alignment: 'stretch' })
