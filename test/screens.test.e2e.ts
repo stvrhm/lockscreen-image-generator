@@ -107,6 +107,32 @@ async function openAndroid(t: TestContext, { stallClientHints = false } = {}): P
 }
 
 describe('New Device defaults', () => {
+  it('lets the Notes component styles override the global form defaults', async (t) => {
+    let page = await open(t, routes.screens.newDevice.href())
+    await expectEditor(page)
+
+    let notesStyle = await page.locator('#device-notes').evaluate((element) => {
+      let style = getComputedStyle(element)
+      return {
+        backgroundColor: style.backgroundColor,
+        borderTopWidth: style.borderTopWidth,
+        borderRightWidth: style.borderRightWidth,
+        borderBottomWidth: style.borderBottomWidth,
+        borderLeftWidth: style.borderLeftWidth,
+      }
+    })
+    assert.equal(notesStyle.backgroundColor, 'rgba(0, 0, 0, 0)')
+    assert.deepEqual(
+      [
+        notesStyle.borderTopWidth,
+        notesStyle.borderRightWidth,
+        notesStyle.borderBottomWidth,
+        notesStyle.borderLeftWidth,
+      ],
+      ['1px', '0px', '0px', '0px'],
+    )
+  })
+
   it('uses an editable headline and keeps Phone info in Notes', async (t) => {
     let page = await open(t, routes.screens.newDevice.href())
     await expectEditor(page)

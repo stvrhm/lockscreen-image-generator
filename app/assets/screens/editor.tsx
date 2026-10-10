@@ -526,16 +526,6 @@ export function Editor(
                   rows={7}
                   value={device.notes}
                   aria-labelledby="notes-label"
-                  style={{
-                    // Inline values override the unlayered global form-control reset.
-                    padding: `${theme.space.xs} ${theme.space.xs}`,
-                    border: 0,
-                    borderTop: '1px solid var(--border)',
-                    borderRadius: `0 0 calc(${theme.radius.md} - 1px) calc(${theme.radius.md} - 1px)`,
-                    background: 'transparent',
-                    color: 'var(--text)',
-                    lineHeight: 1.55,
-                  }}
                   mix={[
                     textareaStyle,
                     ref((node) => {
@@ -840,6 +830,13 @@ const textareaStyle = css({
   minHeight: '5.75rem',
   maxHeight: `${NOTES_MAX_HEIGHT}px`,
   width: '100%',
+  padding: `${theme.space.xs} ${theme.space.xs}`,
+  border: 0,
+  borderTop: '1px solid var(--border)',
+  borderRadius: `0 0 calc(${theme.radius.md} - 1px) calc(${theme.radius.md} - 1px)`,
+  background: 'transparent',
+  color: 'var(--text)',
+  lineHeight: 1.55,
 })
 
 const composerStyle = css({

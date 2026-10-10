@@ -11,6 +11,8 @@ export const theme = {
 } as const
 
 export const baseCss = `${generatedThemeCss}
+  @layer base, rmx;
+
   :root {
     color-scheme: dark;
     --page: #0a0a0b;
@@ -125,22 +127,25 @@ export const baseCss = `${generatedThemeCss}
   svg:not([class]) { width: auto; height: 1lh; }
   svg { flex-shrink: 0; }
 
-  form > * + * { margin-block-start: var(--flow-space, 1rem); }
-  :is(input, select, textarea) { accent-color: var(--accent); }
-  :is(input:not([type='checkbox'], [type='radio'], [type='color']), select, textarea) {
-    display: block;
-    width: 100%;
-    padding: 0.5em 0.8em;
-    border: var(--stroke);
-    background: var(--surface);
-    color: var(--text);
+  @layer base {
+    form > * + * { margin-block-start: var(--flow-space, 1rem); }
+    :is(input, select, textarea) { accent-color: var(--accent); }
+    :is(input:not([type='checkbox'], [type='radio'], [type='color']), select, textarea) {
+      display: block;
+      width: 100%;
+      padding: 0.5em 0.8em;
+      border: var(--stroke);
+      background: var(--surface);
+      color: var(--text);
+    }
+    :is(input, select, textarea)::placeholder { color: var(--text-muted); opacity: 1; }
+    label { line-height: 1.1; font-weight: var(--font-weight-medium, 500); }
+    input:disabled { background: var(--surface-2); cursor: not-allowed; }
+    input:disabled, label input:disabled + * { cursor: not-allowed; }
+    fieldset { padding: var(--space-sm); border: var(--stroke); }
+    legend { padding-inline: 1ex; padding-block: 0.75ex; font-weight: var(--font-weight-medium, 500); }
   }
-  :is(input, select, textarea)::placeholder { color: var(--text-muted); opacity: 1; }
-  label { line-height: 1.1; font-weight: var(--font-weight-medium, 500); }
-  input:disabled { background: var(--surface-2); cursor: not-allowed; }
-  input:disabled, label input:disabled + * { cursor: not-allowed; }
-  fieldset { padding: var(--space-sm); border: var(--stroke); }
-  legend { padding-inline: 1ex; padding-block: 0.75ex; font-weight: var(--font-weight-medium, 500); }
+
   summary { font-weight: var(--font-weight-bold, 700); cursor: pointer; }
   details[open] summary { margin-block-end: var(--space-sm); }
 
