@@ -613,6 +613,7 @@ describe('a Device round trip', () => {
 
   it('saving a new Device keeps the scroll position and confirms with a toast', async (t) => {
     let page = await open(t, routes.screens.newDevice.href())
+    await page.setViewportSize({ width: 390, height: 600 })
     await page.getByRole('textbox', { name: strings.editor.label }).fill('Pixel 9 QA')
     let save = page.getByRole('button', { name: strings.editor.saveDevice })
     await save.scrollIntoViewIfNeeded()
