@@ -20,7 +20,6 @@ export const baseCss = `${generatedThemeCss}
     --surface-2: #19191c;
     --surface-3: #222226;
     --border: #2a2a2f;
-    --border-subtle: rgba(255, 255, 255, 0.08);
     --text: #f2f4f7;
     --text-muted: #9aa3af;
     --accent: #7dd3fc;

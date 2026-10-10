@@ -401,7 +401,7 @@ export function Editor(
 
     return (
       <div mix={pageStyle}>
-        <header mix={editorHeaderStyle}>
+        <header mix={flow({ flowSpace: theme.space.sm })}>
           <div mix={headerRowStyle}>
             <Button variant="ghost" onClick={requestLeave}>
               {strings.editor.back}
@@ -460,7 +460,7 @@ export function Editor(
         </header>
 
         <div mix={editorLayoutStyle}>
-          <div mix={formStyle}>
+          <div mix={flow({ flowSpace: theme.space.md })}>
             {labelError ? (
               <p id="device-label-error" role="alert" mix={labelErrorStyle}>
                 {labelError}
@@ -753,15 +753,6 @@ export function Editor(
   }
 }
 
-const editorHeaderStyle = [
-  flow({ flowSpace: theme.space.sm }),
-  css({
-    alignItems: 'flex-start',
-    borderBottom: '1px solid var(--border-subtle)',
-    paddingBottom: '12px',
-  }),
-]
-
 const headerRowStyle = repel({ gutter: theme.space.xs, alignment: 'center' })
 
 const editableHeadlineStyle = css({
@@ -779,14 +770,6 @@ const editorLayoutStyle = switcher({
   targetWidth: '52rem',
 })
 
-const formStyle = [
-  flow({ flowSpace: theme.space.lg }),
-  css({
-    minWidth: '260px',
-    paddingBlock: theme.space['sm-md'],
-  }),
-]
-
 const fieldStyle = [flow({ flowSpace: theme.space.xs })]
 
 const notesFieldStyle = [flow({ flowSpace: theme.space.xs })]
@@ -794,8 +777,6 @@ const notesFieldStyle = [flow({ flowSpace: theme.space.xs })]
 const notesLabelStyle = cluster({ gutter: theme.space['2xs'], alignment: 'center' })
 
 const fieldLabelStyle = css({
-  display: 'block',
-  fontSize: theme.fontSize.small,
   fontWeight: theme.fontWeight.semibold,
   color: 'var(--text)',
 })
@@ -913,7 +894,7 @@ const mobilePreviewStyle = css({
 })
 
 const advancedStyle = css({
-  borderBlock: '1px solid var(--border-subtle)',
+  borderBlock: '1px solid var(--border)',
   paddingBlock: theme.space.xs,
   '& summary': {
     marginBlockEnd: 0,

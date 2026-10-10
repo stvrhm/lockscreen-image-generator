@@ -165,7 +165,7 @@ const listItemStyle = css({
   gap: '12px',
   padding: '18px',
   background: 'rgba(17, 17, 19, 0.78)',
-  border: '1px solid var(--border-subtle)',
+  border: '1px solid var(--border)',
   borderRadius: '14px',
   boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.03)',
 })
