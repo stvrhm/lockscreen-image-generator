@@ -1,6 +1,6 @@
 import { css, navigate, on, ref, type Handle } from 'remix/component'
 
-import { cluster, flow, repel, switcher } from '../../ui/cube/index.ts'
+import { cluster, flow, repel } from '../../ui/cube/index.ts'
 import { theme } from '../../ui/theme.ts'
 import {
   saveDevice,
@@ -551,16 +551,6 @@ export function Editor(
               </div>
             </div>
 
-            <div mix={mobilePreviewStyle}>
-              <p mix={previewLabelStyle}>{strings.editor.preview}</p>
-              <PhonePreview platform={device.platform} text={previewText} size={size} />
-              <ExportSummary
-                device={device}
-                size={size}
-                automatic={editingNew && !platformOverride}
-              />
-            </div>
-
             <details mix={advancedStyle}>
               <summary>{strings.editor.customizeExport}</summary>
               <div mix={advancedContentStyle}>
@@ -765,9 +755,15 @@ const editableHeadlineStyle = css({
 
 const labelErrorStyle = css({ color: 'var(--danger)', margin: 0 })
 
-const editorLayoutStyle = switcher({
-  gutter: theme.space.xl,
-  targetWidth: '52rem',
+const editorLayoutStyle = css({
+  display: 'grid',
+  gridTemplateColumns: 'minmax(0, 1fr)',
+  gap: theme.space.xl,
+  '& > *': { minWidth: 0 },
+  '@media (min-width: 68rem)': {
+    gridTemplateColumns: 'minmax(0, 1.15fr) minmax(22rem, 0.85fr)',
+    alignItems: 'start',
+  },
 })
 
 const fieldStyle = [flow({ flowSpace: theme.space.xs })]
@@ -873,25 +869,15 @@ const previewColumnStyle = [
     flexDirection: 'column',
     alignItems: 'center',
     gap: '16px',
-    flex: '0 0 auto',
-    alignSelf: 'flex-start',
-    position: 'sticky',
-    top: '24px',
+    minWidth: 0,
     padding: '8px 0 0',
-    '@media (max-width: 52rem)': { display: 'none', position: 'static' },
+    '@media (min-width: 68rem) and (min-height: 42rem)': {
+      position: 'sticky',
+      alignSelf: 'start',
+      top: '24px',
+    },
   }),
 ]
-
-const mobilePreviewStyle = css({
-  display: 'none',
-  '@media (max-width: 52rem)': {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: theme.space.xs,
-    paddingBlock: theme.space['3xs'] + ' ' + theme.space.xs,
-  },
-})
 
 const advancedStyle = css({
   borderBlock: '1px solid var(--border)',
