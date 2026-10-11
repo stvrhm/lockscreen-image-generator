@@ -1,6 +1,7 @@
 import { type Handle, css } from 'remix/component'
 
 import { Button } from '../ui/button.tsx'
+import { Icon } from '../ui/icon.tsx'
 import { flow, repel } from '../ui/cube/index.ts'
 import { strings } from '../strings.ts'
 
@@ -63,7 +64,7 @@ export function InstallHint(handle: Handle) {
     return (
       <aside mix={cardStyle} aria-label={strings.install.title}>
         <div mix={installIconStyle} aria-hidden="true">
-          ＋
+          <Icon name="plus" />
         </div>
         <div mix={textStyle}>
           <p mix={titleStyle}>{strings.install.title}</p>

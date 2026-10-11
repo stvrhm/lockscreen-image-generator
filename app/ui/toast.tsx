@@ -1,6 +1,7 @@
 import { type Handle, css } from 'remix/component'
 
 import { Button } from './button.tsx'
+import { Icon } from './icon.tsx'
 import { animateEntrance, animateExit, animateLayout, spring } from '@remix-run/ui/animation'
 
 const DEFAULT_TOAST_DURATION_MS = 6000,
@@ -187,7 +188,7 @@ export function ToastViewport(handle: Handle) {
             mix={dismissGlyphStyle}
             onClick={() => dismiss(item.id)}
           >
-            ×
+            <Icon name="x-mark" />
           </Button>
         </article>
       ))}
