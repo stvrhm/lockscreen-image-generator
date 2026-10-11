@@ -1,16 +1,18 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["unicorn", "typescript", "oxc", "jsx-a11y"],
+  "env": { "browser": true },
   "categories": {
     "correctness": "error",
     "suspicious": "error",
     "perf": "error",
-    "style": "warn",
-    "pedantic": "warn",
-    "restriction": "warn",
-    "nursery": "warn"
+    "style": "off",
+    "pedantic": "off",
+    "restriction": "off",
+    "nursery": "off"
   },
   "rules": {
+    "no-undef": "error",
     "no-magic-numbers": [
       "error",
       {
@@ -24,12 +26,20 @@
     "one-var": "off",
     "explicit-function-return-type": "off",
     "explicit-module-boundary-types": "off",
-    "no-use-before-define": ["error", { "functions": false }],
-    "sort-vars": "error",
+    "no-use-before-define": "off",
+    "sort-vars": "off",
     "no-ternary": "off",
     "no-nested-ternary": "error"
   },
   "overrides": [
+    {
+      "files": ["server.ts", "hmr.ts", "scripts/**/*", "app/assets.ts", "app/router.tsx", "app/router.test.ts"],
+      "env": { "node": true }
+    },
+    {
+      "files": ["app/ui/sw-boot.ts"],
+      "globals": { "process": "readonly" }
+    },
     {
       "files": ["**/*.test.ts", "**/*.test.tsx"],
       "rules": { "no-magic-numbers": "off" }

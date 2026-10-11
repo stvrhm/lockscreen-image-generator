@@ -1,9 +1,13 @@
 import type { Platform } from './devices.ts'
 
 export function inferPlatform(): Platform {
-  if (typeof navigator === 'undefined') {return 'ios'}
+  if (typeof navigator === 'undefined') {
+    return 'ios'
+  }
   const ua = navigator.userAgent
-  if (/android/i.test(ua)) {return 'android'}
+  if (/android/i.test(ua)) {
+    return 'android'
+  }
   return 'ios'
 }
 

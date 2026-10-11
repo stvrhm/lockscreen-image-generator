@@ -8,7 +8,7 @@ import {
 import { type CustomDimensionIssue, customDimensionIssue } from './device-dimensions.ts'
 
 const FILE_TYPE = 'test-device-lockscreen',
- FILE_VERSION = 1
+  FILE_VERSION = 1
 
 export function downloadDeviceFile(device: Device): void {
   const payload = {
@@ -59,7 +59,9 @@ export async function readDeviceFile(file: File): Promise<Device> {
     throw new Error('The Device file is missing valid project details.')
   }
   const dimensionIssue = customDimensionIssue(value.customWidth, value.customHeight)
-  if (dimensionIssue) {throw new DeviceFileDimensionError(dimensionIssue)}
+  if (dimensionIssue) {
+    throw new DeviceFileDimensionError(dimensionIssue)
+  }
   const now = new Date().toISOString()
   return {
     createdAt: now,

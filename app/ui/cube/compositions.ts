@@ -42,60 +42,60 @@ function flowStyleFor(flowSpace?: CubeValue) {
   return flowSpace === undefined ? flowStyle : css({ '& > * + *': { marginBlockStart: flowSpace } })
 }
 const clusterStyle = css({
-  alignItems: 'var(--cluster-alignment, center)',
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: 'var(--gutter, var(--space-md))',
-  justifyContent: 'var(--cluster-justification, flex-start)',
-}),
- gridStyle = css({
-  '&[data-equal-height]': { gridAutoRows: '1fr' },
-  display: 'grid',
-  gap: 'var(--gutter, var(--space-xl))',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(var(--grid-min-item-size, 16rem), 1fr))',
-}),
- sidebarStyle = css({
-  '& > :first-child': { flexBasis: 'var(--sidebar-width, 20rem)', flexGrow: 1 },
-  '& > :last-child': {
-    flexBasis: 0,
-    flexGrow: 999,
-    minInlineSize: 'var(--sidebar-content-min-width, 50%)',
-  },
-  '&[data-direction="stack-to-row"]': {
-    '& > :first-child': { flexBasis: 'auto', flexGrow: 0 },
-    '& > :last-child': { flexBasis: 'auto', flexGrow: 0, minInlineSize: 'auto' },
-    '@media (max-width: 560px)': {
-      '& > :first-child': { flexBasis: 'auto' },
-      '& > :last-child': { flexBasis: 0, flexGrow: 1, minInlineSize: 0 },
-      alignItems: 'flex-start',
-      flexDirection: 'row',
+    alignItems: 'var(--cluster-alignment, center)',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 'var(--gutter, var(--space-md))',
+    justifyContent: 'var(--cluster-justification, flex-start)',
+  }),
+  gridStyle = css({
+    '&[data-equal-height]': { gridAutoRows: '1fr' },
+    display: 'grid',
+    gap: 'var(--gutter, var(--space-xl))',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(var(--grid-min-item-size, 16rem), 1fr))',
+  }),
+  sidebarStyle = css({
+    '& > :first-child': { flexBasis: 'var(--sidebar-width, 20rem)', flexGrow: 1 },
+    '& > :last-child': {
+      flexBasis: 0,
+      flexGrow: 999,
+      minInlineSize: 'var(--sidebar-content-min-width, 50%)',
     },
-    flexDirection: 'column',
-  },
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: 'var(--gutter, var(--space-xl))',
-}),
- switcherStyle = css({
-  '& > *': { flexBasis: 'calc((var(--switcher-target-width, 40rem) - 100%) * 999)', flexGrow: 1 },
-  '& > :nth-child(n + 3)': { flexBasis: '100%' },
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: 'var(--gutter, var(--space-xl))',
-}),
- repelStyle = css({
-  alignItems: 'var(--repel-alignment, center)',
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: 'var(--gutter, var(--space-lg))',
-  justifyContent: 'space-between',
-}),
- wrapperStyle = css({
-  marginInline: 'auto',
-  maxInlineSize: 'var(--wrapper-max-width, 100%)',
-  paddingInline: 'var(--gutter, var(--space-lg))',
-  width: '100%',
-})
+    '&[data-direction="stack-to-row"]': {
+      '& > :first-child': { flexBasis: 'auto', flexGrow: 0 },
+      '& > :last-child': { flexBasis: 'auto', flexGrow: 0, minInlineSize: 'auto' },
+      '@media (max-width: 560px)': {
+        '& > :first-child': { flexBasis: 'auto' },
+        '& > :last-child': { flexBasis: 0, flexGrow: 1, minInlineSize: 0 },
+        alignItems: 'flex-start',
+        flexDirection: 'row',
+      },
+      flexDirection: 'column',
+    },
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 'var(--gutter, var(--space-xl))',
+  }),
+  switcherStyle = css({
+    '& > *': { flexBasis: 'calc((var(--switcher-target-width, 40rem) - 100%) * 999)', flexGrow: 1 },
+    '& > :nth-child(n + 3)': { flexBasis: '100%' },
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 'var(--gutter, var(--space-xl))',
+  }),
+  repelStyle = css({
+    alignItems: 'var(--repel-alignment, center)',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 'var(--gutter, var(--space-lg))',
+    justifyContent: 'space-between',
+  }),
+  wrapperStyle = css({
+    marginInline: 'auto',
+    maxInlineSize: 'var(--wrapper-max-width, 100%)',
+    paddingInline: 'var(--gutter, var(--space-lg))',
+    width: '100%',
+  })
 
 export function flow(options: FlowOptions = {}): CubeMix {
   return [flowStyleFor(options.flowSpace), cubeVars({ '--flow-space': options.flowSpace })]

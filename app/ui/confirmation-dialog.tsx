@@ -17,9 +17,13 @@ export function ConfirmationDialog(
 
   return () => {
     const { id, open, title, description, onDismiss, children } = handle.props
-    if (!open) {return null}
+    if (!open) {
+      return null
+    }
     handle.queueTask(() => {
-      if (!dialog || dialog.open) {return}
+      if (!dialog || dialog.open) {
+        return
+      }
       dialog.showModal()
       dialog.querySelector<HTMLElement>('[autofocus], button, a[href]')?.focus()
     })
@@ -38,7 +42,9 @@ export function ConfirmationDialog(
             onDismiss()
           }),
           on('click', (event) => {
-            if (event.target === event.currentTarget) {onDismiss()}
+            if (event.target === event.currentTarget) {
+              onDismiss()
+            }
           }),
         ]}
       >
@@ -51,23 +57,22 @@ export function ConfirmationDialog(
 }
 
 const dialogStyle = css({
-  '& h2': { fontSize: theme.fontSize.h3, marginBlock: 0 },
-  '& p': { color: 'var(--text-muted)' },
-  '&::backdrop': { background: 'rgba(0, 0, 0, 0.68)' },
-  background: 'var(--surface-3)',
-  border: '1px solid var(--border)',
-  borderRadius: theme.radius.lg,
-  boxShadow: 'var(--shadow-soft)',
-  color: 'var(--text)',
-  maxWidth: 'none',
-  padding: theme.space.lg,
-  width: 'min(30rem, calc(100vw - 2rem))',
-}),
-
- actionsStyle = css({
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: theme.space.xs,
-  justifyContent: 'flex-end',
-  marginBlockStart: theme.space.lg,
-})
+    '& h2': { fontSize: theme.fontSize.h3, marginBlock: 0 },
+    '& p': { color: 'var(--text-muted)' },
+    '&::backdrop': { background: 'rgba(0, 0, 0, 0.68)' },
+    background: 'var(--surface-3)',
+    border: '1px solid var(--border)',
+    borderRadius: theme.radius.lg,
+    boxShadow: 'var(--shadow-soft)',
+    color: 'var(--text)',
+    maxWidth: 'none',
+    padding: theme.space.lg,
+    width: 'min(30rem, calc(100vw - 2rem))',
+  }),
+  actionsStyle = css({
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: theme.space.xs,
+    justifyContent: 'flex-end',
+    marginBlockStart: theme.space.lg,
+  })

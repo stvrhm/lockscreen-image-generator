@@ -7,8 +7,12 @@ export function customDimensionIssue(width: number, height: number): CustomDimen
   if (!Number.isSafeInteger(width) || !Number.isSafeInteger(height) || width < 1 || height < 1) {
     return 'positive-integers'
   }
-  if (width > MAX_CUSTOM_DIMENSION || height > MAX_CUSTOM_DIMENSION) {return 'side-limit'}
-  if (width * height > MAX_CUSTOM_PIXEL_COUNT) {return 'pixel-limit'}
+  if (width > MAX_CUSTOM_DIMENSION || height > MAX_CUSTOM_DIMENSION) {
+    return 'side-limit'
+  }
+  if (width * height > MAX_CUSTOM_PIXEL_COUNT) {
+    return 'pixel-limit'
+  }
   return null
 }
 

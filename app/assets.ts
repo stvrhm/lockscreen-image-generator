@@ -2,9 +2,9 @@ import { createAssetServer } from 'remix/assets'
 import { componentHmr } from 'remix/component-hmr/assets'
 
 const rootDir = process.cwd(),
- nodeEnv = process.env.NODE_ENV ?? 'development',
- isDevelopment = nodeEnv === 'development',
- isHmr = Boolean(isDevelopment && process.env.REMIX_NODE_HMR)
+  nodeEnv = process.env.NODE_ENV ?? 'development',
+  isDevelopment = nodeEnv === 'development',
+  isHmr = Boolean(isDevelopment && process.env.REMIX_NODE_HMR)
 
 // The static build puts its build id in every module URL (see
 // Scripts/build.tsx). Safari reuses ES modules it has already loaded at a URL
@@ -20,6 +20,7 @@ export const assetServer = createAssetServer({
   // Allow list rather than recovered afterwards by deny rules.
   allowFiles: ['app/assets/**', 'app/data/**', 'app/ui/**', 'app/routes.ts', 'app/strings.ts'],
   allowPackages: ['remix', '@remix-run/ui', 'bowser'],
+  files: { extensions: ['.svg'] },
   denyFiles: ['app/**/*.server.*', 'app/**/*.test.*', 'app/assets.ts'],
   sourceMaps: isDevelopment ? 'external' : undefined,
   minify: !isDevelopment,
@@ -42,3 +43,4 @@ const entry = 'app/assets/entry.tsx'
 
 export const scriptEntry = await assetServer.getScriptEntry(entry)
 export const resetStylesheetHref = await assetServer.getHref('app/ui/public/reset.css')
+export const iconSpriteHref = await assetServer.getHref('app/assets/icons/sprite.svg')

@@ -8,34 +8,33 @@ import { renderToStream } from 'remix/component/server'
 const BUILD_ID_LENGTH = 14
 
 const ROOT = join(import.meta.dirname, '..'),
- DIST = join(ROOT, 'dist'),
- BUILD_ID = new Date()
-  .toISOString()
-  .replaceAll(/[^0-9]/g, '')
-  .slice(0, BUILD_ID_LENGTH)
+  DIST = join(ROOT, 'dist'),
+  BUILD_ID = new Date()
+    .toISOString()
+    .replaceAll(/[^0-9]/g, '')
+    .slice(0, BUILD_ID_LENGTH)
 
 // Every release gets fresh module URLs. Safari keeps serving ES modules it has
 // Already loaded at a URL, ignoring `no-cache`, so reusing `/assets/...` across
 // Builds pinned it to the old code even after reloads. The asset server reads
 // Its base path at import time, so set it before loading anything that uses it.
 process.env.ASSET_BASE_PATH = `/assets/${BUILD_ID}`
-const { assetServer } = await import('../app/assets.ts'),
- { Document } = await import('../app/ui/document.tsx'),
-
-// One entry now. Screens are plain modules reached through the browser router
-// rather than separately hydrated islands, so the entry's import graph already
-// covers everything the browser needs.
- CLIENT_ENTRIES = ['app/assets/entry.tsx', 'app/ui/public/reset.css']
+const { assetServer, iconSpriteHref } = await import('../app/assets.ts'),
+  { Document } = await import('../app/ui/document.tsx'),
+  // One entry now. Screens are plain modules reached through the browser router
+  // rather than separately hydrated islands, so the entry's import graph already
+  // covers everything the browser needs.
+  CLIENT_ENTRIES = ['app/assets/entry.tsx', 'app/ui/public/reset.css']
 
 async function renderIndexHtml(): Promise<string> {
   // A neutral shell with an empty body. The SPA router fills it in from the
   // Requested URL, so no screen is baked into the static HTML.
   const stream = renderToStream(<Document />, {
-    onError(error) {
-      throw error
-    },
-  }),
-   html = await new Response(stream).text()
+      onError(error) {
+        throw error
+      },
+    }),
+    html = await new Response(stream).text()
   return `<!doctype html>\n${html}`
 }
 
@@ -86,19 +85,23 @@ async function build() {
   writeFileEnsured(join(DIST, 'index.html'), html)
   console.log(`  index.html (${html.length} bytes)`)
 
-  const assetUrls = await assetServer.getPreloads(CLIENT_ENTRIES)
-  const assets = await Promise.all(assetUrls.map(async (assetUrl) => {
-    const res = await assetServer.fetch(new Request(new URL(assetUrl, 'http://build.local')))
-    if (!res || !res.ok) {
-      throw new Error(`Asset fetch failed for ${assetUrl}: ${res?.status}`)
-    }
-    const bytes = Buffer.from(await res.arrayBuffer())
-    // Netlify decodes URL-encoded path segments before resolving static files.
-    // Write package paths such as `%40remix-run` under their decoded name so
-    // `/assets/npm/%40remix-run/...` resolves instead of falling through to
-    // The SPA HTML fallback.
-    return [join(DIST, decodeURIComponent(assetUrl.replace(/^\//, ''))), bytes] as const
-  }))
+  const assetUrls = [
+    ...new Set([...(await assetServer.getPreloads(CLIENT_ENTRIES)), iconSpriteHref]),
+  ]
+  const assets = await Promise.all(
+    assetUrls.map(async (assetUrl) => {
+      const res = await assetServer.fetch(new Request(new URL(assetUrl, 'http://build.local')))
+      if (!res || !res.ok) {
+        throw new Error(`Asset fetch failed for ${assetUrl}: ${res?.status}`)
+      }
+      const bytes = Buffer.from(await res.arrayBuffer())
+      // Netlify decodes URL-encoded path segments before resolving static files.
+      // Write package paths such as `%40remix-run` under their decoded name so
+      // `/assets/npm/%40remix-run/...` resolves instead of falling through to
+      // The SPA HTML fallback.
+      return [join(DIST, decodeURIComponent(assetUrl.replace(/^\//, ''))), bytes] as const
+    }),
+  )
   for (const [path, bytes] of assets) writeFileEnsured(path, bytes)
   console.log(`  ${assetUrls.length} assets`)
 

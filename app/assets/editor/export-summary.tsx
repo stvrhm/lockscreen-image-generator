@@ -13,7 +13,7 @@ export function ExportSummary(
 ) {
   return () => {
     const { device, size, automatic } = handle.props
-    let exportStatus = strings.editor.customized
+    let exportStatus: string = strings.editor.customized
     if (device.exportSizeMode === 'auto') {
       exportStatus = automatic ? strings.editor.detectedAutomatically : strings.editor.autoSize
     }

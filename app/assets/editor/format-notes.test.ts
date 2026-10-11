@@ -17,8 +17,10 @@ function edit(marked: string): NotesEdit {
 }
 
 function show({ text, start, end }: NotesEdit) {
-  if (start === end) {return text.slice(0, start) + '|' + text.slice(start)}
-  return `${text.slice(0, start)  }[${  text.slice(start, end)  }]${  text.slice(end)}`
+  if (start === end) {
+    return text.slice(0, start) + '|' + text.slice(start)
+  }
+  return `${text.slice(0, start)}[${text.slice(start, end)}]${text.slice(end)}`
 }
 
 function press(marked: string, format: InlineFormat) {

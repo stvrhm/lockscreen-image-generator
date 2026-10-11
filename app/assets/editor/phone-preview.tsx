@@ -3,6 +3,7 @@ import * as popover from '@remix-run/ui/popover'
 
 import type { Platform } from '../../data/devices.ts'
 import { Button } from '../../ui/button.tsx'
+import { Icon } from '../../ui/icon.tsx'
 import { strings } from '../../strings.ts'
 import { theme } from '../../ui/theme.ts'
 import { parseMarkdownLines } from '../../data/markdown.ts'
@@ -17,10 +18,10 @@ import {
 const PHONE_PREVIEW_PADDING_RATIO = 0.12
 
 const FRAME_HEIGHT = 484,
- FRAME_PADDING = 10,
- FRAME_WIDTH = 224,
- SCREEN_WIDTH = FRAME_WIDTH - FRAME_PADDING * 2,
- SCREEN_HEIGHT = FRAME_HEIGHT - FRAME_PADDING * 2
+  FRAME_PADDING = 10,
+  FRAME_WIDTH = 224,
+  SCREEN_WIDTH = FRAME_WIDTH - FRAME_PADDING * 2,
+  SCREEN_HEIGHT = FRAME_HEIGHT - FRAME_PADDING * 2
 
 // Lays the text out at export size, exactly as the Wallpaper does, then scales
 // The whole Wallpaper down to fit the preview screen.
@@ -29,7 +30,7 @@ export function PhonePreview(
   handle: Handle<{ platform: Platform; text: string; size: { width: number; height: number } }>,
 ) {
   let measure: MeasureText | undefined,
-   open = false
+    open = false
 
   return () => {
     const { platform, text, size } = handle.props
@@ -67,7 +68,7 @@ export function PhonePreview(
                     handle.update()
                   }}
                 >
-                  ⚠
+                  <Icon name="exclamation-triangle" />
                 </Button>
                 <div
                   role="dialog"
@@ -123,91 +124,82 @@ function PreviewRun(handle: Handle<{ line: WallpaperLine; run: WallpaperRun }>) 
 }
 
 const phoneFrameStyle = css({
-  background: '#0b0c0e',
-  borderRadius: '48px',
-  boxShadow: '0 24px 50px rgba(0, 0, 0, 0.48), 0 0 0 1px rgba(255, 255, 255, 0.08)',
-  height: `${FRAME_HEIGHT}px`,
-  padding: `${FRAME_PADDING}px`,
-  width: `${FRAME_WIDTH}px`,
-}),
-
- phoneScreenStyle = css({
-  background: '#15171b',
-  borderRadius: '38px',
-  height: '100%',
-  overflow: 'hidden',
-  position: 'relative',
-  width: '100%',
-}),
-
- warningStyle = css({
-  background: 'rgba(180, 83, 9, .9)',
-  borderRadius: '50%',
-  color: '#fff',
-  height: '28px',
-  minHeight: '28px',
-  position: 'absolute',
-  right: '12px',
-  top: '12px',
-  width: '28px',
-  zIndex: 2,
-}),
-
- warningPanelStyle = css({
-  background: 'var(--surface-3)',
-  border: '1px solid var(--border)',
-  borderRadius: theme.radius.md,
-  boxShadow: 'var(--shadow-soft)',
-  color: 'var(--text)',
-  fontSize: theme.fontSize.small,
-  inset: 'auto',
-  lineHeight: 1.45,
-  margin: 0,
-  padding: theme.space.sm,
-  position: 'fixed',
-  width: 'min(18rem, calc(100vw - 32px))',
-}),
-
- notchStyle = css({
-  background: '#000',
-  borderRadius: '0 0 14px 14px',
-  height: '22px',
-  left: '50%',
-  position: 'absolute',
-  top: 0,
-  transform: 'translateX(-50%)',
-  width: '90px',
-}),
-
- punchHoleStyle = css({
-  background: '#000',
-  borderRadius: '50%',
-  height: '14px',
-  left: '50%',
-  position: 'absolute',
-  top: '10px',
-  transform: 'translateX(-50%)',
-  width: '14px',
-}),
-
- wallpaperStyle = css({
-  color: '#fff',
-  left: '50%',
-  position: 'absolute',
-  textShadow: '0 6px 28px rgba(0, 0, 0, 0.6)',
-  top: '50%',
-}),
-
- runStyle = css({
-  boxSizing: 'content-box',
-  position: 'absolute',
-  transform: 'translateY(-50%)',
-  whiteSpace: 'pre',
-}),
-
- codeRunStyle = css({
-  background: 'rgba(255, 255, 255, 0.16)',
-  borderRadius: '6px',
-}),
-
- strikeRunStyle = css({ textDecoration: 'line-through' })
+    background: '#0b0c0e',
+    borderRadius: '48px',
+    boxShadow: '0 24px 50px rgba(0, 0, 0, 0.48), 0 0 0 1px rgba(255, 255, 255, 0.08)',
+    height: `${FRAME_HEIGHT}px`,
+    padding: `${FRAME_PADDING}px`,
+    width: `${FRAME_WIDTH}px`,
+  }),
+  phoneScreenStyle = css({
+    background: '#15171b',
+    borderRadius: '38px',
+    height: '100%',
+    overflow: 'hidden',
+    position: 'relative',
+    width: '100%',
+  }),
+  warningStyle = css({
+    background: 'rgba(180, 83, 9, .9)',
+    borderRadius: '50%',
+    color: '#fff',
+    height: '28px',
+    minHeight: '28px',
+    position: 'absolute',
+    right: '12px',
+    top: '12px',
+    width: '28px',
+    zIndex: 2,
+  }),
+  warningPanelStyle = css({
+    background: 'var(--surface-3)',
+    border: '1px solid var(--border)',
+    borderRadius: theme.radius.md,
+    boxShadow: 'var(--shadow-soft)',
+    color: 'var(--text)',
+    fontSize: theme.fontSize.small,
+    inset: 'auto',
+    lineHeight: 1.45,
+    margin: 0,
+    padding: theme.space.sm,
+    position: 'fixed',
+    width: 'min(18rem, calc(100vw - 32px))',
+  }),
+  notchStyle = css({
+    background: '#000',
+    borderRadius: '0 0 14px 14px',
+    height: '22px',
+    left: '50%',
+    position: 'absolute',
+    top: 0,
+    transform: 'translateX(-50%)',
+    width: '90px',
+  }),
+  punchHoleStyle = css({
+    background: '#000',
+    borderRadius: '50%',
+    height: '14px',
+    left: '50%',
+    position: 'absolute',
+    top: '10px',
+    transform: 'translateX(-50%)',
+    width: '14px',
+  }),
+  wallpaperStyle = css({
+    color: '#fff',
+    left: '50%',
+    position: 'absolute',
+    textShadow: '0 6px 28px rgba(0, 0, 0, 0.6)',
+    top: '50%',
+  }),
+  runStyle = css({
+    boxSizing: 'content-box',
+    position: 'absolute',
+    transform: 'translateY(-50%)',
+    whiteSpace: 'pre',
+  }),
+  codeRunStyle = css({
+    background: 'rgba(255, 255, 255, 0.16)',
+    borderRadius: '6px',
+  }),
+  strikeRunStyle = css({ textDecoration: 'line-through' })

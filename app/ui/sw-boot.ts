@@ -22,12 +22,11 @@ const CLEANUP = `  if ('serviceWorker' in navigator) {
       });
     })['catch'](function () {});
   }`,
-
-// Update detection without a service worker: remember the build id seen when
-// this document loaded, then re-read it while the app stays open. Comparing
-// against the first-seen value rather than a compile-time constant keeps the
-// browser bundle free of build metadata.
- VERSION_CHECK = `  var loadedBuildId = null;
+  // Update detection without a service worker: remember the build id seen when
+  // this document loaded, then re-read it while the app stays open. Comparing
+  // against the first-seen value rather than a compile-time constant keeps the
+  // browser bundle free of build metadata.
+  VERSION_CHECK = `  var loadedBuildId = null;
   var updateNotified = false;
   function notifyUpdate() {
     if (updateNotified) return;
@@ -53,17 +52,18 @@ const CLEANUP = `  if ('serviceWorker' in navigator) {
   document.addEventListener('visibilitychange', checkForUpdate);
   window.setInterval(checkForUpdate, 60000);
   checkForUpdate();`,
-
- PERSIST = `  if (navigator.storage && navigator.storage.persist) {
+  PERSIST = `  if (navigator.storage && navigator.storage.persist) {
     navigator.storage.persist()['catch'](function () {});
   }`
 
-export function createSwBootScript(nodeEnv: string | undefined): string {
+export function createSwBootScript(nodeEnv: string | undefined = undefined): string {
   if (nodeEnv === 'development') {
     return `(function () {\n${CLEANUP}\n})();`
   }
 
-  if (nodeEnv !== 'production') {return ''}
+  if (nodeEnv !== 'production') {
+    return ''
+  }
 
   return `(function () {\n${CLEANUP}\n${VERSION_CHECK}\n${PERSIST}\n})();`
 }

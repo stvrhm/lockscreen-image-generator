@@ -4,12 +4,12 @@ import { type MeasureText, type WallpaperLine, layoutWallpaper } from './wallpap
 
 const JPEG_QUALITY = 0.92
 const CODE_BACKGROUND_HEIGHT_RATIO = 1.24,
- CODE_BACKGROUND_RADIUS = 6,
- CODE_BACKGROUND_RADIUS_RATIO = 0.62,
- CODE_PADDING_RATIO = 0.12,
- STRIKE_LINE_HEIGHT_RATIO = 0.04,
- STRIKE_LINE_MINIMUM_HEIGHT = 2,
- STRIKE_LINE_OFFSET = 1
+  CODE_BACKGROUND_RADIUS = 6,
+  CODE_BACKGROUND_RADIUS_RATIO = 0.62,
+  CODE_PADDING_RATIO = 0.12,
+  STRIKE_LINE_HEIGHT_RATIO = 0.04,
+  STRIKE_LINE_MINIMUM_HEIGHT = 2,
+  STRIKE_LINE_OFFSET = 1
 
 export interface WallpaperOptions {
   label: string
@@ -26,7 +26,9 @@ export async function renderWallpaperBlob(options: WallpaperOptions): Promise<Bl
   canvas.height = height
 
   const ctx = canvas.getContext('2d')
-  if (!ctx) {return null}
+  if (!ctx) {
+    return null
+  }
 
   ctx.fillStyle = '#15171b'
   ctx.fillRect(0, 0, width, height)
@@ -45,7 +47,9 @@ export async function renderWallpaperBlob(options: WallpaperOptions): Promise<Bl
       { width, height },
       measureWithCanvas(ctx),
     )
-    for (const line of layout.lines) {drawLine(ctx, line)}
+    for (const line of layout.lines) {
+      drawLine(ctx, line)
+    }
   }
 
   const mime = encoding === 'size' ? 'image/jpeg' : 'image/png'
@@ -64,7 +68,9 @@ export function wallpaperFilename(label: string, encoding: ExportEncoding): stri
 
 export async function downloadWallpaper(options: WallpaperOptions): Promise<boolean> {
   const blob = await renderWallpaperBlob(options)
-  if (!blob) {return false}
+  if (!blob) {
+    return false
+  }
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
@@ -80,7 +86,9 @@ export async function shareWallpaper(
   options: WallpaperOptions,
 ): Promise<'shared' | 'cancelled' | 'unsupported' | 'failed'> {
   const blob = await renderWallpaperBlob(options)
-  if (!blob) {return 'failed'}
+  if (!blob) {
+    return 'failed'
+  }
 
   const file = new File([blob], wallpaperFilename(options.label, options.encoding), {
     type: blob.type,
@@ -90,7 +98,9 @@ export async function shareWallpaper(
     canShare?: (data?: ShareData) => boolean
   }
 
-  if (!nav.share) {return 'unsupported'}
+  if (!nav.share) {
+    return 'unsupported'
+  }
 
   try {
     if (nav.canShare && !nav.canShare({ files: [file] })) {
@@ -99,7 +109,9 @@ export async function shareWallpaper(
     await nav.share({ files: [file], title: options.label || 'Lockscreen' })
     return 'shared'
   } catch (error) {
-    if ((error as Error).name === 'AbortError') {return 'cancelled'}
+    if ((error as Error).name === 'AbortError') {
+      return 'cancelled'
+    }
     return 'failed'
   }
 }

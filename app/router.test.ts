@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import { iconSpriteHref } from './assets.ts'
 import { router } from './router.tsx'
 import { routes } from './routes.ts'
 import { strings } from './strings.ts'
@@ -19,9 +20,33 @@ function fetchScreen(href: string) {
 
 test('the shell preloads the JSX runtime for the browser entry', async () => {
   const response = await fetchScreen(routes.screens.home.href()),
-   html = await response.text()
+    html = await response.text()
 
   assert.match(html, /href="\/assets\/npm\/%40remix-run\/component\/dist\/runtime\/jsx\.js"/)
+})
+
+test('the shell preloads the served icon sprite with an ETag', async () => {
+  const response = await fetchScreen(routes.screens.home.href()),
+    html = await response.text(),
+    preload = html.match(
+      /<link rel="preload" as="image" type="image\/svg\+xml" href="([^"]+)" data-icon-sprite \/>/,
+    )
+
+  assert.ok(preload)
+  assert.equal(preload[1], iconSpriteHref)
+
+  const sprite = await router.fetch(new Request(`http://test.local${iconSpriteHref}`))
+  assert.equal(sprite.status, 200)
+  assert.match(sprite.headers.get('content-type') ?? '', /image\/svg\+xml/)
+  assert.ok(sprite.headers.get('etag'))
+  assert.match(await sprite.text(), /<symbol id="information-circle"/)
+
+  const cached = await router.fetch(
+    new Request(`http://test.local${iconSpriteHref}`, {
+      headers: { 'if-none-match': sprite.headers.get('etag')! },
+    }),
+  )
+  assert.equal(cached.status, 304)
 })
 
 test('every screen URL is served the same shell', async () => {

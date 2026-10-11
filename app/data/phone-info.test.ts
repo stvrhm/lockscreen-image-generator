@@ -103,17 +103,17 @@ test('Notes omit undetected items', () => {
 
 test('reading from the Host uses Client Hints where available', async () => {
   let requested: string[] = [],
-   info = await readPhoneInfo({
-    host: {
-      userAgent: ua.androidChrome,
-      userAgentData: {
-        async getHighEntropyValues(hints) {
-          requested = hints
-          return { model: 'Pixel 7', platformVersion: '14.0.0' }
+    info = await readPhoneInfo({
+      host: {
+        userAgent: ua.androidChrome,
+        userAgentData: {
+          async getHighEntropyValues(hints) {
+            requested = hints
+            return { model: 'Pixel 7', platformVersion: '14.0.0' }
+          },
         },
       },
-    },
-  })
+    })
 
   assert.deepEqual(requested, ['model', 'platformVersion'])
   assert.deepEqual(info, { model: 'Pixel 7', os: 'Android 14' })

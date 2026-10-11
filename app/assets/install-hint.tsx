@@ -1,6 +1,7 @@
 import { type Handle, css } from 'remix/component'
 
 import { Button } from '../ui/button.tsx'
+import { Icon } from '../ui/icon.tsx'
 import { flow, repel } from '../ui/cube/index.ts'
 import { strings } from '../strings.ts'
 
@@ -12,8 +13,8 @@ interface BeforeInstallPromptEvent extends Event {
 
 export function InstallHint(handle: Handle) {
   let installPrompt: BeforeInstallPromptEvent | null = null,
-   platform: 'ios' | 'android' = 'ios',
-   visible = false
+    platform: 'ios' | 'android' = 'ios',
+    visible = false
 
   handle.queueTask(() => {
     if (isAndroid()) {
@@ -28,7 +29,9 @@ export function InstallHint(handle: Handle) {
   })
 
   function onBeforeInstallPrompt(event: BeforeInstallPromptEvent) {
-    if (wasDismissed()) {return}
+    if (wasDismissed()) {
+      return
+    }
 
     event.preventDefault()
     installPrompt = event
@@ -48,7 +51,9 @@ export function InstallHint(handle: Handle) {
   }
 
   async function install() {
-    if (!installPrompt) {return}
+    if (!installPrompt) {
+      return
+    }
 
     const prompt = installPrompt
     installPrompt = null
@@ -58,12 +63,14 @@ export function InstallHint(handle: Handle) {
   }
 
   return () => {
-    if (!visible) {return null}
+    if (!visible) {
+      return null
+    }
 
     return (
       <aside mix={cardStyle} aria-label={strings.install.title}>
         <div mix={installIconStyle} aria-hidden="true">
-          ＋
+          <Icon name="plus" />
         </div>
         <div mix={textStyle}>
           <p mix={titleStyle}>{strings.install.title}</p>
@@ -88,21 +95,31 @@ export function InstallHint(handle: Handle) {
 }
 
 function isAndroid(): boolean {
-  if (typeof navigator === 'undefined') {return false}
+  if (typeof navigator === 'undefined') {
+    return false
+  }
   return /android/i.test(navigator.userAgent)
 }
 
 function shouldShowIOS(): boolean {
-  if (typeof navigator === 'undefined' || typeof window === 'undefined') {return false}
+  if (typeof navigator === 'undefined' || typeof window === 'undefined') {
+    return false
+  }
 
   const nav = navigator as Navigator & { standalone?: boolean }
-  if (nav.standalone === true) {return false}
-  if (window.matchMedia?.('(display-mode: standalone)').matches) {return false}
+  if (nav.standalone === true) {
+    return false
+  }
+  if (window.matchMedia?.('(display-mode: standalone)').matches) {
+    return false
+  }
 
   const isIOS =
     /iphone|ipad|ipod/i.test(nav.userAgent) ||
     (nav.platform === 'MacIntel' && nav.maxTouchPoints > 1)
-  if (!isIOS) {return false}
+  if (!isIOS) {
+    return false
+  }
 
   return !wasDismissed()
 }
@@ -116,47 +133,41 @@ function wasDismissed(): boolean {
 }
 
 const cardStyle = [
-  repel({ alignment: 'flex-start', gutter: '12px' }),
-  css({
-    background: 'linear-gradient(135deg, rgba(94, 184, 255, 0.1), var(--surface) 48%)',
-    border: '1px solid rgba(94, 184, 255, 0.3)',
-    borderRadius: 'var(--radius)',
-    padding: '16px',
+    repel({ alignment: 'flex-start', gutter: '12px' }),
+    css({
+      background: 'linear-gradient(135deg, rgba(94, 184, 255, 0.1), var(--surface) 48%)',
+      border: '1px solid rgba(94, 184, 255, 0.3)',
+      borderRadius: 'var(--radius)',
+      padding: '16px',
+    }),
+  ],
+  installIconStyle = css({
+    background: 'rgba(94, 184, 255, 0.16)',
+    borderRadius: '9px',
+    color: 'var(--accent)',
+    display: 'grid',
+    flex: '0 0 auto',
+    fontSize: '22px',
+    fontWeight: 400,
+    height: '30px',
+    lineHeight: 1,
+    placeItems: 'center',
+    width: '30px',
   }),
-],
-
- installIconStyle = css({
-  background: 'rgba(94, 184, 255, 0.16)',
-  borderRadius: '9px',
-  color: 'var(--accent)',
-  display: 'grid',
-  flex: '0 0 auto',
-  fontSize: '22px',
-  fontWeight: 400,
-  height: '30px',
-  lineHeight: 1,
-  placeItems: 'center',
-  width: '30px',
-}),
-
- textStyle = flow({ flowSpace: '6px' }),
-
- titleStyle = css({
-  fontSize: '15px',
-  fontWeight: 600,
-}),
-
- bodyStyle = css({
-  color: 'var(--text-muted)',
-  fontSize: '14px',
-  lineHeight: 1.45,
-}),
-
- stepsStyle = css({
-  color: 'var(--accent)',
-  fontSize: '13px',
-  fontWeight: 600,
-  lineHeight: 1.4,
-}),
-
- installAlignStyle = css({ alignSelf: 'flex-start' })
+  textStyle = flow({ flowSpace: '6px' }),
+  titleStyle = css({
+    fontSize: '15px',
+    fontWeight: 600,
+  }),
+  bodyStyle = css({
+    color: 'var(--text-muted)',
+    fontSize: '14px',
+    lineHeight: 1.45,
+  }),
+  stepsStyle = css({
+    color: 'var(--accent)',
+    fontSize: '13px',
+    fontWeight: 600,
+    lineHeight: 1.4,
+  }),
+  installAlignStyle = css({ alignSelf: 'flex-start' })

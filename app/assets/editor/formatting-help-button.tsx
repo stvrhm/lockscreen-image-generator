@@ -3,6 +3,7 @@ import * as popover from '@remix-run/ui/popover'
 
 import { strings } from '../../strings.ts'
 import { Button } from '../../ui/button.tsx'
+import { Icon } from '../../ui/icon.tsx'
 import { theme } from '../../ui/theme.ts'
 
 /**
@@ -41,7 +42,7 @@ export function FormattingHelpButton(handle: Handle) {
         ]}
         onClick={() => (open ? hide() : show())}
       >
-        ⓘ
+        <Icon name="question-mark-circle" />
       </Button>
       <div
         id="formatting-help"
@@ -76,53 +77,50 @@ export function FormattingHelpButton(handle: Handle) {
 // oxlint-enable jsx-a11y/prefer-tag-over-role
 
 const triggerStyle = css({
-  fontSize: '1.125rem',
-  fontWeight: theme.fontWeight.medium,
-}),
-
- panelStyle = css({
-  '&:popover-open': {
-    opacity: 1,
-    transform: 'translate(0, 0)',
-  },
-  '&[data-anchor-placement^="top"]': { transform: 'translateY(4px)' },
-  '@media (prefers-reduced-motion: reduce)': {
-    '&:popover-open': { transform: 'none' },
-    '&[data-anchor-placement^="top"]': { transform: 'none' },
-    transform: 'none',
-    transition: 'opacity 160ms ease-out, overlay 160ms ease-out, display 160ms ease-out',
-  },
-  background: 'var(--surface-3)',
-  border: '1px solid var(--border)',
-  borderRadius: theme.radius.md,
-  boxShadow: 'var(--shadow-soft)',
-  color: 'var(--text)',
-  inset: 'auto',
-  margin: 0,
-  opacity: 0,
-  outline: 'none',
-  padding: theme.space.sm,
-  position: 'fixed',
-  transform: 'translateY(-4px)',
-  transition:
-    'opacity 160ms ease-out, transform 160ms cubic-bezier(0.19, 1, 0.22, 1), overlay 160ms ease-out, display 160ms ease-out',
-  transitionBehavior: 'allow-discrete',
-  width: 'min(22rem, calc(100vw - 32px))',
-}),
-
- titleStyle = css({
-  fontSize: theme.fontSize.small,
-  fontWeight: theme.fontWeight.semibold,
-  margin: 0,
-}),
-
- listStyle = css({
-  display: 'flex',
-  flexDirection: 'column',
-  fontSize: theme.fontSize.small,
-  gap: theme.space['2xs'],
-  lineHeight: theme.leading.standard,
-  margin: `${theme.space.xs} 0 0`,
-  padding: 0,
-  paddingInlineStart: '1.1em',
-})
+    fontSize: '1.125rem',
+    fontWeight: theme.fontWeight.medium,
+  }),
+  panelStyle = css({
+    '&:popover-open': {
+      opacity: 1,
+      transform: 'translate(0, 0)',
+    },
+    '&[data-anchor-placement^="top"]': { transform: 'translateY(4px)' },
+    '@media (prefers-reduced-motion: reduce)': {
+      '&:popover-open': { transform: 'none' },
+      '&[data-anchor-placement^="top"]': { transform: 'none' },
+      transform: 'none',
+      transition: 'opacity 160ms ease-out, overlay 160ms ease-out, display 160ms ease-out',
+    },
+    background: 'var(--surface-3)',
+    border: '1px solid var(--border)',
+    borderRadius: theme.radius.md,
+    boxShadow: 'var(--shadow-soft)',
+    color: 'var(--text)',
+    inset: 'auto',
+    margin: 0,
+    opacity: 0,
+    outline: 'none',
+    padding: theme.space.sm,
+    position: 'fixed',
+    transform: 'translateY(-4px)',
+    transition:
+      'opacity 160ms ease-out, transform 160ms cubic-bezier(0.19, 1, 0.22, 1), overlay 160ms ease-out, display 160ms ease-out',
+    transitionBehavior: 'allow-discrete',
+    width: 'min(22rem, calc(100vw - 32px))',
+  }),
+  titleStyle = css({
+    fontSize: theme.fontSize.small,
+    fontWeight: theme.fontWeight.semibold,
+    margin: 0,
+  }),
+  listStyle = css({
+    display: 'flex',
+    flexDirection: 'column',
+    fontSize: theme.fontSize.small,
+    gap: theme.space['2xs'],
+    lineHeight: theme.leading.standard,
+    margin: `${theme.space.xs} 0 0`,
+    padding: 0,
+    paddingInlineStart: '1.1em',
+  })

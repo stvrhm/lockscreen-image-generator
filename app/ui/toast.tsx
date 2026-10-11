@@ -1,10 +1,11 @@
 import { type Handle, css } from 'remix/component'
 
 import { Button } from './button.tsx'
+import { Icon } from './icon.tsx'
 import { animateEntrance, animateExit, animateLayout, spring } from '@remix-run/ui/animation'
 
 const DEFAULT_TOAST_DURATION_MS = 6000,
- MINIMUM_TOAST_DURATION_MS = 1000
+  MINIMUM_TOAST_DURATION_MS = 1000
 
 export type ToastVariant = 'default' | 'success' | 'error'
 
@@ -28,8 +29,8 @@ interface ToastRecord extends ToastOptions {
 type ToastSubscriber = (toast: ToastRecord) => void
 
 let nextToastId = 0,
- subscribers = new Set<ToastSubscriber>(),
- pendingToasts: ToastRecord[] = []
+  subscribers = new Set<ToastSubscriber>(),
+  pendingToasts: ToastRecord[] = []
 
 export function toast(options: ToastOptions): string {
   const record: ToastRecord = { ...options, id: `toast-${++nextToastId}` }
@@ -67,25 +68,29 @@ function updateToLatest() {
 
 export function ToastViewport(handle: Handle) {
   let items: ToastRecord[] = [],
-   timers = new Map<string, number>(),
-   pendingActions = new Set<string>(),
-   reduceMotion = false,
-   updateToastShown = false
+    timers = new Map<string, number>(),
+    pendingActions = new Set<string>(),
+    reduceMotion = false,
+    updateToastShown = false
 
   function dismiss(id: string) {
     const timer = timers.get(id)
-    if (timer !== undefined) {window.clearTimeout(timer)}
+    if (timer !== undefined) {
+      window.clearTimeout(timer)
+    }
     timers.delete(id)
     items = items.filter((item) => item.id !== id)
     handle.update()
   }
 
   function scheduleDismiss(item: ToastRecord) {
-    if (item.duration === null) {return}
-  const duration = item.duration ?? DEFAULT_TOAST_DURATION_MS
+    if (item.duration === null) {
+      return
+    }
+    const duration = item.duration ?? DEFAULT_TOAST_DURATION_MS
     timers.set(
       item.id,
-    window.setTimeout(() => dismiss(item.id), Math.max(MINIMUM_TOAST_DURATION_MS, duration)),
+      window.setTimeout(() => dismiss(item.id), Math.max(MINIMUM_TOAST_DURATION_MS, duration)),
     )
   }
 
@@ -96,7 +101,9 @@ export function ToastViewport(handle: Handle) {
   }
 
   function showUpdateToast() {
-    if (updateToastShown) {return}
+    if (updateToastShown) {
+      return
+    }
     updateToastShown = true
     toast({
       action: { label: 'Update', onClick: updateToLatest },
@@ -118,7 +125,9 @@ export function ToastViewport(handle: Handle) {
     motionPreference.addEventListener('change', onMotionPreferenceChange)
     window.addEventListener('tdl:update-available', onUpdateAvailable)
 
-    if (window.tdlUpdateAvailable) {showUpdateToast()}
+    if (window.tdlUpdateAvailable) {
+      showUpdateToast()
+    }
 
     handle.signal.addEventListener(
       'abort',
@@ -187,7 +196,7 @@ export function ToastViewport(handle: Handle) {
             mix={dismissGlyphStyle}
             onClick={() => dismiss(item.id)}
           >
-            ×
+            <Icon name="x-mark" />
           </Button>
         </article>
       ))}
@@ -196,52 +205,47 @@ export function ToastViewport(handle: Handle) {
 }
 
 const viewportStyle = css({
-  display: 'grid',
-  gap: 'var(--space-xs)',
-  inset: 'auto 0 calc(env(safe-area-inset-bottom) + var(--space-sm))',
-  justifyItems: 'center',
-  paddingInline: 'var(--space-sm)',
-  pointerEvents: 'none',
-  position: 'fixed',
-  zIndex: 100,
-}),
-
- toastStyle = css({
-  alignItems: 'center',
-  background: 'var(--toast-background, var(--surface-2))',
-  border: '1px solid var(--toast-border, var(--border))',
-  borderRadius: 'var(--radius)',
-  boxShadow: '0 16px 45px rgba(0, 0, 0, 0.32)',
-  color: 'var(--text)',
-  display: 'flex',
-  gap: 'var(--space-xs)',
-  padding: 'var(--space-xs) var(--space-sm)',
-  pointerEvents: 'auto',
-  width: 'min(100%, 440px)',
-}),
-
- variantStyles: Record<ToastVariant, ReturnType<typeof css>> = {
-  default: css({}),
-  error: css({
-    '--toast-border': 'rgba(248, 113, 113, 0.5)',
-    '--toast-background': 'rgba(127, 29, 29, 0.94)',
+    display: 'grid',
+    gap: 'var(--space-xs)',
+    inset: 'auto 0 calc(env(safe-area-inset-bottom) + var(--space-sm))',
+    justifyItems: 'center',
+    paddingInline: 'var(--space-sm)',
+    pointerEvents: 'none',
+    position: 'fixed',
+    zIndex: 100,
   }),
-  success: css({
-    '--toast-border': 'rgba(74, 222, 128, 0.45)',
-    '--toast-background': 'rgba(20, 83, 45, 0.92)',
+  toastStyle = css({
+    alignItems: 'center',
+    background: 'var(--toast-background, var(--surface-2))',
+    border: '1px solid var(--toast-border, var(--border))',
+    borderRadius: 'var(--radius)',
+    boxShadow: '0 16px 45px rgba(0, 0, 0, 0.32)',
+    color: 'var(--text)',
+    display: 'flex',
+    gap: 'var(--space-xs)',
+    padding: 'var(--space-xs) var(--space-sm)',
+    pointerEvents: 'auto',
+    width: 'min(100%, 440px)',
   }),
-},
-
- copyStyle = css({
-  '& p': { color: 'var(--text-muted)', fontSize: 'var(--font-size-small)', margin: '0.2em 0 0' },
-  '& strong': { display: 'block', fontWeight: 'var(--font-weight-semibold)' },
-  flex: '1 1 auto',
-  minWidth: 0,
-}),
-
- actionButtonStyle = css({
-  flexShrink: 0,
-  whiteSpace: 'nowrap',
-}),
-
- dismissGlyphStyle = css({ flex: '0 0 auto', fontSize: '1.4rem' })
+  variantStyles: Record<ToastVariant, ReturnType<typeof css>> = {
+    default: css({}),
+    error: css({
+      '--toast-border': 'rgba(248, 113, 113, 0.5)',
+      '--toast-background': 'rgba(127, 29, 29, 0.94)',
+    }),
+    success: css({
+      '--toast-border': 'rgba(74, 222, 128, 0.45)',
+      '--toast-background': 'rgba(20, 83, 45, 0.92)',
+    }),
+  },
+  copyStyle = css({
+    '& p': { color: 'var(--text-muted)', fontSize: 'var(--font-size-small)', margin: '0.2em 0 0' },
+    '& strong': { display: 'block', fontWeight: 'var(--font-weight-semibold)' },
+    flex: '1 1 auto',
+    minWidth: 0,
+  }),
+  actionButtonStyle = css({
+    flexShrink: 0,
+    whiteSpace: 'nowrap',
+  }),
+  dismissGlyphStyle = css({ flex: '0 0 auto', fontSize: '1.4rem' })
