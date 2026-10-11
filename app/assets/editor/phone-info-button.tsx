@@ -9,6 +9,7 @@ import {
 } from '../../data/phone-info.ts'
 import { strings } from '../../strings.ts'
 import { Button } from '../../ui/button.tsx'
+import { Icon } from '../../ui/icon.tsx'
 import { theme } from '../../ui/theme.ts'
 
 /**
@@ -69,7 +70,7 @@ export function PhoneInfoButton(handle: Handle<{ onAdd: (lines: string) => void 
           ]}
           onClick={() => (open ? hide() : show())}
         >
-          ⓘ
+          <Icon name="information-circle" />
         </Button>
         <div
           id="phone-info-overlay"

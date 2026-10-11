@@ -491,6 +491,11 @@ describe('the Phone info overlay', () => {
     }
 
     let trigger = page.getByRole('button', { name: strings.editor.phoneInfo })
+    assert.equal(
+      (await trigger.locator('svg use').getAttribute('href'))?.split('#').at(-1),
+      'information-circle',
+    )
+    assert.equal(await trigger.locator('svg').getAttribute('aria-hidden'), 'true')
     await trigger.click()
     let overlay = page.getByRole('dialog', { name: strings.editor.phoneInfo })
     await overlay.getByText(strings.editor.phoneInfoEmpty).waitFor()

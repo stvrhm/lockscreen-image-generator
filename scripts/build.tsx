@@ -19,7 +19,7 @@ const ROOT = join(import.meta.dirname, '..'),
 // Builds pinned it to the old code even after reloads. The asset server reads
 // Its base path at import time, so set it before loading anything that uses it.
 process.env.ASSET_BASE_PATH = `/assets/${BUILD_ID}`
-const { assetServer } = await import('../app/assets.ts'),
+const { assetServer, iconSpriteHref } = await import('../app/assets.ts'),
  { Document } = await import('../app/ui/document.tsx'),
 
 // One entry now. Screens are plain modules reached through the browser router
@@ -86,7 +86,7 @@ async function build() {
   writeFileEnsured(join(DIST, 'index.html'), html)
   console.log(`  index.html (${html.length} bytes)`)
 
-  const assetUrls = await assetServer.getPreloads(CLIENT_ENTRIES)
+  const assetUrls = [...new Set([...await assetServer.getPreloads(CLIENT_ENTRIES), iconSpriteHref])]
   const assets = await Promise.all(assetUrls.map(async (assetUrl) => {
     const res = await assetServer.fetch(new Request(new URL(assetUrl, 'http://build.local')))
     if (!res || !res.ok) {

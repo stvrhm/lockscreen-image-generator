@@ -1,6 +1,6 @@
 import type { Handle, RemixNode } from 'remix/component'
 
-import { resetStylesheetHref, scriptEntry } from '../assets.ts'
+import { iconSpriteHref, resetStylesheetHref, scriptEntry } from '../assets.ts'
 import { strings } from '../strings.ts'
 import { swBootScript } from './sw-boot.ts'
 import { THEME_COLOR, baseCss } from './theme.ts'
@@ -42,6 +42,7 @@ export function Document(handle: Handle<DocumentProps>) {
 
           <title>{title}</title>
           <link rel="stylesheet" href={resetStylesheetHref} />
+          <link rel="preload" as="image" type="image/svg+xml" href={iconSpriteHref} data-icon-sprite />
           <style>{baseCss}</style>
           {head}
           <script type="importmap" data-rmx-import-map>

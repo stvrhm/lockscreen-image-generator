@@ -7,10 +7,11 @@
     "hmr": "NODE_ENV=development node hmr.ts",
     "start": "NODE_ENV=production node --import remix/node-tsx server.ts",
     "icons": "node scripts/generate-icons.mjs",
+    "icons:sprite": "node scripts/generate-icon-sprite.mjs",
     "theme": "node --import remix/node-tsx scripts/generate-theme.ts",
-    "build": "node scripts/generate-icons.mjs && NODE_ENV=production node --import remix/node-tsx scripts/build.tsx",
+    "build": "node scripts/generate-icons.mjs && node scripts/generate-icon-sprite.mjs && NODE_ENV=production node --import remix/node-tsx scripts/build.tsx",
     "preview": "node scripts/preview.mjs",
-    "test": "NODE_ENV=test node --import remix/node-tsx --test 'app/**/*.test.ts'",
+    "test": "NODE_ENV=test node --import remix/node-tsx --test 'app/**/*.test.ts' 'app/**/*.test.tsx' scripts/generate-icon-sprite.test.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint app scripts server.ts hmr.ts",
     "format": "oxfmt app scripts server.ts hmr.ts",
@@ -30,6 +31,7 @@
     "oxfmt": "^0.68.0",
     "oxlint": "^1.83.0",
     "playwright": "^1.63.0",
+    "svgo": "^4.1.0",
     "typescript": "latest"
   }
 }
