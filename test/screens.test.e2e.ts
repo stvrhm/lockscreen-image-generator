@@ -439,7 +439,10 @@ describe('Formatting help', () => {
     assert.equal(await page.locator('#device-notes').getAttribute('aria-describedby'), null)
 
     let trigger = page.getByRole('button', { name: strings.editor.formattingHelp, exact: true })
-    assert.equal(await trigger.innerText(), 'ⓘ')
+    assert.equal(
+      (await trigger.locator('svg use').getAttribute('href'))?.split('#').at(-1),
+      'question-mark-circle',
+    )
     assert.equal(await trigger.getAttribute('aria-haspopup'), 'dialog')
     assert.equal(
       await trigger.evaluate(
@@ -673,7 +676,10 @@ describe('custom Wallpaper dimension limits', () => {
     await page.getByLabel(/label/i).first().fill('Dimension boundary')
     await page.getByText(strings.editor.customizeExport, { exact: true }).click()
     await page.getByRole('button', { name: strings.editor.exportSizeCustom, exact: true }).click()
-    let exportSummary = page.locator('strong').filter({ hasText: /\d+ × \d+ px/ }).first()
+    let exportSummary = page
+      .locator('strong')
+      .filter({ hasText: /\d+ × \d+ px/ })
+      .first()
     let safePreviewSize = await exportSummary.innerText()
 
     let width = page.getByLabel(strings.editor.width)
@@ -685,20 +691,34 @@ describe('custom Wallpaper dimension limits', () => {
     await sizeError.waitFor()
     assert.equal(await width.inputValue(), '4000')
     assert.equal(await height.inputValue(), '3001')
-    assert.equal(await page.getByRole('button', { name: strings.editor.saveDevice }).isDisabled(), true)
-    assert.equal(await page.getByRole('button', { name: strings.editor.saveToPhotos }).isDisabled(), true)
-    assert.equal(await page.getByRole('button', { name: strings.editor.download }).isDisabled(), true)
-    assert.equal(await page.getByText(strings.editor.preview, { exact: true }).first().isVisible(), true)
+    assert.equal(
+      await page.getByRole('button', { name: strings.editor.saveDevice }).isDisabled(),
+      true,
+    )
+    assert.equal(
+      await page.getByRole('button', { name: strings.editor.saveToPhotos }).isDisabled(),
+      true,
+    )
+    assert.equal(
+      await page.getByRole('button', { name: strings.editor.download }).isDisabled(),
+      true,
+    )
+    assert.equal(
+      await page.getByText(strings.editor.preview, { exact: true }).first().isVisible(),
+      true,
+    )
     assert.equal(await exportSummary.innerText(), safePreviewSize)
 
     await width.fill('2.5')
-    let integerError = page.getByText(
-      strings.editor.dimensionIssues['positive-integers'],
-      { exact: true },
-    )
+    let integerError = page.getByText(strings.editor.dimensionIssues['positive-integers'], {
+      exact: true,
+    })
     await integerError.waitFor()
     assert.equal(await width.inputValue(), '2.5')
-    assert.equal(await page.getByRole('button', { name: strings.editor.saveDevice }).isDisabled(), true)
+    assert.equal(
+      await page.getByRole('button', { name: strings.editor.saveDevice }).isDisabled(),
+      true,
+    )
 
     await width.fill('0')
     assert.equal(await width.inputValue(), '0')
@@ -714,11 +734,17 @@ describe('custom Wallpaper dimension limits', () => {
 
     await width.fill('4096')
     await sideError.waitFor({ state: 'hidden' })
-    assert.equal(await page.getByRole('button', { name: strings.editor.saveDevice }).isDisabled(), false)
+    assert.equal(
+      await page.getByRole('button', { name: strings.editor.saveDevice }).isDisabled(),
+      false,
+    )
     await width.fill('3000')
     await height.fill('4000')
     await sizeError.waitFor({ state: 'hidden' })
-    assert.equal(await page.getByRole('button', { name: strings.editor.saveDevice }).isDisabled(), false)
+    assert.equal(
+      await page.getByRole('button', { name: strings.editor.saveDevice }).isDisabled(),
+      false,
+    )
   })
 
   it('rejects an imported project whose saved custom dimensions exceed a limit', async (t) => {
@@ -855,7 +881,10 @@ describe('custom Wallpaper dimension limits', () => {
     await page.getByText(strings.editor.customizeExport, { exact: true }).click()
     await page.getByRole('button', { name: strings.editor.exportSizeCustom, exact: true }).click()
 
-    let summary = page.locator('strong').filter({ hasText: /\d+ × \d+ px/ }).first()
+    let summary = page
+      .locator('strong')
+      .filter({ hasText: /\d+ × \d+ px/ })
+      .first()
     let match = (await summary.innerText()).match(/(\d+) × (\d+) px/)
     assert.ok(match, 'preview dimensions are not visible')
     let width = Number(match[1])
