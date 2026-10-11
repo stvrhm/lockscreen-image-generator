@@ -5,12 +5,14 @@ import { dirname, join } from 'node:path'
 
 import { renderToStream } from 'remix/component/server'
 
+const BUILD_ID_LENGTH = 14
+
 const ROOT = join(import.meta.dirname, '..'),
  DIST = join(ROOT, 'dist'),
  BUILD_ID = new Date()
   .toISOString()
   .replaceAll(/[^0-9]/g, '')
-  .slice(0, 14)
+  .slice(0, BUILD_ID_LENGTH)
 
 // Every release gets fresh module URLs. Safari keeps serving ES modules it has
 // Already loaded at a URL, ignoring `no-cache`, so reusing `/assets/...` across

@@ -7,6 +7,9 @@ interface Viewports { min: number; max: number }
 const root = join(import.meta.dirname, '..'),
  tokensDir = join(root, 'design-tokens'),
  outputPath = join(root, 'app/ui/generated-theme.ts'),
+ CSS_PRECISION_DIGITS = 2,
+ REM_PRECISION_DIGITS = 4,
+ VIEWPORT_PERCENT = 100,
  rootSize = 16
 
 async function readJson<T>(name: string): Promise<T> {
@@ -21,7 +24,7 @@ function cssName(name: string) {
 }
 
 function rem(value: number) {
-  return `${Number((value / rootSize).toFixed(4))}rem`
+  return `${Number((value / rootSize).toFixed(REM_PRECISION_DIGITS))}rem`
 }
 
 function fluidValue(min: number, max: number, viewports: Viewports) {
@@ -32,7 +35,7 @@ function fluidValue(min: number, max: number, viewports: Viewports) {
    maxViewportRem = viewports.max / rootSize,
    slope = (maxRem - minRem) / (maxViewportRem - minViewportRem),
    intercept = minRem - minViewportRem * slope
-  return `clamp(${rem(min)}, ${intercept.toFixed(2)}rem + ${(slope * 100).toFixed(2)}vw, ${rem(max)})`
+  return `clamp(${rem(min)}, ${intercept.toFixed(CSS_PRECISION_DIGITS)}rem + ${(slope * VIEWPORT_PERCENT).toFixed(CSS_PRECISION_DIGITS)}vw, ${rem(max)})`
 }
 
 function quote(value: string) {

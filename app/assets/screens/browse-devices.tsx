@@ -28,6 +28,14 @@ import {
   pageStyle,
 } from '../../ui/screen-styles.ts'
 
+function getImportErrorDescription(error: unknown): string | undefined {
+  if (error instanceof DeviceFileDimensionError) {
+    return strings.editor.dimensionIssues[error.issue]
+  }
+  if (error instanceof Error) {return error.message}
+  return undefined
+}
+
 export function BrowseDevices(handle: Handle<{ devices: Device[] }>) {
   let {devices} = handle.props
   let importInput: HTMLInputElement | null = null
@@ -51,12 +59,7 @@ export function BrowseDevices(handle: Handle<{ devices: Device[] }>) {
       toast({ title: strings.browse.imported, variant: 'success' })
     } catch (error) {
       toast({
-        description:
-          error instanceof DeviceFileDimensionError
-            ? strings.editor.dimensionIssues[error.issue]
-            : error instanceof Error
-              ? error.message
-              : undefined,
+        description: getImportErrorDescription(error),
         title: strings.browse.importFailed,
         variant: 'error',
       })

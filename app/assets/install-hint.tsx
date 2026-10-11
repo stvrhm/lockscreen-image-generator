@@ -11,9 +11,9 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function InstallHint(handle: Handle) {
-  let visible = false,
-   installPrompt: BeforeInstallPromptEvent | null = null,
-   platform: 'ios' | 'android' = 'ios'
+  let installPrompt: BeforeInstallPromptEvent | null = null,
+   platform: 'ios' | 'android' = 'ios',
+   visible = false
 
   handle.queueTask(() => {
     if (isAndroid()) {

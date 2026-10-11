@@ -94,17 +94,19 @@ function localSelection(
 }
 
 function emptyPair(source: string, index: number): { len: number; style: Style } | null {
+  const DOUBLE_MARKER_LENGTH = 4,
+   STRONG_ITALIC_MARKER_LENGTH = 6
   const ch = source[index]
   if (!ch || (index > 0 && source[index - 1] === ch)) {return null}
   if (ch !== '*' && ch !== '~' && ch !== '`') {return null}
   let len = 0
   while (source[index + len] === ch) {len++}
-  if (ch === '*' && len === 6) {
+  if (ch === '*' && len === STRONG_ITALIC_MARKER_LENGTH) {
     return { len, style: { bold: true, code: false, italic: true, strike: false } }
   }
-  if (ch === '*' && len === 4) {return { len, style: { ...PLAIN, bold: true } }}
+  if (ch === '*' && len === DOUBLE_MARKER_LENGTH) {return { len, style: { ...PLAIN, bold: true } }}
   if (ch === '*' && len === 2) {return { len, style: { ...PLAIN, italic: true } }}
-  if (ch === '~' && len === 4) {return { len, style: { ...PLAIN, strike: true } }}
+  if (ch === '~' && len === DOUBLE_MARKER_LENGTH) {return { len, style: { ...PLAIN, strike: true } }}
   if (ch === '`' && len === 2) {return { len, style: { ...PLAIN, code: true } }}
   return null
 }
@@ -209,9 +211,9 @@ function serialize(pieces: Piece[]) {
     })
   }
 
-  let text = '',
+  let selEnd: number | null = null,
    selStart: number | null = null,
-   selEnd: number | null = null
+   text = ''
   for (const piece of merged) {
     const [open, close] = markers(piece.style)
     const contentAt = text.length + open.length

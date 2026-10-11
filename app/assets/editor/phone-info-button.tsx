@@ -18,10 +18,10 @@ import { theme } from '../../ui/theme.ts'
  */
 // oxlint-disable jsx-a11y/prefer-tag-over-role -- A dialog popover must use a controlled div; native dialog state conflicts with showPopover().
 export function PhoneInfoButton(handle: Handle<{ onAdd: (lines: string) => void }>) {
-  let open = false,
-   info: PhoneInfo | undefined,
-   restoreFocus = true,
-   reads = 0
+  let info: PhoneInfo | undefined,
+   open = false,
+   reads = 0,
+   restoreFocus = true
 
   function show() {
     open = true
@@ -85,9 +85,11 @@ export function PhoneInfoButton(handle: Handle<{ onAdd: (lines: string) => void 
           <p id="phone-info-title" mix={titleStyle}>
             {strings.editor.phoneInfo}
           </p>
-          {info ? items.length === 0 ? (
+          {!info && <p mix={[mutedStyle, stackGapStyle]}>{strings.editor.phoneInfoDetecting}</p>}
+          {info && items.length === 0 && (
             <p mix={[mutedStyle, stackGapStyle]}>{strings.editor.phoneInfoEmpty}</p>
-          ) : (
+          )}
+          {info && items.length > 0 && (
             <>
               <ul mix={[listStyle, stackGapStyle]}>
                 {items.map((item) => (
@@ -118,8 +120,6 @@ export function PhoneInfoButton(handle: Handle<{ onAdd: (lines: string) => void 
                 {strings.editor.phoneInfoAddAll}
               </Button>
             </>
-          ) : (
-            <p mix={[mutedStyle, stackGapStyle]}>{strings.editor.phoneInfoDetecting}</p>
           )}
         </div>
       </popover.Context>

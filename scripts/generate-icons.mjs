@@ -3,13 +3,20 @@ import { deflateSync } from 'node:zlib'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-const OUT = join(import.meta.dirname, '..', 'public', 'icons'),
+// This script implements PNG's byte layout, CRC algorithm, and pixel coordinates.
+// Those literals define the format and geometry directly.
+// oxlint-disable no-magic-numbers
 
- BG = [0x15, 0x17, 0x1B],
- PHONE = [0x5E, 0xB8, 0xFF],
- SCREEN = [0x2A, 0x30, 0x38],
+const BG = [0x15, 0x17, 0x1B]
+const OUT = join(import.meta.dirname, '..', 'public', 'icons')
+const PHONE = [0x5E, 0xB8, 0xFF]
+const SCREEN = [0x2A, 0x30, 0x38]
 
- clamp01 = (x) => (x < 0 ? 0 : (x > 1 ? 1 : x))
+function clamp01(x) {
+  if (x < 0) {return 0}
+  if (x > 1) {return 1}
+  return x
+}
 
 function roundedRectSD(px, py, x0, y0, x1, y1, r) {
   const cx = (x0 + x1) / 2,

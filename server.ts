@@ -3,7 +3,10 @@ import { createRequestListener } from 'remix/node-fetch-server'
 
 import { router } from './app/router.tsx'
 
-const port = process.env.PORT ? Number.parseInt(process.env.PORT, 10) : 44_100
+const DEFAULT_PORT = 44_100
+const PORT_ENV_RADIX = 10
+
+const port = process.env.PORT ? Number.parseInt(process.env.PORT, PORT_ENV_RADIX) : DEFAULT_PORT
 const hmrProxyPort = process.env.HMR_PROXY_PORT
   ? Number.parseInt(process.env.HMR_PROXY_PORT, 10)
   : null,

@@ -3,8 +3,14 @@ import { createServer } from 'node:http'
 import { readFile, stat } from 'node:fs/promises'
 import { extname, join, normalize } from 'node:path'
 
+const DEFAULT_PORT = 44_100
+const INTERNAL_ERROR_STATUS = 500
+const NOT_FOUND_STATUS = 404
+const OK_STATUS = 200
+const PORT_ENV_RADIX = 10
+
 const DIST = join(dirname(import.meta.filename), '..', 'dist'),
- PORT = process.env.PORT ? Number.parseInt(process.env.PORT, 10) : 44_100
+ PORT = process.env.PORT ? Number.parseInt(process.env.PORT, PORT_ENV_RADIX) : DEFAULT_PORT
 
 function dirname(p) {
   return p.slice(0, p.lastIndexOf('/'))
@@ -48,19 +54,19 @@ const server = createServer(async (req, res) => {
       resolved = await tryFile(join(DIST, 'index.html'))
     }
     if (!resolved) {
-      res.writeHead(404, { 'content-type': 'text/plain' })
+      res.writeHead(NOT_FOUND_STATUS, { 'content-type': 'text/plain' })
       res.end('Not Found')
       return
     }
 
     const body = await readFile(resolved)
-    res.writeHead(200, {
+    res.writeHead(OK_STATUS, {
       'cache-control': 'no-cache',
       'content-type': TYPES[extname(resolved)] ?? 'application/octet-stream',
     })
     res.end(body)
   } catch (error) {
-    res.writeHead(500, { 'content-type': 'text/plain' })
+    res.writeHead(INTERNAL_ERROR_STATUS, { 'content-type': 'text/plain' })
     res.end('Internal Server Error')
     console.error(error)
   }

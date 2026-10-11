@@ -15,8 +15,15 @@ void __componentHmrBrowserRuntime__
 void componentRefresh
 void multipleImportMapsPolyfill
 
-const router = createBrowserRouter(),
- redirectStatuses = new Set([301, 302, 303, 307, 308])
+const router = createBrowserRouter()
+enum RedirectStatus {
+  MovedPermanently = 301,
+  Found = 302,
+  SeeOther = 303,
+  TemporaryRedirect = 307,
+  PermanentRedirect = 308,
+}
+const redirectStatuses = new Set(Object.values(RedirectStatus))
 let resolvingInitialRoute = true
 
 // Every screen URL is served the same shell document, so routing starts here:

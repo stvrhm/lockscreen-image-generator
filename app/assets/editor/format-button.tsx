@@ -4,13 +4,13 @@ import * as popover from '@remix-run/ui/popover'
 import { Button } from '../../ui/button.tsx'
 import { theme } from '../../ui/theme.ts'
 
-const TOOLTIP_DELAY = 750,
+const TOOLTIP_CLOSE_DELAY = 500,
 
- TOOLTIP_CLOSE_DELAY = 500
+ TOOLTIP_DELAY = 750
 
-let tooltipWarmUntil = 0,
+let activeTooltipHide: ((skipExitAnimation?: boolean) => void) | undefined,
 
- activeTooltipHide: ((skipExitAnimation?: boolean) => void) | undefined
+ tooltipWarmUntil = 0
 
 export function FormatButton(
   handle: Handle<{
@@ -21,12 +21,12 @@ export function FormatButton(
     onArm?: () => void
   }>,
 ) {
-  let visible = false,
+  let hideTimer: ReturnType<typeof setTimeout> | undefined,
    immediate = false,
    immediateExit = false,
-   tooltipSurface: (HTMLElement & { hidePopover?: () => void }) | null = null,
    showTimer: ReturnType<typeof setTimeout> | undefined,
-   hideTimer: ReturnType<typeof setTimeout> | undefined,
+   tooltipSurface: (HTMLElement & { hidePopover?: () => void }) | null = null,
+   visible = false,
    tooltipId = `format-tooltip-${handle.props.label.toLowerCase().replaceAll(' ', '-')}`
 
   function clearTimers() {

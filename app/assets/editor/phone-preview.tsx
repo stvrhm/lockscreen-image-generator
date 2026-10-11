@@ -14,9 +14,11 @@ import {
   layoutWallpaper,
 } from '../../data/wallpaper-layout.ts'
 
-const FRAME_WIDTH = 224,
- FRAME_HEIGHT = 484,
+const PHONE_PREVIEW_PADDING_RATIO = 0.12
+
+const FRAME_HEIGHT = 484,
  FRAME_PADDING = 10,
+ FRAME_WIDTH = 224,
  SCREEN_WIDTH = FRAME_WIDTH - FRAME_PADDING * 2,
  SCREEN_HEIGHT = FRAME_HEIGHT - FRAME_PADDING * 2
 
@@ -98,7 +100,7 @@ function PreviewRun(handle: Handle<{ line: WallpaperLine; run: WallpaperRun }>) 
   return () => {
     const { line, run } = handle.props
     const { fontSize, y } = line
-    const padding = fontSize * 0.12
+    const padding = fontSize * PHONE_PREVIEW_PADDING_RATIO
     return (
       <span
         mix={[runStyle, run.code && codeRunStyle, run.strike && strikeRunStyle]}

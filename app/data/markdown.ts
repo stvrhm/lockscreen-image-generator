@@ -18,6 +18,10 @@ export interface InlineToken {
   strike?: boolean
 }
 
+const EMPHASIS_MARKER_LENGTH = 1,
+ STRONG_EMPHASIS_MARKER_LENGTH = 3,
+ STRONG_MARKER_LENGTH = 2
+
 /** `body` for plain text; 1 for a `# ` Heading, 2 for a `## ` Heading. */
 export type HeadingLevel = 'body' | 1 | 2
 
@@ -60,15 +64,21 @@ export function tokenizeInline(line: string): InlineToken[] {
     const from = match.index
     const to = from + token.length
     if (token.startsWith('***')) {
-      tokens.push({ bold: true, from, italic: true, text: token.slice(3, -3), to })
+      tokens.push({
+        bold: true,
+        from,
+        italic: true,
+        text: token.slice(STRONG_EMPHASIS_MARKER_LENGTH, -STRONG_EMPHASIS_MARKER_LENGTH),
+        to,
+      })
     } else if (token.startsWith('`')) {
-      tokens.push({ code: true, from, text: token.slice(1, -1), to })
+      tokens.push({ code: true, from, text: token.slice(EMPHASIS_MARKER_LENGTH, -EMPHASIS_MARKER_LENGTH), to })
     } else if (token.startsWith('**')) {
-      tokens.push({ bold: true, from, text: token.slice(2, -2), to })
+      tokens.push({ bold: true, from, text: token.slice(STRONG_MARKER_LENGTH, -STRONG_MARKER_LENGTH), to })
     } else if (token.startsWith('~~')) {
-      tokens.push({ from, strike: true, text: token.slice(2, -2), to })
+      tokens.push({ from, strike: true, text: token.slice(STRONG_MARKER_LENGTH, -STRONG_MARKER_LENGTH), to })
     } else {
-      tokens.push({ from, italic: true, text: token.slice(1, -1), to })
+      tokens.push({ from, italic: true, text: token.slice(EMPHASIS_MARKER_LENGTH, -EMPHASIS_MARKER_LENGTH), to })
     }
 
     lastIndex = to

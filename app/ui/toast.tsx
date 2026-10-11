@@ -3,6 +3,9 @@ import { type Handle, css } from 'remix/component'
 import { Button } from './button.tsx'
 import { animateEntrance, animateExit, animateLayout, spring } from '@remix-run/ui/animation'
 
+const DEFAULT_TOAST_DURATION_MS = 6000,
+ MINIMUM_TOAST_DURATION_MS = 1000
+
 export type ToastVariant = 'default' | 'success' | 'error'
 
 export interface ToastAction {
@@ -66,8 +69,8 @@ export function ToastViewport(handle: Handle) {
   let items: ToastRecord[] = [],
    timers = new Map<string, number>(),
    pendingActions = new Set<string>(),
-   updateToastShown = false,
-   reduceMotion = false
+   reduceMotion = false,
+   updateToastShown = false
 
   function dismiss(id: string) {
     const timer = timers.get(id)
@@ -79,10 +82,10 @@ export function ToastViewport(handle: Handle) {
 
   function scheduleDismiss(item: ToastRecord) {
     if (item.duration === null) {return}
-    const duration = item.duration ?? 6000
+  const duration = item.duration ?? DEFAULT_TOAST_DURATION_MS
     timers.set(
       item.id,
-      window.setTimeout(() => dismiss(item.id), Math.max(1000, duration)),
+    window.setTimeout(() => dismiss(item.id), Math.max(MINIMUM_TOAST_DURATION_MS, duration)),
     )
   }
 

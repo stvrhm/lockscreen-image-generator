@@ -13,12 +13,10 @@ export function ExportSummary(
 ) {
   return () => {
     const { device, size, automatic } = handle.props
-    const exportStatus =
-      device.exportSizeMode === 'auto'
-        ? automatic
-          ? strings.editor.detectedAutomatically
-          : strings.editor.autoSize
-        : strings.editor.customized
+    let exportStatus = strings.editor.customized
+    if (device.exportSizeMode === 'auto') {
+      exportStatus = automatic ? strings.editor.detectedAutomatically : strings.editor.autoSize
+    }
     return (
       <p mix={exportSummaryStyle}>
         <strong>

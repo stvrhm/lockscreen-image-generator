@@ -28,9 +28,9 @@ export interface DeviceInput {
 
 const DB_NAME = 'tdl-devices',
  DB_VERSION = 1,
- STORE = 'devices',
+ DEVICE_CHANGE_CHANNEL = 'tdl:device-changes',
  LAST_DRAFT_KEY = 'tdl:last-draft-id',
- DEVICE_CHANGE_CHANNEL = 'tdl:device-changes'
+ STORE = 'devices'
 
 export class DeviceLabelConflictError extends Error {
   constructor() {
@@ -86,12 +86,15 @@ function idbRequest<T>(request: IDBRequest<T>): Promise<T> {
 export function createId(): string {
   if (typeof crypto.randomUUID === 'function') {return crypto.randomUUID()}
 
+  // UUID v4 byte offsets, masks, and hexadecimal groups follow the UUID format.
+  // oxlint-disable no-magic-numbers
   const bytes = crypto.getRandomValues(new Uint8Array(16))
   bytes[6] = (bytes[6] & 0x0F) | 0x40
   bytes[8] = (bytes[8] & 0x3F) | 0x80
   const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')
 
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
+  // oxlint-enable no-magic-numbers
 }
 
 export function blankDevice(platform: Platform, width: number, height: number): Device {

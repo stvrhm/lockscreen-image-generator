@@ -4,6 +4,8 @@ import type { HeadingLevel, MarkdownLine, MarkdownSegment } from './markdown.ts'
 
 const BASE_WIDTH = 1170,
  BASE_HEIGHT = 2532,
+ HORIZONTAL_INSET = 94,
+ VERTICAL_INSET = 202,
  LINE_HEIGHT = 1.35,
 
 // Body text size in pixels at the reference width, and the smallest it may be
@@ -13,14 +15,14 @@ const BASE_WIDTH = 1170,
  HEADING_RATIO: Record<HeadingLevel, number> = { 1: 1.75, 2: 1.35, body: 1 },
 
 // Too-tall Notes shrink in 5% steps, but never below 35% of full size.
- SHRINK_STEP = 0.05,
- SHRINK_FLOOR = 0.35,
-
  BODY_WEIGHT = 600,
  BOLD_WEIGHT = 800,
+
  HEADING_WEIGHT = 800,
+ MONO_FAMILY = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
  SANS_FAMILY = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
- MONO_FAMILY = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace'
+ SHRINK_FLOOR = 0.35,
+ SHRINK_STEP = 0.05
 
 /** Width in pixels of `text` drawn in the CSS `font`. */
 export type MeasureText = (text: string, font: string) => number
@@ -62,8 +64,8 @@ export function layoutWallpaper(
   const scale = width / BASE_WIDTH
   const heightScale = height / BASE_HEIGHT
   const bodySize = Math.max(MIN_BODY_SIZE, Math.round(BODY_SIZE * scale))
-  const maxLineWidth = width - Math.round(94 * scale)
-  const availableHeight = height - Math.round(202 * heightScale)
+  const maxLineWidth = width - Math.round(HORIZONTAL_INSET * scale)
+  const availableHeight = height - Math.round(VERTICAL_INSET * heightScale)
 
   // Shrink every line by the same factor, one step at a time, so Headings stay
   // Proportionally larger than body text.
@@ -153,7 +155,8 @@ function tokenizeLine(
 }
 
 function roundTo(value: number, decimals: number): number {
-  const factor = 10 ** decimals
+  const DECIMAL_BASE = 10
+  const factor = DECIMAL_BASE ** decimals
   return Math.round(value * factor) / factor
 }
 

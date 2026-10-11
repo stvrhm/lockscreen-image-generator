@@ -10,5 +10,30 @@
     "restriction": "warn",
     "nursery": "warn"
   },
+  "rules": {
+    "no-magic-numbers": [
+      "error",
+      {
+        "ignore": [-1, 0, 1, 2],
+        "ignoreArrayIndexes": true,
+        "ignoreDefaultValues": true,
+        "ignoreEnums": true
+      }
+    ],
+    "func-style": ["error", "declaration", { "allowArrowFunctions": true }],
+    "one-var": "off",
+    "explicit-function-return-type": "off",
+    "explicit-module-boundary-types": "off",
+    "no-use-before-define": ["error", { "functions": false }],
+    "sort-vars": "error",
+    "no-ternary": "off",
+    "no-nested-ternary": "error"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.test.ts", "**/*.test.tsx"],
+      "rules": { "no-magic-numbers": "off" }
+    }
+  ],
   "ignorePatterns": ["dist", "node_modules"]
 }

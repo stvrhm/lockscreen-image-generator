@@ -201,7 +201,7 @@ export function Button(
       handle.props
     const styles = [
       buttonVariants({ variant, size, shape }),
-      ...(Array.isArray(mix) ? mix : mix == null ? [] : [mix]),
+      ...getMixStyles(mix),
       onClick ? on<HTMLElement>('click', onClick) : null,
     ]
     if (href) {
@@ -216,11 +216,17 @@ export function Button(
         type={type ?? 'button'}
         disabled={disabled}
         aria-label={label}
-        aria-pressed={pressed === undefined ? undefined : (pressed ? 'true' : 'false')}
+        aria-pressed={pressed == null ? undefined : String(pressed)}
         mix={styles}
       >
         {children}
       </button>
     )
   }
+}
+
+function getMixStyles(mix: unknown): unknown[] {
+  if (Array.isArray(mix)) {return mix}
+  if (mix == null) {return []}
+  return [mix]
 }

@@ -3,6 +3,13 @@ import { parseMarkdownLines } from './markdown.ts'
 import { type MeasureText, type WallpaperLine, layoutWallpaper } from './wallpaper-layout.ts'
 
 const JPEG_QUALITY = 0.92
+const CODE_BACKGROUND_HEIGHT_RATIO = 1.24,
+ CODE_BACKGROUND_RADIUS = 6,
+ CODE_BACKGROUND_RADIUS_RATIO = 0.62,
+ CODE_PADDING_RATIO = 0.12,
+ STRIKE_LINE_HEIGHT_RATIO = 0.04,
+ STRIKE_LINE_MINIMUM_HEIGHT = 2,
+ STRIKE_LINE_OFFSET = 1
 
 export interface WallpaperOptions {
   label: string
@@ -111,17 +118,17 @@ function drawLine(ctx: CanvasRenderingContext2D, line: WallpaperLine) {
     ctx.font = run.font
 
     if (run.code) {
-      const padding = fontSize * 0.12
+      const padding = fontSize * CODE_PADDING_RATIO
       ctx.save()
       ctx.shadowColor = 'transparent'
       ctx.fillStyle = 'rgba(255, 255, 255, 0.16)'
       ctx.beginPath()
       ctx.roundRect(
         run.x - padding,
-        y - fontSize * 0.62,
+        y - fontSize * CODE_BACKGROUND_RADIUS_RATIO,
         run.width + padding * 2,
-        fontSize * 1.24,
-        6,
+        fontSize * CODE_BACKGROUND_HEIGHT_RATIO,
+        CODE_BACKGROUND_RADIUS,
       )
       ctx.fill()
       ctx.fillStyle = '#ffffff'
@@ -133,7 +140,12 @@ function drawLine(ctx: CanvasRenderingContext2D, line: WallpaperLine) {
       ctx.save()
       ctx.shadowColor = 'transparent'
       ctx.fillStyle = '#ffffff'
-      ctx.fillRect(run.x, y - 1, run.width, Math.max(2, fontSize * 0.04))
+      ctx.fillRect(
+        run.x,
+        y - STRIKE_LINE_OFFSET,
+        run.width,
+        Math.max(STRIKE_LINE_MINIMUM_HEIGHT, fontSize * STRIKE_LINE_HEIGHT_RATIO),
+      )
       ctx.restore()
     }
   }
