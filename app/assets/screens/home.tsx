@@ -54,25 +54,21 @@ export function Home(handle: Handle<{ hasDraft: boolean }>) {
 }
 
 const startHeaderStyle = [flow({ flowSpace: theme.space['xs-sm'] }), css({ maxWidth: '42rem' })],
-
- eyebrowStyle = css({
-  color: 'var(--text-muted)',
-  fontSize: '12px',
-  fontWeight: 700,
-  letterSpacing: '0.12em',
-  textTransform: 'uppercase',
-}),
-
- titleStyle = css({
-  fontFamily: 'var(--font-display)',
-  fontSize: 'clamp(34px, 7vw, 52px)',
-  letterSpacing: '-0.045em',
-  lineHeight: 1.04,
-}),
-
- startActionsStyle = [
-  switcher({ gutter: theme.space.md, targetWidth: '32rem' }),
-  css({ maxWidth: '42rem' }),
-],
-
- blockStyle = css({ width: '100%' })
+  eyebrowStyle = css({
+    color: 'var(--text-muted)',
+    fontSize: '12px',
+    fontWeight: 700,
+    letterSpacing: '0.12em',
+    textTransform: 'uppercase',
+  }),
+  titleStyle = css({
+    fontFamily: 'var(--font-display)',
+    fontSize: 'clamp(34px, 7vw, 52px)',
+    letterSpacing: '-0.045em',
+    lineHeight: 1.04,
+  }),
+  startActionsStyle = [
+    switcher({ gutter: theme.space.md, targetWidth: '32rem' }),
+    css({ maxWidth: '42rem' }),
+  ],
+  blockStyle = css({ width: '100%' })

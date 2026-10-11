@@ -42,7 +42,13 @@ export function Document(handle: Handle<DocumentProps>) {
 
           <title>{title}</title>
           <link rel="stylesheet" href={resetStylesheetHref} />
-          <link rel="preload" as="image" type="image/svg+xml" href={iconSpriteHref} data-icon-sprite />
+          <link
+            rel="preload"
+            as="image"
+            type="image/svg+xml"
+            href={iconSpriteHref}
+            data-icon-sprite
+          />
           <style>{baseCss}</style>
           {head}
           <script type="importmap" data-rmx-import-map>

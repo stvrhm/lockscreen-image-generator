@@ -1,4 +1,4 @@
-import { type Handle, type RemixNode, css, on } from 'remix/component'
+import { type Handle, type MixInput, type RemixNode, css, on } from 'remix/component'
 
 import { theme } from './theme.ts'
 
@@ -17,156 +17,155 @@ export type ButtonSize = 'default' | 'sm' | 'lg' | 'icon'
 
 export type ButtonShape = 'default' | 'pill'
 
+type ButtonMix = MixInput<any>
+
 const baseStyle = css({
-  '&:active:not(:disabled):not([aria-disabled="true"])': {
-    transform: 'scale(0.98)',
-    transformOrigin: 'center',
-  },
-  '&:disabled, &[aria-disabled="true"]': {
-    cursor: 'not-allowed',
-    opacity: 0.55,
-  },
-  '&:focus-visible': {
-    outline: '2px solid var(--accent)',
-    outlineOffset: '1px',
-  },
-  '&:hover': {
-    background: 'var(--button-bg-hover, var(--button-bg))',
-    color: 'var(--button-fg-hover, var(--button-fg))',
-  },
-  '&[aria-pressed="true"], &[aria-expanded="true"]': {
-    background: 'var(--button-bg-pressed, var(--button-bg))',
-    boxShadow: 'var(--button-ring, none)',
-    color: 'var(--button-fg-pressed, var(--button-fg))',
-  },
-  '--button-bg': 'transparent',
-  '--button-border': '0',
-  '--button-fg': 'var(--text)',
-  alignItems: 'center',
-  appearance: 'none',
-  background: 'var(--button-bg)',
-  border: 'var(--button-border)',
-  borderRadius: theme.radius.sm,
-  boxSizing: 'border-box',
-  color: 'var(--button-fg)',
-  cursor: 'pointer',
-  display: 'inline-flex',
-  font: 'inherit',
-  fontWeight: theme.fontWeight.semibold,
-  gap: '0.4em',
-  justifyContent: 'center',
-  lineHeight: 1,
-  margin: 0,
-  maxWidth: '100%',
-  textAlign: 'center',
-  textDecoration: 'none',
-}),
-
- variantStyle = {
-  accent: css({
-    '--button-bg': 'var(--accent)',
-    '--button-fg': 'var(--page)',
-    '--button-bg-hover': 'var(--accent-strong)',
-    minHeight: '2.75rem',
-    padding: '0.45em 0.8em',
-  }),
-  destructive: css({
+    '&:active:not(:disabled):not([aria-disabled="true"])': {
+      transform: 'scale(0.98)',
+      transformOrigin: 'center',
+    },
+    '&:disabled, &[aria-disabled="true"]': {
+      cursor: 'not-allowed',
+      opacity: 0.55,
+    },
+    '&:focus-visible': {
+      outline: '2px solid var(--accent)',
+      outlineOffset: '1px',
+    },
+    '&:hover': {
+      background: 'var(--button-bg-hover, var(--button-bg))',
+      color: 'var(--button-fg-hover, var(--button-fg))',
+    },
+    '&[aria-pressed="true"], &[aria-expanded="true"]': {
+      background: 'var(--button-bg-pressed, var(--button-bg))',
+      boxShadow: 'var(--button-ring, none)',
+      color: 'var(--button-fg-pressed, var(--button-fg))',
+    },
     '--button-bg': 'transparent',
-    '--button-fg': 'var(--danger)',
-    '--button-bg-hover': 'rgba(240, 113, 120, 0.12)',
-    boxShadow: 'inset 0 0 0 1px var(--danger)',
-    minHeight: '2.875rem',
-    padding: `${theme.space.xs} ${theme.space.sm}`,
-  }),
-  ghost: css({
-    '--button-bg': 'transparent',
-    '--button-fg': 'var(--accent)',
-    '--button-fg-hover': 'var(--accent-strong)',
-    minHeight: 0,
-    padding: '4px 0',
-    fontWeight: 600,
-  }),
-  link: css({
-    '--button-bg': 'transparent',
-    '--button-fg': 'var(--accent)',
-    '--button-fg-hover': 'var(--accent-strong)',
-    justifyContent: 'flex-start',
-    minHeight: 0,
-    padding: 0,
-    fontWeight: 600,
-    textDecoration: 'underline',
-  }),
-  outline: css({
-    '--button-bg': 'transparent',
+    '--button-border': '0',
     '--button-fg': 'var(--text)',
-    '--button-bg-hover': 'var(--surface-2)',
-    boxShadow: 'inset 0 0 0 1px var(--border)',
-    minHeight: '2.875rem',
-    padding: `${theme.space.xs} ${theme.space.sm}`,
-  }),
-  primary: css({
-    '--button-bg': 'var(--text)',
-    '--button-fg': '#09090b',
-    '--button-bg-hover': '#ffffff',
-    minHeight: '2.875rem',
-    padding: `${theme.space.xs} ${theme.space.sm}`,
-  }),
-  secondary: css({
-    '--button-bg': 'var(--surface-2)',
-    '--button-fg': 'var(--text)',
-    '--button-bg-hover': 'var(--surface-3)',
-    boxShadow: 'inset 0 0 0 1px var(--border)',
-    minHeight: '2.875rem',
-    padding: `${theme.space.xs} ${theme.space.sm}`,
-  }),
-  segment: css({
-    '--button-bg': 'transparent',
-    '--button-fg': 'var(--text-muted)',
-    '--button-fg-hover': 'var(--text)',
-    '--button-bg-pressed': 'var(--surface-3)',
-    '--button-fg-pressed': 'var(--text)',
-    '--button-ring': 'inset 0 0 0 1px var(--border)',
-    borderRadius: 0,
-    minHeight: '2.75rem',
-    padding: `${theme.space['2xs']} ${theme.space.xs}`,
-  }),
-  toolbar: css({
-    '--button-bg': 'transparent',
-    '--button-fg': 'var(--text-muted)',
-    '--button-bg-hover': 'var(--surface-2)',
-    '--button-fg-hover': 'var(--text)',
-    '--button-bg-pressed': 'var(--surface-2)',
-    '--button-fg-pressed': 'var(--text)',
-    '--button-ring': 'inset 0 0 0 1px var(--text)',
-    borderRadius: '6px',
-    fontWeight: theme.fontWeight.bold,
-  }),
-} as const,
-
- sizeStyle = {
-  default: css({}),
-  icon: css({
-    width: '2.75rem',
-    minWidth: '2.25rem',
-    height: '2.625rem',
-    minHeight: 0,
-    flexShrink: 1,
-    padding: 0,
+    alignItems: 'center',
+    appearance: 'none',
+    background: 'var(--button-bg)',
+    border: 'var(--button-border)',
+    borderRadius: theme.radius.sm,
+    boxSizing: 'border-box',
+    color: 'var(--button-fg)',
+    cursor: 'pointer',
+    display: 'inline-flex',
+    font: 'inherit',
+    fontWeight: theme.fontWeight.semibold,
+    gap: '0.4em',
+    justifyContent: 'center',
     lineHeight: 1,
-    textBoxTrim: 'trim-both',
-    textBoxEdge: 'cap alphabetic',
+    margin: 0,
+    maxWidth: '100%',
+    textAlign: 'center',
+    textDecoration: 'none',
   }),
-  lg: css({
-    minHeight: '3rem',
-  }),
-  sm: css({
-    minHeight: '2.5rem',
-    padding: '6px 12px',
-    fontSize: '13px',
-  }),
-} as const,
-
- pillStyle = css({ borderRadius: theme.radius.full })
+  variantStyle = {
+    accent: css({
+      '--button-bg': 'var(--accent)',
+      '--button-fg': 'var(--page)',
+      '--button-bg-hover': 'var(--accent-strong)',
+      minHeight: '2.75rem',
+      padding: '0.45em 0.8em',
+    }),
+    destructive: css({
+      '--button-bg': 'transparent',
+      '--button-fg': 'var(--danger)',
+      '--button-bg-hover': 'rgba(240, 113, 120, 0.12)',
+      boxShadow: 'inset 0 0 0 1px var(--danger)',
+      minHeight: '2.875rem',
+      padding: `${theme.space.xs} ${theme.space.sm}`,
+    }),
+    ghost: css({
+      '--button-bg': 'transparent',
+      '--button-fg': 'var(--accent)',
+      '--button-fg-hover': 'var(--accent-strong)',
+      minHeight: 0,
+      padding: '4px 0',
+      fontWeight: 600,
+    }),
+    link: css({
+      '--button-bg': 'transparent',
+      '--button-fg': 'var(--accent)',
+      '--button-fg-hover': 'var(--accent-strong)',
+      justifyContent: 'flex-start',
+      minHeight: 0,
+      padding: 0,
+      fontWeight: 600,
+      textDecoration: 'underline',
+    }),
+    outline: css({
+      '--button-bg': 'transparent',
+      '--button-fg': 'var(--text)',
+      '--button-bg-hover': 'var(--surface-2)',
+      boxShadow: 'inset 0 0 0 1px var(--border)',
+      minHeight: '2.875rem',
+      padding: `${theme.space.xs} ${theme.space.sm}`,
+    }),
+    primary: css({
+      '--button-bg': 'var(--text)',
+      '--button-fg': '#09090b',
+      '--button-bg-hover': '#ffffff',
+      minHeight: '2.875rem',
+      padding: `${theme.space.xs} ${theme.space.sm}`,
+    }),
+    secondary: css({
+      '--button-bg': 'var(--surface-2)',
+      '--button-fg': 'var(--text)',
+      '--button-bg-hover': 'var(--surface-3)',
+      boxShadow: 'inset 0 0 0 1px var(--border)',
+      minHeight: '2.875rem',
+      padding: `${theme.space.xs} ${theme.space.sm}`,
+    }),
+    segment: css({
+      '--button-bg': 'transparent',
+      '--button-fg': 'var(--text-muted)',
+      '--button-fg-hover': 'var(--text)',
+      '--button-bg-pressed': 'var(--surface-3)',
+      '--button-fg-pressed': 'var(--text)',
+      '--button-ring': 'inset 0 0 0 1px var(--border)',
+      borderRadius: 0,
+      minHeight: '2.75rem',
+      padding: `${theme.space['2xs']} ${theme.space.xs}`,
+    }),
+    toolbar: css({
+      '--button-bg': 'transparent',
+      '--button-fg': 'var(--text-muted)',
+      '--button-bg-hover': 'var(--surface-2)',
+      '--button-fg-hover': 'var(--text)',
+      '--button-bg-pressed': 'var(--surface-2)',
+      '--button-fg-pressed': 'var(--text)',
+      '--button-ring': 'inset 0 0 0 1px var(--text)',
+      borderRadius: '6px',
+      fontWeight: theme.fontWeight.bold,
+    }),
+  } as const,
+  sizeStyle = {
+    default: css({}),
+    icon: css({
+      width: '2.75rem',
+      minWidth: '2.25rem',
+      height: '2.625rem',
+      minHeight: 0,
+      flexShrink: 1,
+      padding: 0,
+      lineHeight: 1,
+      textBoxTrim: 'trim-both',
+      textBoxEdge: 'cap alphabetic',
+    }),
+    lg: css({
+      minHeight: '3rem',
+    }),
+    sm: css({
+      minHeight: '2.5rem',
+      padding: '6px 12px',
+      fontSize: '13px',
+    }),
+  } as const,
+  pillStyle = css({ borderRadius: theme.radius.full })
 
 export function buttonVariants(
   options: { variant?: ButtonVariant; size?: ButtonSize; shape?: ButtonShape } = {},
@@ -193,7 +192,7 @@ export function Button(
     disabled?: boolean
     label?: string
     onClick?: () => void
-    mix?: unknown
+    mix?: ButtonMix
   }>,
 ) {
   return () => {
@@ -206,7 +205,7 @@ export function Button(
     ]
     if (href) {
       return (
-        <a href={href} aria-label={label} mix={styles}>
+        <a href={href} aria-label={label} mix={styles as MixInput<HTMLAnchorElement>}>
           {children}
         </a>
       )
@@ -216,8 +215,8 @@ export function Button(
         type={type ?? 'button'}
         disabled={disabled}
         aria-label={label}
-        aria-pressed={pressed == null ? undefined : String(pressed)}
-        mix={styles}
+        aria-pressed={pressed}
+        mix={styles as MixInput<HTMLButtonElement>}
       >
         {children}
       </button>
@@ -225,8 +224,12 @@ export function Button(
   }
 }
 
-function getMixStyles(mix: unknown): unknown[] {
-  if (Array.isArray(mix)) {return mix}
-  if (mix == null) {return []}
+function getMixStyles(mix: ButtonMix | undefined): ButtonMix[] {
+  if (Array.isArray(mix)) {
+    return mix
+  }
+  if (mix == null) {
+    return []
+  }
   return [mix]
 }

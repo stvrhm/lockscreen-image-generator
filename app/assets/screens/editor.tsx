@@ -70,25 +70,25 @@ export function Editor(
     editingNew: boolean
   }>,
 ) {
-  let {draft} = handle.props
+  let { draft } = handle.props
   let savedDevices = handle.props.devices,
-   {editingNew} = handle.props
+    { editingNew } = handle.props
   let baseline: Device = { ...draft },
-   labelError = '',
-   leaveDialogOpen = false,
-   pendingNavigation: PendingNavigation | null = null,
-   dialogReturnFocus: HTMLElement | null = null,
-   navigationGuard: ReturnType<typeof guardEditorNavigation> | null = null,
-   headingRef: HTMLHeadingElement | null = null,
-   labelRef: HTMLInputElement | null = null,
-   selectLabelOnPointerFocus = false,
-   platformOverride = false,
-   notesRef: HTMLTextAreaElement | null = null,
-   notesFocused = false,
-  // Until Notes has been focused or edited, there is no meaningful cursor to
-  // reflect in the formatting toolbar. Starting at 0 made a prefilled H1 look
-  // pressed as soon as the new-device screen opened.
-   notesSelection: { start: number; end: number } | null = null
+    labelError = '',
+    leaveDialogOpen = false,
+    pendingNavigation: PendingNavigation | null = null,
+    dialogReturnFocus: HTMLElement | null = null,
+    navigationGuard: ReturnType<typeof guardEditorNavigation> | null = null,
+    headingRef: HTMLHeadingElement | null = null,
+    labelRef: HTMLInputElement | null = null,
+    selectLabelOnPointerFocus = false,
+    platformOverride = false,
+    notesRef: HTMLTextAreaElement | null = null,
+    notesFocused = false,
+    // Until Notes has been focused or edited, there is no meaningful cursor to
+    // reflect in the formatting toolbar. Starting at 0 made a prefilled H1 look
+    // pressed as soon as the new-device screen opened.
+    notesSelection: { start: number; end: number } | null = null
 
   function isDirty() {
     return (
@@ -125,7 +125,9 @@ export function Editor(
       },
     })
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (!isDirty()) {return}
+      if (!isDirty()) {
+        return
+      }
       event.preventDefault()
       event.returnValue = ''
     }
@@ -147,10 +149,14 @@ export function Editor(
     document.addEventListener(
       'selectionchange',
       () => {
-        if (!notesRef || document.activeElement !== notesRef) {return}
+        if (!notesRef || document.activeElement !== notesRef) {
+          return
+        }
         const start = notesRef.selectionStart
         const end = notesRef.selectionEnd
-        if (notesSelection && start === notesSelection.start && end === notesSelection.end) {return}
+        if (notesSelection && start === notesSelection.start && end === notesSelection.end) {
+          return
+        }
         notesSelection = { end, start }
         handle.update()
       },
@@ -176,7 +182,9 @@ export function Editor(
 
   function patchDraft(patch: Partial<Device>) {
     draft = { ...draft, ...patch }
-    if (patch.label !== undefined) {labelError = ''}
+    if (patch.label !== undefined) {
+      labelError = ''
+    }
     handle.update()
   }
 
@@ -192,14 +200,18 @@ export function Editor(
     handle.update()
     handle.queueTask(() => {
       resizeNotes()
-      if (!notesRef) {return}
+      if (!notesRef) {
+        return
+      }
       notesRef.focus()
       notesRef.setSelectionRange(next.start, next.end)
     })
   }
 
   function armNotesSelection() {
-    if (!notesRef) {return}
+    if (!notesRef) {
+      return
+    }
     notesSelection = { end: notesRef.selectionEnd, start: notesRef.selectionStart }
   }
 
@@ -221,7 +233,9 @@ export function Editor(
     notesFocused = true
     handle.update()
     handle.queueTask(() => {
-      if (!notesRef) {return}
+      if (!notesRef) {
+        return
+      }
       notesRef.focus()
       notesRef.setSelectionRange(next.start, next.end)
     })
@@ -252,7 +266,9 @@ export function Editor(
   }
 
   function resizeNotes() {
-    if (!notesRef) {return}
+    if (!notesRef) {
+      return
+    }
     notesRef.style.height = 'auto'
     notesRef.style.height = `${Math.min(notesRef.scrollHeight, NOTES_MAX_HEIGHT)}px`
     notesRef.style.overflowY = notesRef.scrollHeight > NOTES_MAX_HEIGHT ? 'auto' : 'hidden'
@@ -270,7 +286,9 @@ export function Editor(
     } else {
       labelError = strings.editor.labelRequired
     }
-    if (!labelError) {return true}
+    if (!labelError) {
+      return true
+    }
     handle.update()
     handle.queueTask(() => labelRef?.focus())
     return false
@@ -286,7 +304,9 @@ export function Editor(
         { allowUnchangedDuplicate: !editingNew && draft.label === baseline.label },
       )
     } catch (error) {
-      if (!(error instanceof DeviceLabelConflictError)) {throw error}
+      if (!(error instanceof DeviceLabelConflictError)) {
+        throw error
+      }
       labelError = strings.editor.labelConflict
       handle.update()
       handle.queueTask(() => labelRef?.focus())
@@ -322,23 +342,37 @@ export function Editor(
   }
 
   async function onSaveDevice() {
-    if (!customDimensionsValid()) {return}
-    if (!validateLabel()) {return}
-    if (!(await storeDevice())) {return}
+    if (!customDimensionsValid()) {
+      return
+    }
+    if (!validateLabel()) {
+      return
+    }
+    if (!(await storeDevice())) {
+      return
+    }
     toast({ title: strings.editor.deviceSaved, variant: 'success' })
   }
 
   async function onSaveToPhotos() {
-    if (!customDimensionsValid()) {return}
-    if (!validateLabel()) {return}
+    if (!customDimensionsValid()) {
+      return
+    }
+    if (!validateLabel()) {
+      return
+    }
     const options = wallpaperOptions()
     // Share before touching IndexedDB: the share sheet needs the tap's user
     // Activation, and Safari drops it if other async work runs first.
     const result = await shareWallpaper(options)
     // Dismissing the share sheet backs out of the whole action.
-    if (result === 'cancelled') {return}
+    if (result === 'cancelled') {
+      return
+    }
     const downloaded = result === 'unsupported' && (await downloadWallpaper(options))
-    if (!(await storeDevice())) {return}
+    if (!(await storeDevice())) {
+      return
+    }
 
     if (downloaded) {
       toast({
@@ -354,9 +388,13 @@ export function Editor(
   }
 
   async function onDownload() {
-    if (!customDimensionsValid()) {return}
+    if (!customDimensionsValid()) {
+      return
+    }
     const downloaded = await downloadWallpaper(wallpaperOptions())
-    if (!downloaded) {toast({ title: strings.editor.imageFailed, variant: 'error' })}
+    if (!downloaded) {
+      toast({ title: strings.editor.imageFailed, variant: 'error' })
+    }
   }
 
   async function resolveLeave(decision: 'stay' | 'discard' | 'save') {
@@ -378,12 +416,15 @@ export function Editor(
       pendingNavigation = null
       handle.update()
       return
-    }baseline = { ...draft }
+    }
+    baseline = { ...draft }
     const destination = pendingNavigation
     leaveDialogOpen = false
     pendingNavigation = null
     handle.update()
-    if (!destination) {return}
+    if (!destination) {
+      return
+    }
     if (destination.type === 'traverse' && destination.key && window.navigation) {
       window.navigation.traverseTo(destination.key)
     } else if (destination.type === 'fallback-back') {
@@ -450,7 +491,9 @@ export function Editor(
                   selectLabelOnPointerFocus = document.activeElement !== event.currentTarget
                 }),
                 on('focus', (event) => {
-                  if (!selectLabelOnPointerFocus) {return}
+                  if (!selectLabelOnPointerFocus) {
+                    return
+                  }
                   selectLabelOnPointerFocus = false
                   event.currentTarget.select()
                 }),
@@ -744,183 +787,164 @@ export function Editor(
 }
 
 const headerRowStyle = repel({ alignment: 'center', gutter: theme.space.xs }),
-
- editableHeadlineStyle = css({
-  ':focus-visible': {
-    outline: '2px solid var(--accent-strong)',
-    outlineOffset: '4px',
-  },
-  outline: 'none',
-}),
-
- labelErrorStyle = css({ color: 'var(--danger)', margin: 0 }),
-
- editorLayoutStyle = css({
-  '& > *': { minWidth: 0 },
-  '@media (min-width: 68rem)': {
-    alignItems: 'start',
-    gridTemplateColumns: 'minmax(0, 1.15fr) minmax(22rem, 0.85fr)',
-  },
-  display: 'grid',
-  gap: theme.space.xl,
-  gridTemplateColumns: 'minmax(0, 1fr)',
-}),
-
- fieldStyle = [flow({ flowSpace: theme.space.xs })],
-
- notesFieldStyle = [flow({ flowSpace: theme.space.xs })],
-
- notesLabelStyle = cluster({ alignment: 'center', gutter: theme.space['2xs'] }),
-
- fieldLabelStyle = css({
-  color: 'var(--text)',
-  fontWeight: theme.fontWeight.semibold,
-}),
-
- inputStyle = css({
-  ':focus-visible': {
-    borderColor: 'var(--accent-strong)',
-    boxShadow: '0 0 0 3px rgba(56, 189, 248, 0.14)',
-  },
-  border: '1px solid var(--border)',
-  borderRadius: theme.radius.sm,
-  color: 'var(--text)',
-  padding: `${theme.space.xs} ${theme.space.xs}`,
-  transition: 'border-color 140ms ease, box-shadow 140ms ease',
-}),
-
- platformSelectStyle = css({
-  border: '1px solid var(--border)',
-  borderRadius: theme.radius.sm,
-  color: 'var(--text)',
-  fontWeight: theme.fontWeight.medium,
-  justifyContent: 'space-between',
-  minHeight: '2.75rem',
-  padding: `${theme.space.xs} ${theme.space.xs}`,
-  textAlign: 'start',
-  width: '100%',
-}),
-
- textareaStyle = css({
-  background: 'transparent',
-  border: 0,
-  borderRadius: `0 0 calc(${theme.radius.md} - 1px) calc(${theme.radius.md} - 1px)`,
-  borderTop: '1px solid var(--border)',
-  color: 'var(--text)',
-  display: 'block',
-  lineHeight: 1.55,
-  maxHeight: `${NOTES_MAX_HEIGHT}px`,
-  minHeight: '5.75rem',
-  padding: `${theme.space.xs} ${theme.space.xs}`,
-  resize: 'vertical',
-  width: '100%',
-}),
-
- composerStyle = css({
-  ':focus-within': {
-    borderColor: 'var(--accent-strong)',
-    boxShadow: '0 0 0 3px rgba(56, 189, 248, 0.14)',
-  },
-  border: '1px solid var(--border)',
-  borderRadius: theme.radius.md,
-}),
-
- toolbarStyle = [
-  cluster({ alignment: 'center', gutter: '2px' }),
-  // One row even on narrow phones: the buttons shrink instead of wrapping.
-  css({
-    flexWrap: 'nowrap',
-    padding: '6px',
-  }),
-],
-
- segmentStyle = css({
-  '& > :first-child': {
-    borderBottomLeftRadius: '9px',
-    borderTopLeftRadius: '9px',
-  },
-  '& > :last-child': {
-    borderBottomRightRadius: '9px',
-    borderTopRightRadius: '9px',
-  },
-  border: '1px solid var(--border)',
-  borderRadius: '10px',
-  display: 'flex',
-  gap: '0',
-  margin: 0,
-  minInlineSize: 0,
-  padding: 0,
-  width: 'fit-content',
-}),
-
- sizeInputsStyle = cluster({ alignment: 'stretch', gutter: '12px' }),
-
- inlineFieldStyle = [
-  flow({ flowSpace: theme.space['3xs'] }),
-  css({
-    color: 'var(--text-muted)',
-    display: 'flex',
-    flex: '1 1 120px',
-    flexDirection: 'column',
-    fontSize: theme.fontSize.small,
-  }),
-],
-
- previewColumnStyle = [
-  css({
-    '@media (min-width: 68rem) and (min-height: 42rem)': {
-      alignSelf: 'start',
-      position: 'sticky',
-      top: '24px',
+  editableHeadlineStyle = css({
+    ':focus-visible': {
+      outline: '2px solid var(--accent-strong)',
+      outlineOffset: '4px',
     },
-    alignItems: 'center',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px',
-    minWidth: 0,
-    padding: '8px 0 0',
+    outline: 'none',
   }),
-],
-
- advancedStyle = css({
-  '& summary': {
-    marginBlockEnd: 0,
-    transition: 'margin-block-end 180ms cubic-bezier(0.19, 1, 0.22, 1)',
-  },
-  '&::details-content': {
+  labelErrorStyle = css({ color: 'var(--danger)', margin: 0 }),
+  editorLayoutStyle = css({
+    '& > *': { minWidth: 0 },
+    '@media (min-width: 68rem)': {
+      alignItems: 'start',
+      gridTemplateColumns: 'minmax(0, 1.15fr) minmax(22rem, 0.85fr)',
+    },
     display: 'grid',
-    gridTemplateRows: '0fr',
-    opacity: 0,
-    transform: 'translateY(-4px)',
-    transformOrigin: 'top center',
-    transition:
-      'grid-template-rows 180ms cubic-bezier(0.19, 1, 0.22, 1), opacity 160ms cubic-bezier(0.19, 1, 0.22, 1), transform 180ms cubic-bezier(0.19, 1, 0.22, 1), content-visibility 180ms ease-out',
-    transitionBehavior: 'allow-discrete',
-  },
-  '&::details-content > *': {
-    minHeight: 0,
-    overflow: 'hidden',
-  },
-  '&[open] summary': { marginBlockEnd: theme.space.sm },
-  '&[open]::details-content': {
-    gridTemplateRows: '1fr',
-    opacity: 1,
-    transform: 'translateY(0)',
-  },
-  '@media (prefers-reduced-motion: reduce)': {
-    '&::details-content': { transform: 'none' },
-    '&[open]::details-content': { transform: 'none' },
-  },
-  borderBlock: '1px solid var(--border)',
-  paddingBlock: theme.space.xs,
-}),
-
- advancedContentStyle = [flow({ flowSpace: theme.space.lg }), css({ paddingInline: '2px' })],
-
- previewLabelStyle = css({
-  color: 'var(--text-muted)',
-  fontSize: '12px',
-  fontWeight: 700,
-  letterSpacing: '0.08em',
-  textTransform: 'uppercase',
-})
+    gap: theme.space.xl,
+    gridTemplateColumns: 'minmax(0, 1fr)',
+  }),
+  fieldStyle = [flow({ flowSpace: theme.space.xs })],
+  notesFieldStyle = [flow({ flowSpace: theme.space.xs })],
+  notesLabelStyle = cluster({ alignment: 'center', gutter: theme.space['2xs'] }),
+  fieldLabelStyle = css({
+    color: 'var(--text)',
+    fontWeight: theme.fontWeight.semibold,
+  }),
+  inputStyle = css({
+    ':focus-visible': {
+      borderColor: 'var(--accent-strong)',
+      boxShadow: '0 0 0 3px rgba(56, 189, 248, 0.14)',
+    },
+    border: '1px solid var(--border)',
+    borderRadius: theme.radius.sm,
+    color: 'var(--text)',
+    padding: `${theme.space.xs} ${theme.space.xs}`,
+    transition: 'border-color 140ms ease, box-shadow 140ms ease',
+  }),
+  platformSelectStyle = css({
+    border: '1px solid var(--border)',
+    borderRadius: theme.radius.sm,
+    color: 'var(--text)',
+    fontWeight: theme.fontWeight.medium,
+    justifyContent: 'space-between',
+    minHeight: '2.75rem',
+    padding: `${theme.space.xs} ${theme.space.xs}`,
+    textAlign: 'start',
+    width: '100%',
+  }),
+  textareaStyle = css({
+    background: 'transparent',
+    border: 0,
+    borderRadius: `0 0 calc(${theme.radius.md} - 1px) calc(${theme.radius.md} - 1px)`,
+    borderTop: '1px solid var(--border)',
+    color: 'var(--text)',
+    display: 'block',
+    lineHeight: 1.55,
+    maxHeight: `${NOTES_MAX_HEIGHT}px`,
+    minHeight: '5.75rem',
+    padding: `${theme.space.xs} ${theme.space.xs}`,
+    resize: 'vertical',
+    width: '100%',
+  }),
+  composerStyle = css({
+    ':focus-within': {
+      borderColor: 'var(--accent-strong)',
+      boxShadow: '0 0 0 3px rgba(56, 189, 248, 0.14)',
+    },
+    border: '1px solid var(--border)',
+    borderRadius: theme.radius.md,
+  }),
+  toolbarStyle = [
+    cluster({ alignment: 'center', gutter: '2px' }),
+    // One row even on narrow phones: the buttons shrink instead of wrapping.
+    css({
+      flexWrap: 'nowrap',
+      padding: '6px',
+    }),
+  ],
+  segmentStyle = css({
+    '& > :first-child': {
+      borderBottomLeftRadius: '9px',
+      borderTopLeftRadius: '9px',
+    },
+    '& > :last-child': {
+      borderBottomRightRadius: '9px',
+      borderTopRightRadius: '9px',
+    },
+    border: '1px solid var(--border)',
+    borderRadius: '10px',
+    display: 'flex',
+    gap: '0',
+    margin: 0,
+    minInlineSize: 0,
+    padding: 0,
+    width: 'fit-content',
+  }),
+  sizeInputsStyle = cluster({ alignment: 'stretch', gutter: '12px' }),
+  inlineFieldStyle = [
+    flow({ flowSpace: theme.space['3xs'] }),
+    css({
+      color: 'var(--text-muted)',
+      display: 'flex',
+      flex: '1 1 120px',
+      flexDirection: 'column',
+      fontSize: theme.fontSize.small,
+    }),
+  ],
+  previewColumnStyle = [
+    css({
+      '@media (min-width: 68rem) and (min-height: 42rem)': {
+        alignSelf: 'start',
+        position: 'sticky',
+        top: '24px',
+      },
+      alignItems: 'center',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '16px',
+      minWidth: 0,
+      padding: '8px 0 0',
+    }),
+  ],
+  advancedStyle = css({
+    '& summary': {
+      marginBlockEnd: 0,
+      transition: 'margin-block-end 180ms cubic-bezier(0.19, 1, 0.22, 1)',
+    },
+    '&::details-content': {
+      display: 'grid',
+      gridTemplateRows: '0fr',
+      opacity: 0,
+      transform: 'translateY(-4px)',
+      transformOrigin: 'top center',
+      transition:
+        'grid-template-rows 180ms cubic-bezier(0.19, 1, 0.22, 1), opacity 160ms cubic-bezier(0.19, 1, 0.22, 1), transform 180ms cubic-bezier(0.19, 1, 0.22, 1), content-visibility 180ms ease-out',
+      transitionBehavior: 'allow-discrete',
+    },
+    '&::details-content > *': {
+      minHeight: 0,
+      overflow: 'hidden',
+    },
+    '&[open] summary': { marginBlockEnd: theme.space.sm },
+    '&[open]::details-content': {
+      gridTemplateRows: '1fr',
+      opacity: 1,
+      transform: 'translateY(0)',
+    },
+    '@media (prefers-reduced-motion: reduce)': {
+      '&::details-content': { transform: 'none' },
+      '&[open]::details-content': { transform: 'none' },
+    },
+    borderBlock: '1px solid var(--border)',
+    paddingBlock: theme.space.xs,
+  }),
+  advancedContentStyle = [flow({ flowSpace: theme.space.lg }), css({ paddingInline: '2px' })],
+  previewLabelStyle = css({
+    color: 'var(--text-muted)',
+    fontSize: '12px',
+    fontWeight: 700,
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+  })

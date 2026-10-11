@@ -19,34 +19,31 @@ export function LoadingScreen() {
 }
 
 const loadingStyle = [
-  wrapper({ gutter: theme.space.lg, maxWidth: '52rem' }),
-  css({
-    alignContent: 'center',
-    display: 'grid',
-    gap: theme.space.xs,
-    minHeight: 'min(70dvh, 32rem)',
-    placeItems: 'center',
-    textAlign: 'center',
+    wrapper({ gutter: theme.space.lg, maxWidth: '52rem' }),
+    css({
+      alignContent: 'center',
+      display: 'grid',
+      gap: theme.space.xs,
+      minHeight: 'min(70dvh, 32rem)',
+      placeItems: 'center',
+      textAlign: 'center',
+    }),
+  ],
+  loadingMarkStyle = css({
+    '@media (prefers-reduced-motion: reduce)': {
+      animation: 'none',
+      background: 'var(--accent)',
+      borderColor: 'var(--accent)',
+    },
+    animation: 'loading-spin 0.85s linear infinite',
+    border: '3px solid rgba(94, 184, 255, 0.2)',
+    borderRadius: '50%',
+    borderTopColor: 'var(--accent)',
+    height: '34px',
+    width: '34px',
   }),
-],
-
- loadingMarkStyle = css({
-  '@media (prefers-reduced-motion: reduce)': {
-    animation: 'none',
-    background: 'var(--accent)',
-    borderColor: 'var(--accent)',
-  },
-  animation: 'loading-spin 0.85s linear infinite',
-  border: '3px solid rgba(94, 184, 255, 0.2)',
-  borderRadius: '50%',
-  borderTopColor: 'var(--accent)',
-  height: '34px',
-  width: '34px',
-}),
-
- loadingCopyStyle = flow({ flowSpace: theme.space.xs }),
-
- loadingTitleStyle = css({
-  fontSize: theme.fontSize.h3,
-  fontWeight: theme.fontWeight.bold,
-})
+  loadingCopyStyle = flow({ flowSpace: theme.space.xs }),
+  loadingTitleStyle = css({
+    fontSize: theme.fontSize.h3,
+    fontWeight: theme.fontWeight.bold,
+  })

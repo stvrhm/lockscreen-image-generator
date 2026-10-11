@@ -2,9 +2,9 @@ import { createAssetServer } from 'remix/assets'
 import { componentHmr } from 'remix/component-hmr/assets'
 
 const rootDir = process.cwd(),
- nodeEnv = process.env.NODE_ENV ?? 'development',
- isDevelopment = nodeEnv === 'development',
- isHmr = Boolean(isDevelopment && process.env.REMIX_NODE_HMR)
+  nodeEnv = process.env.NODE_ENV ?? 'development',
+  isDevelopment = nodeEnv === 'development',
+  isHmr = Boolean(isDevelopment && process.env.REMIX_NODE_HMR)
 
 // The static build puts its build id in every module URL (see
 // Scripts/build.tsx). Safari reuses ES modules it has already loaded at a URL

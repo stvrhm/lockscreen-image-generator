@@ -1,15 +1,22 @@
-export interface NotesEdit { text: string; start: number; end: number }
+export interface NotesEdit {
+  text: string
+  start: number
+  end: number
+}
 
 export type HeadingLevel = 0 | 1 | 2
 
 const MARKERS: Record<HeadingLevel, string> = { 0: '', 1: '# ', 2: '## ' },
+  // A run of hashes followed by a space or the end of the line. Only `#` and
+  // `##` make a Heading; deeper runs are plain text but still get replaced when
+  // the line becomes a Heading, so `### Pixel` turns into `# Pixel`.
+  HASH_PREFIX = /^#+(?: |$)/
 
-// A run of hashes followed by a space or the end of the line. Only `#` and
-// `##` make a Heading; deeper runs are plain text but still get replaced when
-// the line becomes a Heading, so `### Pixel` turns into `# Pixel`.
- HASH_PREFIX = /^#+(?: |$)/
-
-interface LineSpan { line: string; start: number; end: number }
+interface LineSpan {
+  line: string
+  start: number
+  end: number
+}
 
 function hashPrefix(line: string) {
   return HASH_PREFIX.exec(line)?.[0] ?? ''
@@ -46,7 +53,9 @@ function eachTouchedLine(
   const touchedEnd = lastTouched(text, start, end)
   const lines = lineSpans(text)
   lines.forEach((line, index) => {
-    if (line.end < start || line.start > touchedEnd) {return}
+    if (line.end < start || line.start > touchedEnd) {
+      return
+    }
     visit(line, index)
   })
 }
@@ -71,8 +80,8 @@ export function setHeading({ text, start, end }: NotesEdit, level: 1 | 2): Notes
   const lines = lineSpans(text)
   const touchedEnd = lastTouched(text, start, end)
   let shift = 0,
-   mapped = { end, start },
-   output: string[] = []
+    mapped = { end, start },
+    output: string[] = []
 
   for (const line of lines) {
     if (line.end < start || line.start > touchedEnd) {
@@ -97,6 +106,8 @@ export function setHeading({ text, start, end }: NotesEdit, level: 1 | 2): Notes
     shift += newMarker.length - oldMarker.length
   }
 
-  if (end > touchedEnd) {mapped.end = end + shift}
+  if (end > touchedEnd) {
+    mapped.end = end + shift
+  }
   return { end: mapped.end, start: mapped.start, text: output.join('\n') }
 }

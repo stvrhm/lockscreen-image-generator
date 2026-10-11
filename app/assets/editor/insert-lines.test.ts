@@ -17,7 +17,7 @@ function edit(marked: string) {
 function insert(marked: string, lines: string) {
   const { text, start, end } = insertLines(edit(marked), lines)
   assert.equal(start, end, 'insertion leaves a collapsed cursor')
-  return `${text.slice(0, start)  }|${  text.slice(start)}`
+  return `${text.slice(0, start)}|${text.slice(start)}`
 }
 
 test('fills empty Notes', () => {

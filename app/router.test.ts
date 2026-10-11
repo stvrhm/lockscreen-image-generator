@@ -20,15 +20,17 @@ function fetchScreen(href: string) {
 
 test('the shell preloads the JSX runtime for the browser entry', async () => {
   const response = await fetchScreen(routes.screens.home.href()),
-   html = await response.text()
+    html = await response.text()
 
   assert.match(html, /href="\/assets\/npm\/%40remix-run\/component\/dist\/runtime\/jsx\.js"/)
 })
 
 test('the shell preloads the served icon sprite with an ETag', async () => {
   const response = await fetchScreen(routes.screens.home.href()),
-   html = await response.text(),
-   preload = html.match(/<link rel="preload" as="image" type="image\/svg\+xml" href="([^"]+)" data-icon-sprite \/>/)
+    html = await response.text(),
+    preload = html.match(
+      /<link rel="preload" as="image" type="image\/svg\+xml" href="([^"]+)" data-icon-sprite \/>/,
+    )
 
   assert.ok(preload)
   assert.equal(preload[1], iconSpriteHref)

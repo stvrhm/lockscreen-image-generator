@@ -38,9 +38,13 @@ export function detectPhoneInfo(userAgent: string, hints?: ClientHints): PhoneIn
   if (/\bAndroid\b/.test(userAgent)) {
     const model = hints?.model?.trim()
     const hintVersion = hints?.platformVersion?.trim()
-    if (hintVersion) {return compact({ model, os: `Android ${trimVersion(hintVersion)}` })}
+    if (hintVersion) {
+      return compact({ model, os: `Android ${trimVersion(hintVersion)}` })
+    }
     // Chromium reports a fixed `Android 10; K` in place of the real values.
-    if (/\bAndroid 10; K[;)]/.test(userAgent)) {return compact({ model })}
+    if (/\bAndroid 10; K[;)]/.test(userAgent)) {
+      return compact({ model })
+    }
     const uaVersion = /\bAndroid (\d+(?:\.\d+)*)/.exec(userAgent)
     return compact({ model, os: uaVersion ? `Android ${trimVersion(uaVersion[1])}` : undefined })
   }
@@ -58,8 +62,12 @@ export interface PhoneInfoItem {
 /** Detected items in Notes order: model Heading, then OS — each only if detected. */
 export function phoneInfoItems(info: PhoneInfo): PhoneInfoItem[] {
   const items: PhoneInfoItem[] = []
-  if (info.model) {items.push({ kind: 'model', value: info.model, line: `# ${info.model}` })}
-  if (info.os) {items.push({ kind: 'os', value: info.os, line: info.os })}
+  if (info.model) {
+    items.push({ kind: 'model', value: info.model, line: `# ${info.model}` })
+  }
+  if (info.os) {
+    items.push({ kind: 'os', value: info.os, line: info.os })
+  }
   return items
 }
 
@@ -84,7 +92,9 @@ export async function readPhoneInfo({
   host = globalThis.navigator as PhoneInfoHost | undefined,
   timeout = CLIENT_HINTS_TIMEOUT,
 }: { host?: PhoneInfoHost; timeout?: number } = {}): Promise<PhoneInfo> {
-  if (!host?.userAgent) {return {}}
+  if (!host?.userAgent) {
+    return {}
+  }
   let hints: ClientHints | undefined
   try {
     const request = host.userAgentData?.getHighEntropyValues(['model', 'platformVersion'])
@@ -97,20 +107,26 @@ export async function readPhoneInfo({
 
 function withinTimeout<T>(promise: Promise<T>, ms: number): Promise<T | undefined> {
   let timer: Parameters<typeof clearTimeout>[0],
-   expired = new Promise<undefined>((resolve) => {
-    timer = setTimeout(resolve, ms)
-  })
+    expired = new Promise<undefined>((resolve) => {
+      timer = setTimeout(resolve, ms)
+    })
   return Promise.race([promise, expired]).finally(() => clearTimeout(timer))
 }
 
 function parsedOS(userAgent: string): string | undefined {
-  if (!userAgent) {return undefined}
+  if (!userAgent) {
+    return undefined
+  }
   const parser = Bowser.getParser(userAgent)
   const name = parser.getOSName()
   const version = parser.getOSVersion()
-  if (!name || !version || !/^\d+(?:\.\d+){0,3}$/.test(version)) {return undefined}
+  if (!name || !version || !/^\d+(?:\.\d+){0,3}$/.test(version)) {
+    return undefined
+  }
   // Browsers on every Mac report this frozen version.
-  if (name === 'macOS' && version === '10.15.7') {return undefined}
+  if (name === 'macOS' && version === '10.15.7') {
+    return undefined
+  }
   return `${name} ${version}`
 }
 
@@ -123,7 +139,11 @@ function compact(info: PhoneInfo): PhoneInfo {
   const result: PhoneInfo = {}
   const model = info.model?.trim()
   const os = info.os?.trim()
-  if (model) {result.model = model}
-  if (os) {result.os = os}
+  if (model) {
+    result.model = model
+  }
+  if (os) {
+    result.os = os
+  }
   return result
 }

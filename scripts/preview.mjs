@@ -10,7 +10,7 @@ const OK_STATUS = 200
 const PORT_ENV_RADIX = 10
 
 const DIST = join(dirname(import.meta.filename), '..', 'dist'),
- PORT = process.env.PORT ? Number.parseInt(process.env.PORT, PORT_ENV_RADIX) : DEFAULT_PORT
+  PORT = process.env.PORT ? Number.parseInt(process.env.PORT, PORT_ENV_RADIX) : DEFAULT_PORT
 
 function dirname(p) {
   return p.slice(0, p.lastIndexOf('/'))
@@ -35,7 +35,9 @@ const TYPES = {
 async function tryFile(path) {
   try {
     const s = await stat(path)
-    if (s.isFile()) {return path}
+    if (s.isFile()) {
+      return path
+    }
   } catch {}
   return null
 }
@@ -43,7 +45,7 @@ async function tryFile(path) {
 const server = createServer(async (req, res) => {
   try {
     const url = new URL(req.url, 'http://localhost'),
-     rel = normalize(decodeURIComponent(url.pathname)).replace(/^(\.\.(\/|\\|$))+/, '')
+      rel = normalize(decodeURIComponent(url.pathname)).replace(/^(\.\.(\/|\\|$))+/, '')
     const filePath = join(DIST, rel)
 
     let resolved = await tryFile(filePath)

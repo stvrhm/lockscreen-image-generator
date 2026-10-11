@@ -9,7 +9,9 @@ type DataAttrs = Record<`data-${string}`, string | null | undefined | false>
 export function cubeVars(vars: CubeVars): CubeMix {
   const styles: Record<string, CubeValue> = {}
   for (const [name, value] of Object.entries(vars)) {
-    if (value != null) {styles[name] = value}
+    if (value != null) {
+      styles[name] = value
+    }
   }
   return Object.keys(styles).length === 0 ? [] : css(styles)
 }
@@ -17,7 +19,9 @@ export function cubeVars(vars: CubeVars): CubeMix {
 export function dataAttrs(attributes: DataAttrs): CubeMix {
   const next: Record<string, string> = {}
   for (const [name, value] of Object.entries(attributes)) {
-    if (value !== false && value != null) {next[name] = value}
+    if (value !== false && value != null) {
+      next[name] = value
+    }
   }
   return Object.keys(next).length === 0 ? [] : attrs(next as Partial<ElementProps>)
 }

@@ -24,8 +24,8 @@
     "one-var": "off",
     "explicit-function-return-type": "off",
     "explicit-module-boundary-types": "off",
-    "no-use-before-define": ["error", { "functions": false }],
-    "sort-vars": "error",
+    "no-use-before-define": ["error", { "functions": false, "variables": false, "classes": false }],
+    "sort-vars": "warn",
     "no-ternary": "off",
     "no-nested-ternary": "error"
   },

@@ -27,10 +27,10 @@ export interface DeviceInput {
 }
 
 const DB_NAME = 'tdl-devices',
- DB_VERSION = 1,
- DEVICE_CHANGE_CHANNEL = 'tdl:device-changes',
- LAST_DRAFT_KEY = 'tdl:last-draft-id',
- STORE = 'devices'
+  DB_VERSION = 1,
+  DEVICE_CHANGE_CHANNEL = 'tdl:device-changes',
+  LAST_DRAFT_KEY = 'tdl:last-draft-id',
+  STORE = 'devices'
 
 export class DeviceLabelConflictError extends Error {
   constructor() {
@@ -52,7 +52,9 @@ export function subscribeToDeviceChanges(onChange: () => void): () => void {
 }
 
 function announceDeviceChange() {
-  if (typeof window !== 'undefined') {window.dispatchEvent(new Event('tdl:devices-changed'))}
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('tdl:devices-changed'))
+  }
   if (typeof BroadcastChannel !== 'undefined') {
     const channel = new BroadcastChannel(DEVICE_CHANGE_CHANNEL)
     // BroadcastChannel.postMessage has no target-origin parameter.
@@ -65,32 +67,46 @@ function announceDeviceChange() {
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION)
-    request.addEventListener('error', () => reject(request.error ?? new Error('IndexedDB open failed')), { once: true })
+    request.addEventListener(
+      'error',
+      () => reject(request.error ?? new Error('IndexedDB open failed')),
+      { once: true },
+    )
     request.addEventListener('success', () => resolve(request.result), { once: true })
-    request.addEventListener('upgradeneeded', () => {
-      const db = request.result
-      if (!db.objectStoreNames.contains(STORE)) {
-        db.createObjectStore(STORE, { keyPath: 'id' })
-      }
-    }, { once: true })
+    request.addEventListener(
+      'upgradeneeded',
+      () => {
+        const db = request.result
+        if (!db.objectStoreNames.contains(STORE)) {
+          db.createObjectStore(STORE, { keyPath: 'id' })
+        }
+      },
+      { once: true },
+    )
   })
 }
 
 function idbRequest<T>(request: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
     request.addEventListener('success', () => resolve(request.result), { once: true })
-    request.addEventListener('error', () => reject(request.error ?? new Error('IndexedDB request failed')), { once: true })
+    request.addEventListener(
+      'error',
+      () => reject(request.error ?? new Error('IndexedDB request failed')),
+      { once: true },
+    )
   })
 }
 
 export function createId(): string {
-  if (typeof crypto.randomUUID === 'function') {return crypto.randomUUID()}
+  if (typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
 
   // UUID v4 byte offsets, masks, and hexadecimal groups follow the UUID format.
   // oxlint-disable no-magic-numbers
   const bytes = crypto.getRandomValues(new Uint8Array(16))
-  bytes[6] = (bytes[6] & 0x0F) | 0x40
-  bytes[8] = (bytes[8] & 0x3F) | 0x80
+  bytes[6] = (bytes[6] & 0x0f) | 0x40
+  bytes[8] = (bytes[8] & 0x3f) | 0x80
   const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')
 
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
@@ -121,10 +137,14 @@ export function normalizeDeviceLabel(label: string): string {
 /** First available default name among saved Devices. Drafts never enter this list. */
 export function nextDeviceLabel(devices: Device[]): string {
   const used = new Set(devices.map((device) => normalizeDeviceLabel(device.label)))
-  if (!used.has('new device')) {return 'New Device'}
+  if (!used.has('new device')) {
+    return 'New Device'
+  }
   for (let number = 2; ; number++) {
     const label = `New Device ${number}`
-    if (!used.has(normalizeDeviceLabel(label))) {return label}
+    if (!used.has(normalizeDeviceLabel(label))) {
+      return label
+    }
   }
 }
 
@@ -132,10 +152,14 @@ export function nextDeviceLabel(devices: Device[]): string {
 export function nextCopyLabel(sourceLabel: string, devices: Device[]): string {
   const used = new Set(devices.map((device) => normalizeDeviceLabel(device.label)))
   const base = sourceLabel.trim() ? `Copy of ${sourceLabel.trim()}` : 'New Device'
-  if (!used.has(normalizeDeviceLabel(base))) {return base}
+  if (!used.has(normalizeDeviceLabel(base))) {
+    return base
+  }
   for (let number = 2; ; number++) {
     const label = `${base} ${number}`
-    if (!used.has(normalizeDeviceLabel(label))) {return label}
+    if (!used.has(normalizeDeviceLabel(label))) {
+      return label
+    }
   }
 }
 
@@ -173,26 +197,38 @@ export async function saveDevice(
     const store = tx.objectStore(STORE)
     await new Promise<void>((resolve, reject) => {
       const lookup = store.getAll() as IDBRequest<Device[]>
-      lookup.addEventListener('success', () => {
-        const conflict = lookup.result.some(
-          (saved) =>
-            saved.id !== next.id &&
-            normalizeDeviceLabel(saved.label) === normalizeDeviceLabel(next.label),
-        )
-        const existing = lookup.result.find((saved) => saved.id === next.id)
-        const mayKeepLegacyDuplicate =
-          allowUnchangedDuplicate && existing?.label === next.label && Boolean(conflict)
-        if (conflict && !mayKeepLegacyDuplicate) {
-          reject(new DeviceLabelConflictError())
-          tx.abort()
-          return
-        }
-        store.put(next)
-      }, { once: true })
-      lookup.addEventListener('error', () => reject(lookup.error ?? new Error('IndexedDB read failed')), { once: true })
+      lookup.addEventListener(
+        'success',
+        () => {
+          const conflict = lookup.result.some(
+            (saved) =>
+              saved.id !== next.id &&
+              normalizeDeviceLabel(saved.label) === normalizeDeviceLabel(next.label),
+          )
+          const existing = lookup.result.find((saved) => saved.id === next.id)
+          const mayKeepLegacyDuplicate =
+            allowUnchangedDuplicate && existing?.label === next.label && Boolean(conflict)
+          if (conflict && !mayKeepLegacyDuplicate) {
+            reject(new DeviceLabelConflictError())
+            tx.abort()
+            return
+          }
+          store.put(next)
+        },
+        { once: true },
+      )
+      lookup.addEventListener(
+        'error',
+        () => reject(lookup.error ?? new Error('IndexedDB read failed')),
+        { once: true },
+      )
       tx.addEventListener('complete', () => resolve(), { once: true })
-      tx.addEventListener('error', () => reject(tx.error ?? new Error('IndexedDB write failed')), { once: true })
-      tx.addEventListener('abort', () => reject(tx.error ?? new Error('IndexedDB write aborted')), { once: true })
+      tx.addEventListener('error', () => reject(tx.error ?? new Error('IndexedDB write failed')), {
+        once: true,
+      })
+      tx.addEventListener('abort', () => reject(tx.error ?? new Error('IndexedDB write aborted')), {
+        once: true,
+      })
     })
   } finally {
     db.close()
@@ -210,7 +246,9 @@ export async function deleteDevice(id: string): Promise<void> {
     await idbRequest(store.delete(id))
     await new Promise<void>((resolve, reject) => {
       tx.addEventListener('complete', () => resolve(), { once: true })
-      tx.addEventListener('error', () => reject(tx.error ?? new Error('IndexedDB delete failed')), { once: true })
+      tx.addEventListener('error', () => reject(tx.error ?? new Error('IndexedDB delete failed')), {
+        once: true,
+      })
     })
   } finally {
     db.close()
@@ -270,6 +308,8 @@ export function clearLastDraftId() {
 
 export async function getLastDraft(): Promise<Device | undefined> {
   const id = getLastDraftId()
-  if (!id) {return undefined}
+  if (!id) {
+    return undefined
+  }
   return findDevice(id)
 }

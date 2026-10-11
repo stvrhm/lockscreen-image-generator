@@ -4,7 +4,12 @@ import type { NotesEdit } from './set-heading.ts'
 
 export type InlineFormat = 'bold' | 'italic' | 'strike' | 'code'
 
-interface Style { bold: boolean; italic: boolean; code: boolean; strike: boolean }
+interface Style {
+  bold: boolean
+  italic: boolean
+  code: boolean
+  strike: boolean
+}
 
 interface Span {
   text: string
@@ -40,28 +45,52 @@ function styleOf(token: InlineToken): Style {
 }
 
 function markers(style: Style): [string, string] {
-  if (style.code) {return ['`', '`']}
-  if (style.strike) {return ['~~', '~~']}
-  if (style.bold && style.italic) {return ['***', '***']}
-  if (style.bold) {return ['**', '**']}
-  if (style.italic) {return ['*', '*']}
+  if (style.code) {
+    return ['`', '`']
+  }
+  if (style.strike) {
+    return ['~~', '~~']
+  }
+  if (style.bold && style.italic) {
+    return ['***', '***']
+  }
+  if (style.bold) {
+    return ['**', '**']
+  }
+  if (style.italic) {
+    return ['*', '*']
+  }
   return ['', '']
 }
 
 function withFormat(style: Style, format: InlineFormat, enabled: boolean): Style {
-  if (!enabled) {return { ...style, [format]: false }}
-  if (format === 'code') {return { bold: false, italic: false, code: true, strike: false }}
-  if (format === 'strike') {return { bold: false, italic: false, code: false, strike: true }}
+  if (!enabled) {
+    return { ...style, [format]: false }
+  }
+  if (format === 'code') {
+    return { bold: false, italic: false, code: true, strike: false }
+  }
+  if (format === 'strike') {
+    return { bold: false, italic: false, code: false, strike: true }
+  }
   return { ...style, [format]: true, code: false, strike: false }
 }
 
 function breaks(format: InlineFormat, text: string) {
-  if (format === 'bold' || format === 'italic') {return text.includes('*')}
-  if (format === 'strike') {return text.includes('~')}
+  if (format === 'bold' || format === 'italic') {
+    return text.includes('*')
+  }
+  if (format === 'strike') {
+    return text.includes('~')
+  }
   return text.includes('`')
 }
 
-interface LineSpan { line: string; start: number; end: number }
+interface LineSpan {
+  line: string
+  start: number
+  end: number
+}
 
 function lineSpans(text: string): LineSpan[] {
   const lines: LineSpan[] = []
@@ -83,31 +112,49 @@ function localSelection(
   line: LineSpan,
 ): { start: number; end: number } | null {
   if (start === end) {
-    if (start >= line.start && start <= line.end) {return { start, end }}
+    if (start >= line.start && start <= line.end) {
+      return { start, end }
+    }
     return null
   }
   const last = text[end - 1] === '\n' ? end - 1 : end
   const from = Math.max(start, line.start)
   const to = Math.min(last, line.end)
-  if (from < to) {return { start: from, end: to }}
+  if (from < to) {
+    return { start: from, end: to }
+  }
   return null
 }
 
 function emptyPair(source: string, index: number): { len: number; style: Style } | null {
   const DOUBLE_MARKER_LENGTH = 4,
-   STRONG_ITALIC_MARKER_LENGTH = 6
+    STRONG_ITALIC_MARKER_LENGTH = 6
   const ch = source[index]
-  if (!ch || (index > 0 && source[index - 1] === ch)) {return null}
-  if (ch !== '*' && ch !== '~' && ch !== '`') {return null}
+  if (!ch || (index > 0 && source[index - 1] === ch)) {
+    return null
+  }
+  if (ch !== '*' && ch !== '~' && ch !== '`') {
+    return null
+  }
   let len = 0
-  while (source[index + len] === ch) {len++}
+  while (source[index + len] === ch) {
+    len++
+  }
   if (ch === '*' && len === STRONG_ITALIC_MARKER_LENGTH) {
     return { len, style: { bold: true, code: false, italic: true, strike: false } }
   }
-  if (ch === '*' && len === DOUBLE_MARKER_LENGTH) {return { len, style: { ...PLAIN, bold: true } }}
-  if (ch === '*' && len === 2) {return { len, style: { ...PLAIN, italic: true } }}
-  if (ch === '~' && len === DOUBLE_MARKER_LENGTH) {return { len, style: { ...PLAIN, strike: true } }}
-  if (ch === '`' && len === 2) {return { len, style: { ...PLAIN, code: true } }}
+  if (ch === '*' && len === DOUBLE_MARKER_LENGTH) {
+    return { len, style: { ...PLAIN, bold: true } }
+  }
+  if (ch === '*' && len === 2) {
+    return { len, style: { ...PLAIN, italic: true } }
+  }
+  if (ch === '~' && len === DOUBLE_MARKER_LENGTH) {
+    return { len, style: { ...PLAIN, strike: true } }
+  }
+  if (ch === '`' && len === 2) {
+    return { len, style: { ...PLAIN, code: true } }
+  }
   return null
 }
 
@@ -140,12 +187,16 @@ function parseLine(line: string): Span[] {
         continue
       }
       let j = i + 1
-      while (j < token.to && !(emptyPair(line, j) && j + emptyPair(line, j)!.len <= token.to)) {j++}
+      while (j < token.to && !(emptyPair(line, j) && j + emptyPair(line, j)!.len <= token.to)) {
+        j++
+      }
       spans.push(span(line.slice(i, j), i, j, PLAIN, 0))
       i = j
     }
   }
-  if (spans.length === 0) {spans.push(span('', 0, 0, PLAIN, 0))}
+  if (spans.length === 0) {
+    spans.push(span('', 0, 0, PLAIN, 0))
+  }
   return spans
 }
 
@@ -154,8 +205,12 @@ function spanAtCaret(spans: Span[], caret: number) {
 }
 
 function contentOffset(item: Span, caret: number) {
-  if (caret <= item.contentFrom) {return 0}
-  if (caret >= item.contentTo) {return item.text.length}
+  if (caret <= item.contentFrom) {
+    return 0
+  }
+  if (caret >= item.contentTo) {
+    return item.text.length
+  }
   return caret - item.contentFrom
 }
 
@@ -174,7 +229,9 @@ function piecesFrom(spans: Span[], start: number, end: number): Piece[] {
     }
     const a = from - item.contentFrom
     const b = to - item.contentFrom
-    if (a > 0) {pieces.push({ text: item.text.slice(0, a), style: item.style, selected: null })}
+    if (a > 0) {
+      pieces.push({ text: item.text.slice(0, a), style: item.style, selected: null })
+    }
     pieces.push({
       selected: [0, b - a],
       style: { ...item.style },
@@ -212,13 +269,15 @@ function serialize(pieces: Piece[]) {
   }
 
   let selEnd: number | null = null,
-   selStart: number | null = null,
-   text = ''
+    selStart: number | null = null,
+    text = ''
   for (const piece of merged) {
     const [open, close] = markers(piece.style)
     const contentAt = text.length + open.length
     text += open + piece.text + close
-    if (!piece.selected) {continue}
+    if (!piece.selected) {
+      continue
+    }
     const a = contentAt + piece.selected[0]
     const b = contentAt + piece.selected[1]
     selStart = selStart === null ? a : Math.min(selStart, a)
@@ -234,7 +293,9 @@ function insertEmpty(spans: Span[], caret: number, format: InlineFormat) {
   for (const item of spans) {
     if (!inserted && isPlain(item.style) && item.from <= caret && caret <= item.to) {
       const cut = caret - item.from
-      if (cut > 0) {pieces.push({ text: item.text.slice(0, cut), style: PLAIN, selected: null })}
+      if (cut > 0) {
+        pieces.push({ text: item.text.slice(0, cut), style: PLAIN, selected: null })
+      }
       pieces.push({ isolate: true, selected: [0, 0], style, text: '' })
       if (cut < item.text.length) {
         pieces.push({ selected: null, style: PLAIN, text: item.text.slice(cut) })
@@ -248,13 +309,17 @@ function insertEmpty(spans: Span[], caret: number, format: InlineFormat) {
     }
     pieces.push({ selected: null, style: item.style, text: item.text })
   }
-  if (!inserted) {pieces.push({ text: '', style, selected: [0, 0], isolate: true })}
+  if (!inserted) {
+    pieces.push({ text: '', style, selected: [0, 0], isolate: true })
+  }
   return serialize(pieces)
 }
 
 function editCaret(line: string, spans: Span[], caret: number, format: InlineFormat) {
   const host = spanAtCaret(spans, caret)
-  if (!host) {return insertEmpty(spans, caret, format)}
+  if (!host) {
+    return insertEmpty(spans, caret, format)
+  }
   if (!host.style[format] && breaks(format, host.text)) {
     return { end: caret, start: caret, text: line }
   }
@@ -269,20 +334,26 @@ function editCaret(line: string, spans: Span[], caret: number, format: InlineFor
 
 function editLine(line: string, start: number, end: number, format: InlineFormat) {
   const spans = parseLine(line)
-  if (start === end) {return editCaret(line, spans, start, format)}
+  if (start === end) {
+    return editCaret(line, spans, start, format)
+  }
 
   const pieces = piecesFrom(spans, start, end)
   const selected = pieces.filter((piece) => piece.selected)
   if (selected.length === 0) {
     const host = markerHost(spans, start, end)
-    if (!host) {return { text: line, start, end }}
+    if (!host) {
+      return { text: line, start, end }
+    }
     const piecesForHost = spans.map((item) => ({
       text: item.text,
       style:
         item === host ? withFormat(item.style, format, !item.style[format]) : { ...item.style },
       selected: item === host ? ([0, item.text.length] as [number, number]) : null,
     }))
-    if (!host.style[format] && breaks(format, host.text)) {return { text: line, start, end }}
+    if (!host.style[format] && breaks(format, host.text)) {
+      return { text: line, start, end }
+    }
     return serialize(piecesForHost)
   }
 
@@ -291,7 +362,9 @@ function editLine(line: string, start: number, end: number, format: InlineFormat
     return { end, start, text: line }
   }
   for (const piece of pieces) {
-    if (!piece.selected) {continue}
+    if (!piece.selected) {
+      continue
+    }
     piece.style = withFormat(piece.style, format, !active)
   }
   return serialize(pieces)
@@ -306,13 +379,17 @@ function lineVerdict(
   const spans = parseLine(line)
   if (start === end) {
     const host = spanAtCaret(spans, start)
-    if (!host) {return 'no'}
+    if (!host) {
+      return 'no'
+    }
     return host.style[format] ? 'yes' : 'no'
   }
   const selected = piecesFrom(spans, start, end).filter((piece) => piece.selected)
   if (selected.length === 0) {
     const host = markerHost(spans, start, end)
-    if (!host) {return 'skip'}
+    if (!host) {
+      return 'skip'
+    }
     return host.style[format] ? 'yes' : 'no'
   }
   return selected.every((piece) => piece.style[format]) ? 'yes' : 'no'
@@ -327,10 +404,16 @@ export function inlineFormatActive(
   let covered = false
   for (const line of lineSpans(text)) {
     const local = localSelection(text, start, end, line)
-    if (!local) {continue}
+    if (!local) {
+      continue
+    }
     const verdict = lineVerdict(line.line, local.start - line.start, local.end - line.start, format)
-    if (verdict === 'no') {return false}
-    if (verdict === 'yes') {covered = true}
+    if (verdict === 'no') {
+      return false
+    }
+    if (verdict === 'yes') {
+      covered = true
+    }
   }
   return covered
 }
@@ -341,9 +424,9 @@ export function toggleInlineFormat(
 ): NotesEdit {
   const nextLines: string[] = []
   let shift = 0,
-   mappedStart = start,
-   mappedEnd = end,
-   placedStart = false
+    mappedStart = start,
+    mappedEnd = end,
+    placedStart = false
 
   for (const line of lineSpans(text)) {
     const local = localSelection(text, start, end, line)

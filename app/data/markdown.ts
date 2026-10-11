@@ -19,8 +19,8 @@ export interface InlineToken {
 }
 
 const EMPHASIS_MARKER_LENGTH = 1,
- STRONG_EMPHASIS_MARKER_LENGTH = 3,
- STRONG_MARKER_LENGTH = 2
+  STRONG_EMPHASIS_MARKER_LENGTH = 3,
+  STRONG_MARKER_LENGTH = 2
 
 /** `body` for plain text; 1 for a `# ` Heading, 2 for a `## ` Heading. */
 export type HeadingLevel = 'body' | 1 | 2
@@ -43,7 +43,9 @@ const HEADING_PATTERN = /^(#{1,2})(?: |$)/
 
 function parseLine(line: string): MarkdownLine {
   const marker = HEADING_PATTERN.exec(line)
-  if (!marker) {return { heading: 'body', segments: parseInline(line) }}
+  if (!marker) {
+    return { heading: 'body', segments: parseInline(line) }
+  }
   const heading: HeadingLevel = marker[1].length === 1 ? 1 : 2
   return { heading, segments: parseInline(line.slice(marker[0].length)) }
 }
@@ -52,7 +54,7 @@ function parseLine(line: string): MarkdownLine {
 export function tokenizeInline(line: string): InlineToken[] {
   const tokens: InlineToken[] = []
   let lastIndex = 0,
-   match: RegExpExecArray | null
+    match: RegExpExecArray | null
 
   INLINE_MARKDOWN_PATTERN.lastIndex = 0
   while ((match = INLINE_MARKDOWN_PATTERN.exec(line))) {
@@ -72,13 +74,33 @@ export function tokenizeInline(line: string): InlineToken[] {
         to,
       })
     } else if (token.startsWith('`')) {
-      tokens.push({ code: true, from, text: token.slice(EMPHASIS_MARKER_LENGTH, -EMPHASIS_MARKER_LENGTH), to })
+      tokens.push({
+        code: true,
+        from,
+        text: token.slice(EMPHASIS_MARKER_LENGTH, -EMPHASIS_MARKER_LENGTH),
+        to,
+      })
     } else if (token.startsWith('**')) {
-      tokens.push({ bold: true, from, text: token.slice(STRONG_MARKER_LENGTH, -STRONG_MARKER_LENGTH), to })
+      tokens.push({
+        bold: true,
+        from,
+        text: token.slice(STRONG_MARKER_LENGTH, -STRONG_MARKER_LENGTH),
+        to,
+      })
     } else if (token.startsWith('~~')) {
-      tokens.push({ from, strike: true, text: token.slice(STRONG_MARKER_LENGTH, -STRONG_MARKER_LENGTH), to })
+      tokens.push({
+        from,
+        strike: true,
+        text: token.slice(STRONG_MARKER_LENGTH, -STRONG_MARKER_LENGTH),
+        to,
+      })
     } else {
-      tokens.push({ from, italic: true, text: token.slice(EMPHASIS_MARKER_LENGTH, -EMPHASIS_MARKER_LENGTH), to })
+      tokens.push({
+        from,
+        italic: true,
+        text: token.slice(EMPHASIS_MARKER_LENGTH, -EMPHASIS_MARKER_LENGTH),
+        to,
+      })
     }
 
     lastIndex = to
@@ -94,10 +116,18 @@ export function tokenizeInline(line: string): InlineToken[] {
 function parseInline(line: string): MarkdownSegment[] {
   return tokenizeInline(line).map((token) => {
     const segment: MarkdownSegment = { text: token.text }
-    if (token.bold) {segment.bold = true}
-    if (token.italic) {segment.italic = true}
-    if (token.code) {segment.code = true}
-    if (token.strike) {segment.strike = true}
+    if (token.bold) {
+      segment.bold = true
+    }
+    if (token.italic) {
+      segment.italic = true
+    }
+    if (token.code) {
+      segment.code = true
+    }
+    if (token.strike) {
+      segment.strike = true
+    }
     return segment
   })
 }

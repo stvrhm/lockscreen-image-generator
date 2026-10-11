@@ -43,7 +43,9 @@ const app = run(
       if (resolvingInitialRoute && !redirectStatuses.has(response.status)) {
         resolvingInitialRoute = false
         const url = new URL(input instanceof Request ? input.url : input, location.href)
-        if (url.href !== location.href) {history.replaceState(history.state, '', url)}
+        if (url.href !== location.href) {
+          history.replaceState(history.state, '', url)
+        }
       }
       return response
     },

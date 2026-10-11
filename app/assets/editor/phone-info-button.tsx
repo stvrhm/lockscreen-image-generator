@@ -20,9 +20,9 @@ import { theme } from '../../ui/theme.ts'
 // oxlint-disable jsx-a11y/prefer-tag-over-role -- A dialog popover must use a controlled div; native dialog state conflicts with showPopover().
 export function PhoneInfoButton(handle: Handle<{ onAdd: (lines: string) => void }>) {
   let info: PhoneInfo | undefined,
-   open = false,
-   reads = 0,
-   restoreFocus = true
+    open = false,
+    reads = 0,
+    restoreFocus = true
 
   function show() {
     open = true
@@ -31,7 +31,9 @@ export function PhoneInfoButton(handle: Handle<{ onAdd: (lines: string) => void 
     const read = ++reads
     handle.update()
     void readPhoneInfo().then((result) => {
-      if (read !== reads || handle.signal.aborted) {return}
+      if (read !== reads || handle.signal.aborted) {
+        return
+      }
       info = result
       handle.update()
     })
@@ -134,85 +136,75 @@ function rows(info: PhoneInfo) {
 }
 
 const itemNames = {
-  model: strings.editor.phoneInfoModel,
-  os: strings.editor.phoneInfoOS,
-},
-
- triggerStyle = css({
-  fontSize: '1.125rem',
-  fontWeight: theme.fontWeight.medium,
-  marginInlineStart: 'auto',
-}),
-
- panelStyle = css({
-  '&:popover-open': {
-    opacity: 1,
-    transform: 'translate(0, 0)',
+    model: strings.editor.phoneInfoModel,
+    os: strings.editor.phoneInfoOS,
   },
-  '&[data-anchor-placement^="top"]': { transform: 'translateY(4px)' },
-  '@media (prefers-reduced-motion: reduce)': {
-    '&:popover-open': { transform: 'none' },
-    '&[data-anchor-placement^="top"]': { transform: 'none' },
-    transform: 'none',
-    transition: 'opacity 160ms ease-out, overlay 160ms ease-out, display 160ms ease-out',
-  },
-  background: 'var(--surface-3)',
-  border: '1px solid var(--border)',
-  borderRadius: theme.radius.md,
-  boxShadow: 'var(--shadow-soft)',
-  color: 'var(--text)',
-  inset: 'auto',
-  margin: 0,
-  opacity: 0,
-  outline: 'none',
-  padding: theme.space.sm,
-  position: 'fixed',
-  transform: 'translateY(-4px)',
-  transition:
-    'opacity 160ms ease-out, transform 160ms cubic-bezier(0.19, 1, 0.22, 1), overlay 160ms ease-out, display 160ms ease-out',
-  transitionBehavior: 'allow-discrete',
-  width: 'min(18rem, calc(100vw - 32px))',
-}),
-
- titleStyle = css({
-  fontSize: theme.fontSize.small,
-  fontWeight: theme.fontWeight.semibold,
-  margin: 0,
-}),
-
- mutedStyle = css({
-  color: 'var(--text-muted)',
-  fontSize: theme.fontSize.small,
-  margin: 0,
-}),
-
- listStyle = css({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: theme.space['3xs'],
-  listStyle: 'none',
-  margin: 0,
-  padding: 0,
-}),
-
- rowStyle = css({
-  alignItems: 'center',
-  display: 'flex',
-  gap: theme.space.xs,
-  justifyContent: 'space-between',
-}),
-
- rowTextStyle = css({
-  display: 'flex',
-  flexDirection: 'column',
-  minWidth: 0,
-}),
-
- valueStyle = css({
-  fontWeight: theme.fontWeight.semibold,
-  overflowWrap: 'anywhere',
-}),
-
- addAllStyle = css({ width: '100%' }),
-
- stackGapStyle = css({ marginTop: theme.space.xs })
+  triggerStyle = css({
+    fontSize: '1.125rem',
+    fontWeight: theme.fontWeight.medium,
+    marginInlineStart: 'auto',
+  }),
+  panelStyle = css({
+    '&:popover-open': {
+      opacity: 1,
+      transform: 'translate(0, 0)',
+    },
+    '&[data-anchor-placement^="top"]': { transform: 'translateY(4px)' },
+    '@media (prefers-reduced-motion: reduce)': {
+      '&:popover-open': { transform: 'none' },
+      '&[data-anchor-placement^="top"]': { transform: 'none' },
+      transform: 'none',
+      transition: 'opacity 160ms ease-out, overlay 160ms ease-out, display 160ms ease-out',
+    },
+    background: 'var(--surface-3)',
+    border: '1px solid var(--border)',
+    borderRadius: theme.radius.md,
+    boxShadow: 'var(--shadow-soft)',
+    color: 'var(--text)',
+    inset: 'auto',
+    margin: 0,
+    opacity: 0,
+    outline: 'none',
+    padding: theme.space.sm,
+    position: 'fixed',
+    transform: 'translateY(-4px)',
+    transition:
+      'opacity 160ms ease-out, transform 160ms cubic-bezier(0.19, 1, 0.22, 1), overlay 160ms ease-out, display 160ms ease-out',
+    transitionBehavior: 'allow-discrete',
+    width: 'min(18rem, calc(100vw - 32px))',
+  }),
+  titleStyle = css({
+    fontSize: theme.fontSize.small,
+    fontWeight: theme.fontWeight.semibold,
+    margin: 0,
+  }),
+  mutedStyle = css({
+    color: 'var(--text-muted)',
+    fontSize: theme.fontSize.small,
+    margin: 0,
+  }),
+  listStyle = css({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.space['3xs'],
+    listStyle: 'none',
+    margin: 0,
+    padding: 0,
+  }),
+  rowStyle = css({
+    alignItems: 'center',
+    display: 'flex',
+    gap: theme.space.xs,
+    justifyContent: 'space-between',
+  }),
+  rowTextStyle = css({
+    display: 'flex',
+    flexDirection: 'column',
+    minWidth: 0,
+  }),
+  valueStyle = css({
+    fontWeight: theme.fontWeight.semibold,
+    overflowWrap: 'anywhere',
+  }),
+  addAllStyle = css({ width: '100%' }),
+  stackGapStyle = css({ marginTop: theme.space.xs })

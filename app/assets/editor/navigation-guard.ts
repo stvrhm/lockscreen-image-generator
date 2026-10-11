@@ -1,4 +1,8 @@
-export interface PendingNavigation { url: string; key: string; type: string }
+export interface PendingNavigation {
+  url: string
+  key: string
+  type: string
+}
 
 /** Guards browser and link navigation while an Editor has unsaved changes. */
 export function guardEditorNavigation(options: {
@@ -6,7 +10,7 @@ export function guardEditorNavigation(options: {
   onRequest(destination: PendingNavigation): void
 }) {
   let currentUrl = location.href,
-   {navigation} = window
+    { navigation } = window
 
   function request(url: string, key = '', type = 'push') {
     if (url === location.href || new URL(url).origin !== location.origin || !options.isDirty()) {
@@ -32,13 +36,20 @@ export function guardEditorNavigation(options: {
       event.ctrlKey ||
       event.shiftKey ||
       event.altKey
-    )
-      {return}
+    ) {
+      return
+    }
     const target = event.target
-    if (!(target instanceof Element)) {return}
+    if (!(target instanceof Element)) {
+      return
+    }
     const link = target.closest('a[href]')
-    if (!(link instanceof HTMLAnchorElement) || link.target || link.hasAttribute('download')) {return}
-    if (request(link.href)) {event.preventDefault()}
+    if (!(link instanceof HTMLAnchorElement) || link.target || link.hasAttribute('download')) {
+      return
+    }
+    if (request(link.href)) {
+      event.preventDefault()
+    }
   }
 
   function onPopState() {
