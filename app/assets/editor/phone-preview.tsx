@@ -3,6 +3,7 @@ import * as popover from '@remix-run/ui/popover'
 
 import type { Platform } from '../../data/devices.ts'
 import { Button } from '../../ui/button.tsx'
+import { Icon } from '../../ui/icon.tsx'
 import { strings } from '../../strings.ts'
 import { theme } from '../../ui/theme.ts'
 import { parseMarkdownLines } from '../../data/markdown.ts'
@@ -67,7 +68,7 @@ export function PhonePreview(
                     handle.update()
                   }}
                 >
-                  ⚠
+                  <Icon name="exclamation-triangle" />
                 </Button>
                 <div
                   role="dialog"

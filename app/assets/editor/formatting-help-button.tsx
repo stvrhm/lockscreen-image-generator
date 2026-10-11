@@ -3,6 +3,7 @@ import * as popover from '@remix-run/ui/popover'
 
 import { strings } from '../../strings.ts'
 import { Button } from '../../ui/button.tsx'
+import { Icon } from '../../ui/icon.tsx'
 import { theme } from '../../ui/theme.ts'
 
 /**
@@ -41,7 +42,7 @@ export function FormattingHelpButton(handle: Handle) {
         ]}
         onClick={() => (open ? hide() : show())}
       >
-        ⓘ
+        <Icon name="question-mark-circle" />
       </Button>
       <div
         id="formatting-help"
