@@ -1,4 +1,4 @@
-import { css, type Handle } from 'remix/component'
+import { type Handle, css } from 'remix/component'
 
 import { Button } from './button.tsx'
 import { animateEntrance, animateExit, animateLayout, spring } from '@remix-run/ui/animation'
@@ -24,12 +24,12 @@ interface ToastRecord extends ToastOptions {
 
 type ToastSubscriber = (toast: ToastRecord) => void
 
-let nextToastId = 0
-let subscribers = new Set<ToastSubscriber>()
-let pendingToasts: ToastRecord[] = []
+let nextToastId = 0,
+ subscribers = new Set<ToastSubscriber>(),
+ pendingToasts: ToastRecord[] = []
 
 export function toast(options: ToastOptions): string {
-  let record: ToastRecord = { ...options, id: `toast-${++nextToastId}` }
+  const record: ToastRecord = { ...options, id: `toast-${++nextToastId}` }
   if (subscribers.size === 0) {
     pendingToasts.push(record)
   } else {
@@ -42,7 +42,7 @@ export const showToast = toast
 
 function subscribe(subscriber: ToastSubscriber) {
   subscribers.add(subscriber)
-  let pending = pendingToasts
+  const pending = pendingToasts
   pendingToasts = []
   pending.forEach(subscriber)
   return () => subscribers.delete(subscriber)
@@ -50,12 +50,12 @@ function subscribe(subscriber: ToastSubscriber) {
 
 declare global {
   interface Window {
-    __tdlUpdateAvailable?: boolean
+    tdlUpdateAvailable?: boolean
   }
 }
 
 // No service worker mediates releases, so the newest build is whatever the
-// network serves. Reloading is the whole update step.
+// Network serves. Reloading is the whole update step.
 function updateToLatest() {
   // Assigning the current URL forces a new document request in installed
   // Safari PWAs, where `location.reload()` can leave the stale client visible.
@@ -63,23 +63,23 @@ function updateToLatest() {
 }
 
 export function ToastViewport(handle: Handle) {
-  let items: ToastRecord[] = []
-  let timers = new Map<string, number>()
-  let pendingActions = new Set<string>()
-  let updateToastShown = false
-  let reduceMotion = false
+  let items: ToastRecord[] = [],
+   timers = new Map<string, number>(),
+   pendingActions = new Set<string>(),
+   updateToastShown = false,
+   reduceMotion = false
 
   function dismiss(id: string) {
-    let timer = timers.get(id)
-    if (timer !== undefined) window.clearTimeout(timer)
+    const timer = timers.get(id)
+    if (timer !== undefined) {window.clearTimeout(timer)}
     timers.delete(id)
     items = items.filter((item) => item.id !== id)
     handle.update()
   }
 
   function scheduleDismiss(item: ToastRecord) {
-    if (item.duration === null) return
-    let duration = item.duration ?? 6000
+    if (item.duration === null) {return}
+    const duration = item.duration ?? 6000
     timers.set(
       item.id,
       window.setTimeout(() => dismiss(item.id), Math.max(1000, duration)),
@@ -93,21 +93,21 @@ export function ToastViewport(handle: Handle) {
   }
 
   function showUpdateToast() {
-    if (updateToastShown) return
+    if (updateToastShown) {return}
     updateToastShown = true
     toast({
-      title: 'Update available',
-      description: 'A newer version of Lockscreens is ready.',
       action: { label: 'Update', onClick: updateToLatest },
+      description: 'A newer version of Lockscreens is ready.',
       duration: null,
+      title: 'Update available',
     })
   }
 
   handle.queueTask(() => {
-    let unsubscribe = subscribe(addItem)
-    let onUpdateAvailable = () => showUpdateToast()
-    let motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)')
-    let onMotionPreferenceChange = (event: MediaQueryListEvent) => {
+    const unsubscribe = subscribe(addItem)
+    const onUpdateAvailable = () => showUpdateToast()
+    const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const onMotionPreferenceChange = (event: MediaQueryListEvent) => {
       reduceMotion = event.matches
       handle.update()
     }
@@ -115,7 +115,7 @@ export function ToastViewport(handle: Handle) {
     motionPreference.addEventListener('change', onMotionPreferenceChange)
     window.addEventListener('tdl:update-available', onUpdateAvailable)
 
-    if (window.__tdlUpdateAvailable) showUpdateToast()
+    if (window.tdlUpdateAvailable) {showUpdateToast()}
 
     handle.signal.addEventListener(
       'abort',
@@ -139,19 +139,19 @@ export function ToastViewport(handle: Handle) {
             toastStyle,
             variantStyles[item.variant ?? 'default'],
             reduceMotion
-              ? animateEntrance({ opacity: 0, duration: 120 })
+              ? animateEntrance({ duration: 120, opacity: 0 })
               : animateEntrance({
                   opacity: 0,
                   transform: 'translateY(8px) scale(0.98)',
                   ...spring('snappy'),
                 }),
             reduceMotion
-              ? animateExit({ opacity: 0, duration: 100 })
+              ? animateExit({ duration: 100, opacity: 0 })
               : animateExit({
-                  opacity: 0,
-                  transform: 'translateY(4px) scale(0.99)',
                   duration: 120,
                   easing: 'ease-in',
+                  opacity: 0,
+                  transform: 'translateY(4px) scale(0.99)',
                 }),
             reduceMotion
               ? animateLayout(false)
@@ -193,52 +193,52 @@ export function ToastViewport(handle: Handle) {
 }
 
 const viewportStyle = css({
-  position: 'fixed',
-  zIndex: 100,
-  inset: 'auto 0 calc(env(safe-area-inset-bottom) + var(--space-sm))',
   display: 'grid',
-  justifyItems: 'center',
   gap: 'var(--space-xs)',
+  inset: 'auto 0 calc(env(safe-area-inset-bottom) + var(--space-sm))',
+  justifyItems: 'center',
   paddingInline: 'var(--space-sm)',
   pointerEvents: 'none',
-})
+  position: 'fixed',
+  zIndex: 100,
+}),
 
-const toastStyle = css({
-  width: 'min(100%, 440px)',
-  display: 'flex',
+ toastStyle = css({
   alignItems: 'center',
-  gap: 'var(--space-xs)',
-  padding: 'var(--space-xs) var(--space-sm)',
+  background: 'var(--toast-background, var(--surface-2))',
   border: '1px solid var(--toast-border, var(--border))',
   borderRadius: 'var(--radius)',
-  background: 'var(--toast-background, var(--surface-2))',
-  color: 'var(--text)',
   boxShadow: '0 16px 45px rgba(0, 0, 0, 0.32)',
+  color: 'var(--text)',
+  display: 'flex',
+  gap: 'var(--space-xs)',
+  padding: 'var(--space-xs) var(--space-sm)',
   pointerEvents: 'auto',
-})
+  width: 'min(100%, 440px)',
+}),
 
-const variantStyles: Record<ToastVariant, ReturnType<typeof css>> = {
+ variantStyles: Record<ToastVariant, ReturnType<typeof css>> = {
   default: css({}),
-  success: css({
-    '--toast-border': 'rgba(74, 222, 128, 0.45)',
-    '--toast-background': 'rgba(20, 83, 45, 0.92)',
-  }),
   error: css({
     '--toast-border': 'rgba(248, 113, 113, 0.5)',
     '--toast-background': 'rgba(127, 29, 29, 0.94)',
   }),
-}
+  success: css({
+    '--toast-border': 'rgba(74, 222, 128, 0.45)',
+    '--toast-background': 'rgba(20, 83, 45, 0.92)',
+  }),
+},
 
-const copyStyle = css({
-  minWidth: 0,
-  flex: '1 1 auto',
+ copyStyle = css({
+  '& p': { color: 'var(--text-muted)', fontSize: 'var(--font-size-small)', margin: '0.2em 0 0' },
   '& strong': { display: 'block', fontWeight: 'var(--font-weight-semibold)' },
-  '& p': { margin: '0.2em 0 0', color: 'var(--text-muted)', fontSize: 'var(--font-size-small)' },
-})
+  flex: '1 1 auto',
+  minWidth: 0,
+}),
 
-const actionButtonStyle = css({
+ actionButtonStyle = css({
   flexShrink: 0,
   whiteSpace: 'nowrap',
-})
+}),
 
-const dismissGlyphStyle = css({ flex: '0 0 auto', fontSize: '1.4rem' })
+ dismissGlyphStyle = css({ flex: '0 0 auto', fontSize: '1.4rem' })

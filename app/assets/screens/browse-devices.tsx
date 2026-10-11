@@ -1,13 +1,13 @@
-import { css, navigate, on, ref, type Handle } from 'remix/component'
+import { type Handle, css, navigate, on, ref } from 'remix/component'
 
 import { flow } from '../../ui/cube/index.ts'
 import { theme } from '../../ui/theme.ts'
 import {
+  type Device,
   deleteDevice,
   duplicateDevice,
   listDevices,
   saveDevice,
-  type Device,
 } from '../../data/devices.ts'
 import {
   DeviceFileDimensionError,
@@ -21,15 +21,15 @@ import { PhonePreview } from '../editor/phone-preview.tsx'
 import { Button } from '../../ui/button.tsx'
 import { toast } from '../../ui/toast.tsx'
 import {
+  actionsRowStyle,
+  headerRowStyle,
+  headingStyle,
   mutedStyle,
   pageStyle,
-  headingStyle,
-  headerRowStyle,
-  actionsRowStyle,
 } from '../../ui/screen-styles.ts'
 
 export function BrowseDevices(handle: Handle<{ devices: Device[] }>) {
-  let devices = handle.props.devices
+  let {devices} = handle.props
   let importInput: HTMLInputElement | null = null
 
   async function refresh() {
@@ -37,39 +37,34 @@ export function BrowseDevices(handle: Handle<{ devices: Device[] }>) {
     handle.update()
   }
 
-  async function onDuplicate(device: Device) {
-    let copy = await duplicateDevice(device)
-    navigate(routes.screens.editDevice.href({ id: copy.id }))
-  }
-
   async function onDelete(device: Device) {
-    if (!window.confirm(strings.browse.confirmDelete)) return
+    if (!window.confirm(strings.browse.confirmDelete)) {return}
     await deleteDevice(device.id)
     await refresh()
   }
 
   async function onImport(file: File) {
     try {
-      let device = await readDeviceFile(file)
+      const device = await readDeviceFile(file)
       await saveDevice(device)
       await refresh()
       toast({ title: strings.browse.imported, variant: 'success' })
     } catch (error) {
       toast({
-        title: strings.browse.importFailed,
         description:
           error instanceof DeviceFileDimensionError
             ? strings.editor.dimensionIssues[error.issue]
             : error instanceof Error
               ? error.message
               : undefined,
+        title: strings.browse.importFailed,
         variant: 'error',
       })
     }
   }
 
-  return () => {
-    return (
+  return () =>
+    (
       <div mix={pageStyle}>
         <header mix={headerRowStyle}>
           <Button href={routes.screens.home.href()} variant="ghost">
@@ -141,7 +136,7 @@ export function BrowseDevices(handle: Handle<{ devices: Device[] }>) {
                   >
                     {strings.browse.edit}
                   </Button>
-                  <Button variant="secondary" onClick={() => void onDuplicate(device)}>
+                  <Button variant="secondary" onClick={() => void duplicateAndNavigate(device)}>
                     {strings.browse.duplicate}
                   </Button>
                   <Button variant="destructive" onClick={() => void onDelete(device)}>
@@ -154,20 +149,25 @@ export function BrowseDevices(handle: Handle<{ devices: Device[] }>) {
         )}
       </div>
     )
-  }
+
 }
 
-const listStyle = [flow({ flowSpace: theme.space.md }), css({ listStyle: 'none', padding: 0 })]
+async function duplicateAndNavigate(device: Device) {
+  const copy = await duplicateDevice(device)
+  navigate(routes.screens.editDevice.href({ id: copy.id }))
+}
 
-const listItemStyle = css({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '12px',
-  padding: '18px',
+const listStyle = [flow({ flowSpace: theme.space.md }), css({ listStyle: 'none', padding: 0 })],
+
+ listItemStyle = css({
   background: 'rgba(17, 17, 19, 0.78)',
   border: '1px solid var(--border)',
   borderRadius: '14px',
   boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.03)',
-})
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '12px',
+  padding: '18px',
+}),
 
-const listMainStyle = flow({ flowSpace: theme.space.xs })
+ listMainStyle = flow({ flowSpace: theme.space.xs })

@@ -5,7 +5,7 @@ import { parseMarkdownLines } from './markdown.ts'
 
 test('parses each Notes line as body text with its inline segments', () => {
   assert.deepEqual(parseMarkdownLines('plain **bold**\n'), [
-    { heading: 'body', segments: [{ text: 'plain ' }, { text: 'bold', bold: true }] },
+    { heading: 'body', segments: [{ text: 'plain ' }, { bold: true, text: 'bold' }] },
     { heading: 'body', segments: [{ text: '' }] },
   ])
 })
@@ -54,13 +54,13 @@ test('parses inline formatting inside Headings', () => {
     {
       heading: 1,
       segments: [
-        { text: 'Pixel', bold: true },
+        { bold: true, text: 'Pixel' },
         { text: ' ' },
-        { text: '9', italic: true },
+        { italic: true, text: '9' },
         { text: ' ' },
-        { text: 'Pro', code: true },
+        { code: true, text: 'Pro' },
         { text: ' ' },
-        { text: 'XL', strike: true },
+        { strike: true, text: 'XL' },
       ],
     },
   ])

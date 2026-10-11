@@ -1,22 +1,22 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { headingPressed, setHeading, type NotesEdit } from './set-heading.ts'
+import { type NotesEdit, headingPressed, setHeading } from './set-heading.ts'
 
 // `|` marks a collapsed cursor; `[` and `]` mark a selection.
 function edit(marked: string): NotesEdit {
-  let cursor = marked.indexOf('|')
+  const cursor = marked.indexOf('|')
   if (cursor !== -1) {
-    return { text: marked.replace('|', ''), start: cursor, end: cursor }
+    return { end: cursor, start: cursor, text: marked.replace('|', '') }
   }
-  let start = marked.indexOf('[')
-  let end = marked.indexOf(']') - 1
-  return { text: marked.replace('[', '').replace(']', ''), start, end }
+  const start = marked.indexOf('[')
+  const end = marked.indexOf(']') - 1
+  return { end, start, text: marked.replace('[', '').replace(']', '') }
 }
 
 function show({ text, start, end }: NotesEdit) {
-  if (start === end) return text.slice(0, start) + '|' + text.slice(start)
-  return text.slice(0, start) + '[' + text.slice(start, end) + ']' + text.slice(end)
+  if (start === end) {return text.slice(0, start) + '|' + text.slice(start)}
+  return `${text.slice(0, start)  }[${  text.slice(start, end)  }]${  text.slice(end)}`
 }
 
 function press(marked: string, level: 1 | 2) {

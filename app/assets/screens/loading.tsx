@@ -8,45 +8,45 @@ import { mutedStyle } from '../../ui/screen-styles.ts'
 /** Shown by the SPA runtime while the first route resolves. */
 export function LoadingScreen() {
   return () => (
-    <div mix={loadingStyle} role="status" aria-live="polite">
+    <output mix={loadingStyle} aria-live="polite">
       <div mix={loadingMarkStyle} aria-hidden="true" />
       <div mix={loadingCopyStyle}>
         <p mix={loadingTitleStyle}>{strings.loading.title}</p>
         <p mix={mutedStyle}>{strings.loading.body}</p>
       </div>
-    </div>
+    </output>
   )
 }
 
 const loadingStyle = [
   wrapper({ gutter: theme.space.lg, maxWidth: '52rem' }),
   css({
-    minHeight: 'min(70dvh, 32rem)',
-    display: 'grid',
-    placeItems: 'center',
     alignContent: 'center',
+    display: 'grid',
     gap: theme.space.xs,
+    minHeight: 'min(70dvh, 32rem)',
+    placeItems: 'center',
     textAlign: 'center',
   }),
-]
+],
 
-const loadingMarkStyle = css({
-  width: '34px',
-  height: '34px',
-  borderRadius: '50%',
-  border: '3px solid rgba(94, 184, 255, 0.2)',
-  borderTopColor: 'var(--accent)',
-  animation: 'loading-spin 0.85s linear infinite',
+ loadingMarkStyle = css({
   '@media (prefers-reduced-motion: reduce)': {
     animation: 'none',
     background: 'var(--accent)',
     borderColor: 'var(--accent)',
   },
-})
+  animation: 'loading-spin 0.85s linear infinite',
+  border: '3px solid rgba(94, 184, 255, 0.2)',
+  borderRadius: '50%',
+  borderTopColor: 'var(--accent)',
+  height: '34px',
+  width: '34px',
+}),
 
-const loadingCopyStyle = flow({ flowSpace: theme.space.xs })
+ loadingCopyStyle = flow({ flowSpace: theme.space.xs }),
 
-const loadingTitleStyle = css({
+ loadingTitleStyle = css({
   fontSize: theme.fontSize.h3,
   fontWeight: theme.fontWeight.bold,
 })

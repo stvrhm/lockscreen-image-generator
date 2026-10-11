@@ -1,4 +1,4 @@
-import { css, type Handle } from 'remix/component'
+import { type Handle, css } from 'remix/component'
 
 import { Button } from '../ui/button.tsx'
 import { flow, repel } from '../ui/cube/index.ts'
@@ -11,9 +11,9 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function InstallHint(handle: Handle) {
-  let visible = false
-  let installPrompt: BeforeInstallPromptEvent | null = null
-  let platform: 'ios' | 'android' = 'ios'
+  let visible = false,
+   installPrompt: BeforeInstallPromptEvent | null = null,
+   platform: 'ios' | 'android' = 'ios'
 
   handle.queueTask(() => {
     if (isAndroid()) {
@@ -28,7 +28,7 @@ export function InstallHint(handle: Handle) {
   })
 
   function onBeforeInstallPrompt(event: BeforeInstallPromptEvent) {
-    if (wasDismissed()) return
+    if (wasDismissed()) {return}
 
     event.preventDefault()
     installPrompt = event
@@ -41,16 +41,16 @@ export function InstallHint(handle: Handle) {
     try {
       localStorage.setItem(DISMISS_KEY, '1')
     } catch {
-      // ignore
+      // Ignore
     }
     visible = false
     handle.update()
   }
 
   async function install() {
-    if (!installPrompt) return
+    if (!installPrompt) {return}
 
-    let prompt = installPrompt
+    const prompt = installPrompt
     installPrompt = null
     visible = false
     handle.update()
@@ -58,7 +58,7 @@ export function InstallHint(handle: Handle) {
   }
 
   return () => {
-    if (!visible) return null
+    if (!visible) {return null}
 
     return (
       <aside mix={cardStyle} aria-label={strings.install.title}>
@@ -88,21 +88,21 @@ export function InstallHint(handle: Handle) {
 }
 
 function isAndroid(): boolean {
-  if (typeof navigator === 'undefined') return false
+  if (typeof navigator === 'undefined') {return false}
   return /android/i.test(navigator.userAgent)
 }
 
 function shouldShowIOS(): boolean {
-  if (typeof navigator === 'undefined' || typeof window === 'undefined') return false
+  if (typeof navigator === 'undefined' || typeof window === 'undefined') {return false}
 
-  let nav = navigator as Navigator & { standalone?: boolean }
-  if (nav.standalone === true) return false
-  if (window.matchMedia?.('(display-mode: standalone)').matches) return false
+  const nav = navigator as Navigator & { standalone?: boolean }
+  if (nav.standalone === true) {return false}
+  if (window.matchMedia?.('(display-mode: standalone)').matches) {return false}
 
-  let isIOS =
+  const isIOS =
     /iphone|ipad|ipod/i.test(nav.userAgent) ||
     (nav.platform === 'MacIntel' && nav.maxTouchPoints > 1)
-  if (!isIOS) return false
+  if (!isIOS) {return false}
 
   return !wasDismissed()
 }
@@ -116,47 +116,47 @@ function wasDismissed(): boolean {
 }
 
 const cardStyle = [
-  repel({ gutter: '12px', alignment: 'flex-start' }),
+  repel({ alignment: 'flex-start', gutter: '12px' }),
   css({
-    padding: '16px',
     background: 'linear-gradient(135deg, rgba(94, 184, 255, 0.1), var(--surface) 48%)',
     border: '1px solid rgba(94, 184, 255, 0.3)',
     borderRadius: 'var(--radius)',
+    padding: '16px',
   }),
-]
+],
 
-const installIconStyle = css({
-  display: 'grid',
-  placeItems: 'center',
-  flex: '0 0 auto',
-  width: '30px',
-  height: '30px',
-  borderRadius: '9px',
+ installIconStyle = css({
   background: 'rgba(94, 184, 255, 0.16)',
+  borderRadius: '9px',
   color: 'var(--accent)',
+  display: 'grid',
+  flex: '0 0 auto',
   fontSize: '22px',
-  lineHeight: 1,
   fontWeight: 400,
-})
+  height: '30px',
+  lineHeight: 1,
+  placeItems: 'center',
+  width: '30px',
+}),
 
-const textStyle = flow({ flowSpace: '6px' })
+ textStyle = flow({ flowSpace: '6px' }),
 
-const titleStyle = css({
+ titleStyle = css({
   fontSize: '15px',
   fontWeight: 600,
-})
+}),
 
-const bodyStyle = css({
-  fontSize: '14px',
+ bodyStyle = css({
   color: 'var(--text-muted)',
+  fontSize: '14px',
   lineHeight: 1.45,
-})
+}),
 
-const stepsStyle = css({
+ stepsStyle = css({
   color: 'var(--accent)',
   fontSize: '13px',
   fontWeight: 600,
   lineHeight: 1.4,
-})
+}),
 
-const installAlignStyle = css({ alignSelf: 'flex-start' })
+ installAlignStyle = css({ alignSelf: 'flex-start' })

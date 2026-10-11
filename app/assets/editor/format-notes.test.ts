@@ -2,23 +2,23 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { parseMarkdownLines } from '../../data/markdown.ts'
-import { inlineFormatActive, toggleInlineFormat, type InlineFormat } from './format-notes.ts'
+import { type InlineFormat, inlineFormatActive, toggleInlineFormat } from './format-notes.ts'
 import type { NotesEdit } from './set-heading.ts'
 
 // `|` marks a collapsed cursor; `[` and `]` mark a selection.
 function edit(marked: string): NotesEdit {
-  let cursor = marked.indexOf('|')
+  const cursor = marked.indexOf('|')
   if (cursor !== -1) {
-    return { text: marked.replace('|', ''), start: cursor, end: cursor }
+    return { end: cursor, start: cursor, text: marked.replace('|', '') }
   }
-  let start = marked.indexOf('[')
-  let end = marked.indexOf(']') - 1
-  return { text: marked.replace('[', '').replace(']', ''), start, end }
+  const start = marked.indexOf('[')
+  const end = marked.indexOf(']') - 1
+  return { end, start, text: marked.replace('[', '').replace(']', '') }
 }
 
 function show({ text, start, end }: NotesEdit) {
-  if (start === end) return text.slice(0, start) + '|' + text.slice(start)
-  return text.slice(0, start) + '[' + text.slice(start, end) + ']' + text.slice(end)
+  if (start === end) {return text.slice(0, start) + '|' + text.slice(start)}
+  return `${text.slice(0, start)  }[${  text.slice(start, end)  }]${  text.slice(end)}`
 }
 
 function press(marked: string, format: InlineFormat) {
@@ -26,7 +26,7 @@ function press(marked: string, format: InlineFormat) {
 }
 
 function active(marked: string, format: InlineFormat) {
-  let { text, start, end } = edit(marked)
+  const { text, start, end } = edit(marked)
   return inlineFormatActive(text, start, end, format)
 }
 
@@ -120,13 +120,13 @@ test('a Heading prefix stays put when an inline format changes', () => {
 })
 
 test('the Wallpaper reads back the toggled formatting', () => {
-  let next = toggleInlineFormat(edit('[hello **there**]'), 'italic')
+  const next = toggleInlineFormat(edit('[hello **there**]'), 'italic')
   assert.deepEqual(parseMarkdownLines(next.text), [
     {
       heading: 'body',
       segments: [
-        { text: 'hello ', italic: true },
-        { text: 'there', bold: true, italic: true },
+        { italic: true, text: 'hello ' },
+        { bold: true, italic: true, text: 'there' },
       ],
     },
   ])

@@ -1,18 +1,18 @@
-export type PendingNavigation = { url: string; key: string; type: string }
+export interface PendingNavigation { url: string; key: string; type: string }
 
 /** Guards browser and link navigation while an Editor has unsaved changes. */
 export function guardEditorNavigation(options: {
   isDirty(): boolean
   onRequest(destination: PendingNavigation): void
 }) {
-  let currentUrl = location.href
-  let navigation = window.navigation
+  let currentUrl = location.href,
+   {navigation} = window
 
   function request(url: string, key = '', type = 'push') {
     if (url === location.href || new URL(url).origin !== location.origin || !options.isDirty()) {
       return false
     }
-    options.onRequest({ url, key, type })
+    options.onRequest({ key, type, url })
     return true
   }
 
@@ -33,12 +33,12 @@ export function guardEditorNavigation(options: {
       event.shiftKey ||
       event.altKey
     )
-      return
-    let target = event.target
-    if (!(target instanceof Element)) return
-    let link = target.closest('a[href]')
-    if (!(link instanceof HTMLAnchorElement) || link.target || link.hasAttribute('download')) return
-    if (request(link.href)) event.preventDefault()
+      {return}
+    const target = event.target
+    if (!(target instanceof Element)) {return}
+    const link = target.closest('a[href]')
+    if (!(link instanceof HTMLAnchorElement) || link.target || link.hasAttribute('download')) {return}
+    if (request(link.href)) {event.preventDefault()}
   }
 
   function onPopState() {
@@ -46,9 +46,9 @@ export function guardEditorNavigation(options: {
       currentUrl = location.href
       return
     }
-    let destinationUrl = location.href
+    const destinationUrl = location.href
     history.pushState(history.state, '', currentUrl)
-    options.onRequest({ url: destinationUrl, key: '', type: 'fallback-back' })
+    options.onRequest({ key: '', type: 'fallback-back', url: destinationUrl })
   }
 
   navigation?.addEventListener('navigate', onNavigate, { capture: true })

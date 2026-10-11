@@ -1,6 +1,6 @@
 import { get, route } from 'remix/routes'
 
-export let routes = route({
+export const routes = route({
   // Served by the Node asset pipeline. Never resolved by the browser router:
   // module URLs are fetched by the browser itself, not navigated to.
   assets: get('/assets/*path'),

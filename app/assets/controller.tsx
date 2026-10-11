@@ -24,6 +24,25 @@ import { Home } from './screens/home.tsx'
  */
 export default createController(routes.screens, {
   actions: {
+    async browseDevices({ get, render }) {
+      let devices = await get(DeviceStore).listDevices()
+      return render(<BrowseDevices devices={devices} />)
+    },
+
+    async continueDevice({ get, render }) {
+      let store = get(DeviceStore)
+      let [draft, devices] = await Promise.all([store.getLastDraft(), store.listDevices()])
+      if (!draft) return redirect(routes.screens.home.href())
+      return render(<Editor draft={draft} devices={devices} editingNew={false} />)
+    },
+
+    async editDevice({ get, params, render }) {
+      let store = get(DeviceStore)
+      let [draft, devices] = await Promise.all([store.findDevice(params.id), store.listDevices()])
+      if (!draft) return redirect(routes.screens.browseDevices.href())
+      return render(<Editor draft={draft} devices={devices} editingNew={false} />)
+    },
+
     async home({ get, render }) {
       let draft = await get(DeviceStore).getLastDraft()
       return render(<Home hasDraft={Boolean(draft)} />)
@@ -40,25 +59,6 @@ export default createController(routes.screens, {
         notes: phoneInfoNotes(info),
       }
       return render(<Editor draft={draft} devices={devices} editingNew />)
-    },
-
-    async continueDevice({ get, render }) {
-      let store = get(DeviceStore)
-      let [draft, devices] = await Promise.all([store.getLastDraft(), store.listDevices()])
-      if (!draft) return redirect(routes.screens.home.href())
-      return render(<Editor draft={draft} devices={devices} editingNew={false} />)
-    },
-
-    async browseDevices({ get, render }) {
-      let devices = await get(DeviceStore).listDevices()
-      return render(<BrowseDevices devices={devices} />)
-    },
-
-    async editDevice({ get, params, render }) {
-      let store = get(DeviceStore)
-      let [draft, devices] = await Promise.all([store.findDevice(params.id), store.listDevices()])
-      if (!draft) return redirect(routes.screens.browseDevices.href())
-      return render(<Editor draft={draft} devices={devices} editingNew={false} />)
     },
   },
 })

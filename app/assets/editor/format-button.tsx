@@ -1,16 +1,16 @@
-import { attrs, css, on, ref, type Handle } from 'remix/component'
+import { type Handle, attrs, css, on, ref } from 'remix/component'
 import * as popover from '@remix-run/ui/popover'
 
 import { Button } from '../../ui/button.tsx'
 import { theme } from '../../ui/theme.ts'
 
-const TOOLTIP_DELAY = 750
+const TOOLTIP_DELAY = 750,
 
-const TOOLTIP_CLOSE_DELAY = 500
+ TOOLTIP_CLOSE_DELAY = 500
 
-let tooltipWarmUntil = 0
+let tooltipWarmUntil = 0,
 
-let activeTooltipHide: ((skipExitAnimation?: boolean) => void) | undefined
+ activeTooltipHide: ((skipExitAnimation?: boolean) => void) | undefined
 
 export function FormatButton(
   handle: Handle<{
@@ -21,17 +21,17 @@ export function FormatButton(
     onArm?: () => void
   }>,
 ) {
-  let visible = false
-  let immediate = false
-  let immediateExit = false
-  let tooltipSurface: (HTMLElement & { hidePopover?: () => void }) | null = null
-  let showTimer: ReturnType<typeof setTimeout> | undefined
-  let hideTimer: ReturnType<typeof setTimeout> | undefined
-  let tooltipId = `format-tooltip-${handle.props.label.toLowerCase().replaceAll(' ', '-')}`
+  let visible = false,
+   immediate = false,
+   immediateExit = false,
+   tooltipSurface: (HTMLElement & { hidePopover?: () => void }) | null = null,
+   showTimer: ReturnType<typeof setTimeout> | undefined,
+   hideTimer: ReturnType<typeof setTimeout> | undefined,
+   tooltipId = `format-tooltip-${handle.props.label.toLowerCase().replaceAll(' ', '-')}`
 
   function clearTimers() {
-    if (showTimer) clearTimeout(showTimer)
-    if (hideTimer) clearTimeout(hideTimer)
+    if (showTimer) {clearTimeout(showTimer)}
+    if (hideTimer) {clearTimeout(hideTimer)}
     showTimer = undefined
     hideTimer = undefined
   }
@@ -41,14 +41,14 @@ export function FormatButton(
     immediateExit = skipExitAnimation
     visible = false
     tooltipSurface?.hidePopover?.()
-    if (activeTooltipHide === hide) activeTooltipHide = undefined
+    if (activeTooltipHide === hide) {activeTooltipHide = undefined}
     tooltipWarmUntil = Date.now() + TOOLTIP_CLOSE_DELAY
     handle.update()
   }
 
   function showImmediately(skipAnimation = false) {
     clearTimers()
-    if (visible) return
+    if (visible) {return}
     activeTooltipHide?.(true)
     immediate = skipAnimation
     immediateExit = false
@@ -60,8 +60,8 @@ export function FormatButton(
 
   function showAfterHover() {
     clearTimers()
-    let skipAnimation = tooltipWarmUntil > Date.now()
-    let delay = skipAnimation ? 0 : TOOLTIP_DELAY
+    const skipAnimation = tooltipWarmUntil > Date.now()
+    const delay = skipAnimation ? 0 : TOOLTIP_DELAY
     showTimer = setTimeout(() => showImmediately(skipAnimation), delay)
   }
 
@@ -71,13 +71,13 @@ export function FormatButton(
   }
 
   return () => {
-    let { label, symbol, pressed, onSelect, onArm } = handle.props
+    const { label, symbol, pressed, onSelect, onArm } = handle.props
     return (
       <popover.Context>
         <span
           mix={[
             tooltipTriggerStyle,
-            popover.anchor({ placement: 'top', offset: 8 }),
+            popover.anchor({ offset: 8, placement: 'top' }),
             on('mouseenter', showAfterHover),
             on('mouseleave', hideAfterHover),
           ]}
@@ -92,10 +92,10 @@ export function FormatButton(
               attrs({ 'aria-describedby': tooltipId }),
               popover.focusOnHide(),
               // Keyboard focus only: a tap or click also focuses the button, and
-              // opening the tooltip between that focus and the click swallows
-              // the click, so the first tap would do nothing.
+              // Opening the tooltip between that focus and the click swallows
+              // The click, so the first tap would do nothing.
               on<HTMLButtonElement>('focus', (event) => {
-                if (event.currentTarget.matches(':focus-visible')) showImmediately()
+                if (event.currentTarget.matches(':focus-visible')) {showImmediately()}
               }),
               on<HTMLButtonElement>('blur', () => hide()),
               on<HTMLButtonElement>('pointerdown', () => {
@@ -118,8 +118,8 @@ export function FormatButton(
               tooltipSurface = node as HTMLElement & { hidePopover?: () => void }
             }),
             popover.surface({
-              open: visible,
               onHide: () => hide(),
+              open: visible,
               restoreFocusOnHide: false,
             }),
           ]}
@@ -132,110 +132,110 @@ export function FormatButton(
 }
 
 const tooltipTriggerStyle = css({
-  position: 'relative',
   display: 'inline-flex',
   minWidth: 0,
-})
+  position: 'relative',
+}),
 
-const tooltipStyle = css({
-  position: 'fixed',
-  inset: 'auto',
-  margin: 0,
-  overflow: 'visible',
-  padding: '5px 8px',
-  border: '1px solid var(--border)',
-  borderRadius: '6px',
-  background: 'var(--surface-3)',
-  color: 'var(--text)',
-  boxShadow: 'var(--shadow-soft)',
-  fontSize: theme.fontSize.small,
-  fontWeight: theme.fontWeight.medium,
-  lineHeight: 1.2,
-  whiteSpace: 'nowrap',
-  pointerEvents: 'none',
-  opacity: 0,
-  transform: 'translateY(4px)',
-  transition:
-    'opacity 160ms ease-out, transform 160ms cubic-bezier(0.19, 1, 0.22, 1), overlay 160ms ease-out, display 160ms ease-out',
-  transitionBehavior: 'allow-discrete',
-  '&:popover-open': {
-    opacity: 1,
-    transform: 'translate(0, 0)',
+ tooltipStyle = css({
+  '&::after': {
+    background: 'var(--surface-3)',
+    borderBottom: '1px solid var(--border)',
+    borderRight: '1px solid var(--border)',
+    bottom: '-5px',
+    content: '""',
+    height: '8px',
+    left: '50%',
+    position: 'absolute',
+    transform: 'translateX(-50%) rotate(45deg)',
+    width: '8px',
   },
   '&:not(:popover-open)': {
     pointerEvents: 'none',
   },
+  '&:popover-open': {
+    opacity: 1,
+    transform: 'translate(0, 0)',
+  },
   '&[data-anchor-placement^="bottom"]': {
     transform: 'translateY(-4px)',
+  },
+  '&[data-anchor-placement^="bottom"]::after': {
+    borderBottom: 0,
+    borderLeft: '1px solid var(--border)',
+    borderRight: 0,
+    borderTop: '1px solid var(--border)',
+    bottom: 'auto',
+    left: '50%',
+    right: 'auto',
+    top: '-5px',
+    transform: 'translateX(-50%) rotate(45deg)',
   },
   '&[data-anchor-placement^="left"]': {
     transform: 'translateX(4px)',
   },
+  '&[data-anchor-placement^="left"]::after': {
+    borderBottom: '1px solid var(--border)',
+    borderLeft: 0,
+    borderRight: '1px solid var(--border)',
+    borderTop: 0,
+    bottom: 'auto',
+    left: 'auto',
+    right: '-5px',
+    top: '50%',
+    transform: 'translateY(-50%) rotate(45deg)',
+  },
   '&[data-anchor-placement^="right"]': {
     transform: 'translateX(-4px)',
   },
-  '&::after': {
-    content: '""',
-    position: 'absolute',
-    width: '8px',
-    height: '8px',
-    left: '50%',
-    bottom: '-5px',
-    borderRight: '1px solid var(--border)',
-    borderBottom: '1px solid var(--border)',
-    background: 'var(--surface-3)',
-    transform: 'translateX(-50%) rotate(45deg)',
-  },
-  '&[data-anchor-placement^="bottom"]::after': {
-    top: '-5px',
-    right: 'auto',
-    bottom: 'auto',
-    left: '50%',
-    borderTop: '1px solid var(--border)',
+  '&[data-anchor-placement^="right"]::after': {
+    borderBottom: 0,
     borderLeft: '1px solid var(--border)',
     borderRight: 0,
-    borderBottom: 0,
-    transform: 'translateX(-50%) rotate(45deg)',
-  },
-  '&[data-anchor-placement^="left"]::after': {
-    top: '50%',
-    right: '-5px',
-    bottom: 'auto',
-    left: 'auto',
-    borderTop: 0,
-    borderLeft: 0,
-    borderRight: '1px solid var(--border)',
-    borderBottom: '1px solid var(--border)',
-    transform: 'translateY(-50%) rotate(45deg)',
-  },
-  '&[data-anchor-placement^="right"]::after': {
-    top: '50%',
-    right: 'auto',
+    borderTop: '1px solid var(--border)',
     bottom: 'auto',
     left: '-5px',
-    borderTop: '1px solid var(--border)',
-    borderLeft: '1px solid var(--border)',
-    borderRight: 0,
-    borderBottom: 0,
+    right: 'auto',
+    top: '50%',
     transform: 'translateY(-50%) rotate(45deg)',
   },
   '@media (prefers-reduced-motion: reduce)': {
-    transition: 'opacity 160ms ease-out, overlay 160ms ease-out, display 160ms ease-out',
-    transform: 'none',
     '&:popover-open': { transform: 'none' },
     '&[data-anchor-placement^="bottom"]': { transform: 'none' },
     '&[data-anchor-placement^="left"]': { transform: 'none' },
     '&[data-anchor-placement^="right"]': { transform: 'none' },
+    transform: 'none',
+    transition: 'opacity 160ms ease-out, overlay 160ms ease-out, display 160ms ease-out',
   },
-})
+  background: 'var(--surface-3)',
+  border: '1px solid var(--border)',
+  borderRadius: '6px',
+  boxShadow: 'var(--shadow-soft)',
+  color: 'var(--text)',
+  fontSize: theme.fontSize.small,
+  fontWeight: theme.fontWeight.medium,
+  inset: 'auto',
+  lineHeight: 1.2,
+  margin: 0,
+  opacity: 0,
+  overflow: 'visible',
+  padding: '5px 8px',
+  pointerEvents: 'none',
+  position: 'fixed',
+  transform: 'translateY(4px)',
+  transition:
+    'opacity 160ms ease-out, transform 160ms cubic-bezier(0.19, 1, 0.22, 1), overlay 160ms ease-out, display 160ms ease-out',
+  transitionBehavior: 'allow-discrete',
+  whiteSpace: 'nowrap',
+}),
 
-const tooltipImmediateStyle = css({
+ tooltipImmediateStyle = css({
   '&:popover-open': {
     transition: 'none',
   },
-})
+}),
 
-const tooltipImmediateExitStyle = css({
+ tooltipImmediateExitStyle = css({
   '&:not(:popover-open)': {
     transition: 'none',
   },

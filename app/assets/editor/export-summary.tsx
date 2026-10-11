@@ -1,7 +1,7 @@
-import { css, type Handle } from 'remix/component'
+import { type Handle, css } from 'remix/component'
 
 import { theme } from '../../ui/theme.ts'
-import { type Device } from '../../data/devices.ts'
+import type { Device } from '../../data/devices.ts'
 import { strings } from '../../strings.ts'
 
 export function ExportSummary(
@@ -12,8 +12,8 @@ export function ExportSummary(
   }>,
 ) {
   return () => {
-    let { device, size, automatic } = handle.props
-    let exportStatus =
+    const { device, size, automatic } = handle.props
+    const exportStatus =
       device.exportSizeMode === 'auto'
         ? automatic
           ? strings.editor.detectedAutomatically
@@ -34,13 +34,13 @@ export function ExportSummary(
 }
 
 const exportSummaryStyle = css({
+  color: 'var(--text-muted)',
   display: 'flex',
   flexDirection: 'column',
-  gap: theme.space['3xs'],
-  width: '100%',
-  color: 'var(--text-muted)',
   fontSize: theme.fontSize.small,
+  gap: theme.space['3xs'],
   lineHeight: 1.35,
-  textAlign: 'center',
   strong: { color: 'var(--text)', fontWeight: 600 },
+  textAlign: 'center',
+  width: '100%',
 })

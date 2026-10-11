@@ -6,14 +6,14 @@ import { createBrowserRouter } from './browser-router.tsx'
 import type { DeviceStore } from './device-store.ts'
 
 // `remix/spa`'s render middleware builds responses that carry Remix nodes and
-// refuses to run outside a browser, so the screens themselves are covered by
-// the browser tier. The redirect contract never reaches render and is asserted
-// here: these are the paths that previously mutated `window.location` after a
-// screen had already started rendering.
+// Refuses to run outside a browser, so the screens themselves are covered by
+// The browser tier. The redirect contract never reaches render and is asserted
+// Here: these are the paths that previously mutated `window.location` after a
+// Screen had already started rendering.
 const emptyStore: DeviceStore = {
-  listDevices: async () => [],
   findDevice: async () => undefined,
   getLastDraft: async () => undefined,
+  listDevices: async () => [],
 }
 
 function fetchScreen(href: string, store: DeviceStore = emptyStore) {

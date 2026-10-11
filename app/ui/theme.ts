@@ -3,11 +3,11 @@ import { fluidSpace, fluidType, generatedThemeCss, leading, weights } from './ge
 export const THEME_COLOR = '#15171b'
 
 export const theme = {
-  space: fluidSpace,
-  radius: { sm: '8px', md: '12px', lg: '20px', full: '999px' },
   fontSize: fluidType,
   fontWeight: weights,
   leading,
+  radius: { full: '999px', lg: '20px', md: '12px', sm: '8px' },
+  space: fluidSpace,
 } as const
 
 export const baseCss = `${generatedThemeCss}

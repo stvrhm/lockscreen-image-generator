@@ -11,10 +11,10 @@ import { Document } from '../../ui/document.tsx'
  */
 export default createController(routes.screens, {
   actions: {
+    browseDevices: (context) => context.render(<Document />),
+    continueDevice: (context) => context.render(<Document />),
+    editDevice: (context) => context.render(<Document />),
     home: (context) => context.render(<Document />),
     newDevice: (context) => context.render(<Document />),
-    continueDevice: (context) => context.render(<Document />),
-    browseDevices: (context) => context.render(<Document />),
-    editDevice: (context) => context.render(<Document />),
   },
 })

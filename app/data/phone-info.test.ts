@@ -4,22 +4,22 @@ import test from 'node:test'
 import { detectPhoneInfo, phoneInfoItems, phoneInfoNotes, readPhoneInfo } from './phone-info.ts'
 
 const ua = {
+  androidChrome:
+    'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Mobile Safari/537.36',
+  firefoxAndroid: 'Mozilla/5.0 (Android 14; Mobile; rv:143.0) Gecko/143.0 Firefox/143.0',
   ios26Safari:
     'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1',
   iosChrome:
     'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/140.0.7339.101 Mobile/15E148 Safari/604.1',
-  androidChrome:
-    'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Mobile Safari/537.36',
-  samsungInternet:
-    'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/28.0 Chrome/130.0.0.0 Mobile Safari/537.36',
-  firefoxAndroid: 'Mozilla/5.0 (Android 14; Mobile; rv:143.0) Gecko/143.0 Firefox/143.0',
-  macChrome:
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
-  windowsChrome:
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
   linuxChrome:
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
+  macChrome:
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
   macFirefox: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14.5; rv:130.0) Gecko/20100101 Firefox/130.0',
+  samsungInternet:
+    'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/28.0 Chrome/130.0.0.0 Mobile Safari/537.36',
+  windowsChrome:
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
 }
 
 test('iOS Safari reports iPhone and the Safari version, not the frozen OS token', () => {
@@ -83,11 +83,11 @@ test('an empty user agent detects nothing', () => {
 
 test('items list each detected value with its Notes line', () => {
   assert.deepEqual(phoneInfoItems({ model: 'Pixel 7', os: 'Android 14' }), [
-    { kind: 'model', value: 'Pixel 7', line: '# Pixel 7' },
-    { kind: 'os', value: 'Android 14', line: 'Android 14' },
+    { kind: 'model', line: '# Pixel 7', value: 'Pixel 7' },
+    { kind: 'os', line: 'Android 14', value: 'Android 14' },
   ])
   assert.deepEqual(phoneInfoItems({ os: 'Android 14' }), [
-    { kind: 'os', value: 'Android 14', line: 'Android 14' },
+    { kind: 'os', line: 'Android 14', value: 'Android 14' },
   ])
 })
 
@@ -102,8 +102,8 @@ test('Notes omit undetected items', () => {
 })
 
 test('reading from the Host uses Client Hints where available', async () => {
-  let requested: string[] = []
-  let info = await readPhoneInfo({
+  let requested: string[] = [],
+   info = await readPhoneInfo({
     host: {
       userAgent: ua.androidChrome,
       userAgentData: {
@@ -120,7 +120,7 @@ test('reading from the Host uses Client Hints where available', async () => {
 })
 
 test('a Client Hints rejection counts as unavailable', async () => {
-  let info = await readPhoneInfo({
+  const info = await readPhoneInfo({
     host: {
       userAgent: ua.androidChrome,
       userAgentData: { getHighEntropyValues: () => Promise.reject(new Error('denied')) },
@@ -138,7 +138,7 @@ test('reading from a Host without Client Hints uses the user agent alone', async
 })
 
 test('Client Hints that take too long count as unavailable', async () => {
-  let info = await readPhoneInfo({
+  const info = await readPhoneInfo({
     host: {
       userAgent: ua.androidChrome,
       userAgentData: { getHighEntropyValues: () => new Promise(() => {}) },
@@ -150,7 +150,7 @@ test('Client Hints that take too long count as unavailable', async () => {
 })
 
 test('the time limit still leaves the user agent to read', async () => {
-  let info = await readPhoneInfo({
+  const info = await readPhoneInfo({
     host: {
       userAgent: ua.firefoxAndroid,
       userAgentData: { getHighEntropyValues: () => new Promise(() => {}) },

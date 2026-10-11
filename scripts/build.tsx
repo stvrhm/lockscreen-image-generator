@@ -1,40 +1,39 @@
 // Static client-only build for Netlify. Installable from the manifest; no
-// service worker, so every launch loads current bytes from the network.
+// Service worker, so every launch loads current bytes from the network.
 import { cpSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 import { renderToStream } from 'remix/component/server'
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-const DIST = join(ROOT, 'dist')
-const BUILD_ID = new Date()
+const ROOT = join(import.meta.dirname, '..'),
+ DIST = join(ROOT, 'dist'),
+ BUILD_ID = new Date()
   .toISOString()
-  .replace(/[^0-9]/g, '')
+  .replaceAll(/[^0-9]/g, '')
   .slice(0, 14)
 
 // Every release gets fresh module URLs. Safari keeps serving ES modules it has
-// already loaded at a URL, ignoring `no-cache`, so reusing `/assets/...` across
-// builds pinned it to the old code even after reloads. The asset server reads
-// its base path at import time, so set it before loading anything that uses it.
+// Already loaded at a URL, ignoring `no-cache`, so reusing `/assets/...` across
+// Builds pinned it to the old code even after reloads. The asset server reads
+// Its base path at import time, so set it before loading anything that uses it.
 process.env.ASSET_BASE_PATH = `/assets/${BUILD_ID}`
-const { assetServer } = await import('../app/assets.ts')
-const { Document } = await import('../app/ui/document.tsx')
+const { assetServer } = await import('../app/assets.ts'),
+ { Document } = await import('../app/ui/document.tsx'),
 
 // One entry now. Screens are plain modules reached through the browser router
 // rather than separately hydrated islands, so the entry's import graph already
 // covers everything the browser needs.
-const CLIENT_ENTRIES = ['app/assets/entry.tsx', 'app/ui/public/reset.css']
+ CLIENT_ENTRIES = ['app/assets/entry.tsx', 'app/ui/public/reset.css']
 
 async function renderIndexHtml(): Promise<string> {
   // A neutral shell with an empty body. The SPA router fills it in from the
-  // requested URL, so no screen is baked into the static HTML.
+  // Requested URL, so no screen is baked into the static HTML.
   const stream = renderToStream(<Document />, {
     onError(error) {
       throw error
     },
-  })
-  const html = await new Response(stream).text()
+  }),
+   html = await new Response(stream).text()
   return `<!doctype html>\n${html}`
 }
 
@@ -46,11 +45,11 @@ function writeFileEnsured(absPath: string, data: Buffer | string) {
 // One-shot kill switch for the caching worker shipped by earlier builds.
 //
 // The app no longer uses a service worker: it is installable from the manifest
-// alone and always loads from the network, so every launch is current. The old
-// worker answered navigations cache-first, which could pin an installed device
-// to a stale release that redeploying could not dislodge. Deleting `sw.js`
-// would leave those installs controlled by it forever, so this worker ships in
-// its place to unregister itself and drop the caches it created.
+// Alone and always loads from the network, so every launch is current. The old
+// Worker answered navigations cache-first, which could pin an installed device
+// To a stale release that redeploying could not dislodge. Deleting `sw.js`
+// Would leave those installs controlled by it forever, so this worker ships in
+// Its place to unregister itself and drop the caches it created.
 //
 // It deliberately has no `fetch` handler, so requests bypass it entirely.
 function cleanupWorkerSource(): string {
@@ -78,7 +77,7 @@ self.addEventListener('activate', (event) => {
 
 async function build() {
   console.log(`Building static client-only bundle (build ${BUILD_ID})…`)
-  rmSync(DIST, { recursive: true, force: true })
+  rmSync(DIST, { force: true, recursive: true })
   mkdirSync(DIST, { recursive: true })
 
   const html = await renderIndexHtml()
@@ -86,7 +85,7 @@ async function build() {
   console.log(`  index.html (${html.length} bytes)`)
 
   const assetUrls = await assetServer.getPreloads(CLIENT_ENTRIES)
-  for (const assetUrl of assetUrls) {
+  const assets = await Promise.all(assetUrls.map(async (assetUrl) => {
     const res = await assetServer.fetch(new Request(new URL(assetUrl, 'http://build.local')))
     if (!res || !res.ok) {
       throw new Error(`Asset fetch failed for ${assetUrl}: ${res?.status}`)
@@ -95,9 +94,10 @@ async function build() {
     // Netlify decodes URL-encoded path segments before resolving static files.
     // Write package paths such as `%40remix-run` under their decoded name so
     // `/assets/npm/%40remix-run/...` resolves instead of falling through to
-    // the SPA HTML fallback.
-    writeFileEnsured(join(DIST, decodeURIComponent(assetUrl.replace(/^\//, ''))), bytes)
-  }
+    // The SPA HTML fallback.
+    return [join(DIST, decodeURIComponent(assetUrl.replace(/^\//, ''))), bytes] as const
+  }))
+  for (const [path, bytes] of assets) writeFileEnsured(path, bytes)
   console.log(`  ${assetUrls.length} assets`)
 
   cpSync(join(ROOT, 'public'), DIST, { recursive: true })

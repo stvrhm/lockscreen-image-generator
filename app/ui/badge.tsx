@@ -1,4 +1,4 @@
-import { css, type Handle, type RemixNode } from 'remix/component'
+import { type Handle, type RemixNode, css } from 'remix/component'
 
 import { theme } from './theme.ts'
 
@@ -8,15 +8,15 @@ export function Badge(handle: Handle<{ children?: RemixNode }>) {
 }
 
 const badgeStyle = css({
-  display: 'inline-flex',
   alignItems: 'center',
   border: '1px solid var(--border)',
   borderRadius: theme.radius.full,
-  padding: '0.75ex 1.5ex',
   color: 'var(--text-muted)',
+  display: 'inline-flex',
   fontSize: theme.fontSize.small,
   fontWeight: theme.fontWeight.semibold,
-  lineHeight: 1,
-  textTransform: 'uppercase',
   letterSpacing: '0.06em',
+  lineHeight: 1,
+  padding: '0.75ex 1.5ex',
+  textTransform: 'uppercase',
 })

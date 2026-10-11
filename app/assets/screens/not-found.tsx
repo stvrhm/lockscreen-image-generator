@@ -1,7 +1,7 @@
 import { strings } from '../../strings.ts'
 import { routes } from '../../routes.ts'
 import { Button } from '../../ui/button.tsx'
-import { mutedStyle, pageStyle, headingStyle, headerRowStyle } from '../../ui/screen-styles.ts'
+import { headerRowStyle, headingStyle, mutedStyle, pageStyle } from '../../ui/screen-styles.ts'
 
 /** Rendered by the browser router for a URL that matches no screen. */
 export function NotFoundScreen() {

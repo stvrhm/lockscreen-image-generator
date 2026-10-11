@@ -21,8 +21,8 @@ export interface DocumentProps {
  */
 export function Document(handle: Handle<DocumentProps>) {
   return () => {
-    let { head, title = strings.appName } = handle.props
-    let { href, importMap, preloads } = scriptEntry
+    const { head, title = strings.appName } = handle.props
+    const { href, importMap, preloads } = scriptEntry
 
     return (
       <html lang="en">
@@ -45,7 +45,7 @@ export function Document(handle: Handle<DocumentProps>) {
           <style>{baseCss}</style>
           {head}
           <script type="importmap" data-rmx-import-map>
-            {JSON.stringify(importMap).replaceAll('<', '\\u003c')}
+            {JSON.stringify(importMap).replaceAll('<', String.raw`\u003c`)}
           </script>
           {preloads.map((preloadHref) => (
             <link key={preloadHref} rel="modulepreload" href={preloadHref} />

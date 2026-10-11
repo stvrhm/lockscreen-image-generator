@@ -3,12 +3,12 @@ import { createRequestListener } from 'remix/node-fetch-server'
 
 import { router } from './app/router.tsx'
 
-const port = process.env.PORT ? Number.parseInt(process.env.PORT, 10) : 44100
+const port = process.env.PORT ? Number.parseInt(process.env.PORT, 10) : 44_100
 const hmrProxyPort = process.env.HMR_PROXY_PORT
   ? Number.parseInt(process.env.HMR_PROXY_PORT, 10)
-  : null
+  : null,
 
-const server = http.createServer(
+ server = http.createServer(
   createRequestListener(async (request) => {
     try {
       return await router.fetch(request)
@@ -32,7 +32,7 @@ server.listen(port, () => {
 let shuttingDown = false
 
 function shutdown() {
-  if (shuttingDown) return
+  if (shuttingDown) {return}
   shuttingDown = true
   server.close(() => process.exit(0))
   server.closeAllConnections()

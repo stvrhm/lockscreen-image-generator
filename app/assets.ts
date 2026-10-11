@@ -1,15 +1,15 @@
 import { createAssetServer } from 'remix/assets'
 import { componentHmr } from 'remix/component-hmr/assets'
 
-const rootDir = process.cwd()
-const nodeEnv = process.env.NODE_ENV ?? 'development'
-const isDevelopment = nodeEnv === 'development'
-const isHmr = Boolean(isDevelopment && process.env.REMIX_NODE_HMR)
+const rootDir = process.cwd(),
+ nodeEnv = process.env.NODE_ENV ?? 'development',
+ isDevelopment = nodeEnv === 'development',
+ isHmr = Boolean(isDevelopment && process.env.REMIX_NODE_HMR)
 
 // The static build puts its build id in every module URL (see
-// scripts/build.tsx). Safari reuses ES modules it has already loaded at a URL
-// without revalidating them, even across reloads and despite `no-cache`, so a
-// new release must reach the browser under new URLs.
+// Scripts/build.tsx). Safari reuses ES modules it has already loaded at a URL
+// Without revalidating them, even across reloads and despite `no-cache`, so a
+// New release must reach the browser under new URLs.
 export const assetBasePath = process.env.ASSET_BASE_PATH ?? '/assets'
 
 export const assetServer = createAssetServer({
@@ -17,7 +17,7 @@ export const assetServer = createAssetServer({
   rootDir,
   // Client SPA: name the browser-reachable trees explicitly. `app/actions/**`,
   // `app/router.ts`, and this file are server-only and simply absent from the
-  // allow list rather than recovered afterwards by deny rules.
+  // Allow list rather than recovered afterwards by deny rules.
   allowFiles: ['app/assets/**', 'app/data/**', 'app/ui/**', 'app/routes.ts', 'app/strings.ts'],
   allowPackages: ['remix', '@remix-run/ui', 'bowser'],
   denyFiles: ['app/**/*.server.*', 'app/**/*.test.*', 'app/assets.ts'],

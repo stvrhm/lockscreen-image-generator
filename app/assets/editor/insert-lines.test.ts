@@ -5,19 +5,19 @@ import { insertLines } from './insert-lines.ts'
 
 // `|` marks a collapsed cursor; `[` and `]` mark a selection.
 function edit(marked: string) {
-  let cursor = marked.indexOf('|')
+  const cursor = marked.indexOf('|')
   if (cursor !== -1) {
-    return { text: marked.replace('|', ''), start: cursor, end: cursor }
+    return { end: cursor, start: cursor, text: marked.replace('|', '') }
   }
-  let start = marked.indexOf('[')
-  let end = marked.indexOf(']') - 1
-  return { text: marked.replace('[', '').replace(']', ''), start, end }
+  const start = marked.indexOf('[')
+  const end = marked.indexOf(']') - 1
+  return { end, start, text: marked.replace('[', '').replace(']', '') }
 }
 
 function insert(marked: string, lines: string) {
-  let { text, start, end } = insertLines(edit(marked), lines)
+  const { text, start, end } = insertLines(edit(marked), lines)
   assert.equal(start, end, 'insertion leaves a collapsed cursor')
-  return text.slice(0, start) + '|' + text.slice(start)
+  return `${text.slice(0, start)  }|${  text.slice(start)}`
 }
 
 test('fills empty Notes', () => {

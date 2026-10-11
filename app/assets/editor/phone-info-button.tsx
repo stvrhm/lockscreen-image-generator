@@ -1,11 +1,11 @@
-import { attrs, css, type Handle } from 'remix/component'
+import { type Handle, attrs, css } from 'remix/component'
 import * as popover from '@remix-run/ui/popover'
 
 import {
+  type PhoneInfo,
   phoneInfoItems,
   phoneInfoNotes,
   readPhoneInfo,
-  type PhoneInfo,
 } from '../../data/phone-info.ts'
 import { strings } from '../../strings.ts'
 import { Button } from '../../ui/button.tsx'
@@ -16,20 +16,21 @@ import { theme } from '../../ui/theme.ts'
  * read fresh each time it opens. `onAdd` receives Notes lines in the pre-fill
  * format and owns focus afterwards.
  */
+// oxlint-disable jsx-a11y/prefer-tag-over-role -- A dialog popover must use a controlled div; native dialog state conflicts with showPopover().
 export function PhoneInfoButton(handle: Handle<{ onAdd: (lines: string) => void }>) {
-  let open = false
-  let info: PhoneInfo | undefined
-  let restoreFocus = true
-  let reads = 0
+  let open = false,
+   info: PhoneInfo | undefined,
+   restoreFocus = true,
+   reads = 0
 
   function show() {
     open = true
     restoreFocus = true
     info = undefined
-    let read = ++reads
+    const read = ++reads
     handle.update()
     void readPhoneInfo().then((result) => {
-      if (read !== reads || handle.signal.aborted) return
+      if (read !== reads || handle.signal.aborted) {return}
       info = result
       handle.update()
     })
@@ -48,8 +49,8 @@ export function PhoneInfoButton(handle: Handle<{ onAdd: (lines: string) => void 
   }
 
   return () => {
-    let items = info ? rows(info) : []
-    let allLines = info ? phoneInfoNotes(info) : ''
+    const items = info ? rows(info) : []
+    const allLines = info ? phoneInfoNotes(info) : ''
     return (
       <popover.Context>
         <Button
@@ -59,11 +60,11 @@ export function PhoneInfoButton(handle: Handle<{ onAdd: (lines: string) => void 
           mix={[
             triggerStyle,
             attrs({
-              'aria-haspopup': 'dialog',
-              'aria-expanded': open ? 'true' : 'false',
               'aria-controls': 'phone-info-overlay',
+              'aria-expanded': open ? 'true' : 'false',
+              'aria-haspopup': 'dialog',
             }),
-            popover.anchor({ placement: 'bottom-end', offset: 8 }),
+            popover.anchor({ offset: 8, placement: 'bottom-end' }),
             popover.focusOnHide(),
           ]}
           onClick={() => (open ? hide() : show())}
@@ -78,15 +79,13 @@ export function PhoneInfoButton(handle: Handle<{ onAdd: (lines: string) => void 
           mix={[
             panelStyle,
             popover.focusOnShow(),
-            popover.surface({ open, onHide: hide, restoreFocusOnHide: restoreFocus }),
+            popover.surface({ onHide: hide, open, restoreFocusOnHide: restoreFocus }),
           ]}
         >
           <p id="phone-info-title" mix={titleStyle}>
             {strings.editor.phoneInfo}
           </p>
-          {!info ? (
-            <p mix={[mutedStyle, stackGapStyle]}>{strings.editor.phoneInfoDetecting}</p>
-          ) : items.length === 0 ? (
+          {info ? items.length === 0 ? (
             <p mix={[mutedStyle, stackGapStyle]}>{strings.editor.phoneInfoEmpty}</p>
           ) : (
             <>
@@ -119,97 +118,100 @@ export function PhoneInfoButton(handle: Handle<{ onAdd: (lines: string) => void 
                 {strings.editor.phoneInfoAddAll}
               </Button>
             </>
+          ) : (
+            <p mix={[mutedStyle, stackGapStyle]}>{strings.editor.phoneInfoDetecting}</p>
           )}
         </div>
       </popover.Context>
     )
   }
 }
+// oxlint-enable jsx-a11y/prefer-tag-over-role
 
 function rows(info: PhoneInfo) {
-  return phoneInfoItems(info).map((item) => ({ ...item, name: itemNames[item.kind] }))
+  return phoneInfoItems(info).map((item) => Object.assign({}, item, { name: itemNames[item.kind] }))
 }
 
 const itemNames = {
   model: strings.editor.phoneInfoModel,
   os: strings.editor.phoneInfoOS,
-}
+},
 
-const triggerStyle = css({
-  marginInlineStart: 'auto',
+ triggerStyle = css({
   fontSize: '1.125rem',
   fontWeight: theme.fontWeight.medium,
-})
+  marginInlineStart: 'auto',
+}),
 
-const panelStyle = css({
-  position: 'fixed',
-  inset: 'auto',
-  margin: 0,
-  width: 'min(18rem, calc(100vw - 32px))',
-  padding: theme.space.sm,
-  border: '1px solid var(--border)',
-  borderRadius: theme.radius.md,
-  background: 'var(--surface-3)',
-  color: 'var(--text)',
-  boxShadow: 'var(--shadow-soft)',
-  outline: 'none',
-  opacity: 0,
-  transform: 'translateY(-4px)',
-  transition:
-    'opacity 160ms ease-out, transform 160ms cubic-bezier(0.19, 1, 0.22, 1), overlay 160ms ease-out, display 160ms ease-out',
-  transitionBehavior: 'allow-discrete',
+ panelStyle = css({
   '&:popover-open': {
     opacity: 1,
     transform: 'translate(0, 0)',
   },
   '&[data-anchor-placement^="top"]': { transform: 'translateY(4px)' },
   '@media (prefers-reduced-motion: reduce)': {
-    transition: 'opacity 160ms ease-out, overlay 160ms ease-out, display 160ms ease-out',
-    transform: 'none',
     '&:popover-open': { transform: 'none' },
     '&[data-anchor-placement^="top"]': { transform: 'none' },
+    transform: 'none',
+    transition: 'opacity 160ms ease-out, overlay 160ms ease-out, display 160ms ease-out',
   },
-})
-
-const titleStyle = css({
+  background: 'var(--surface-3)',
+  border: '1px solid var(--border)',
+  borderRadius: theme.radius.md,
+  boxShadow: 'var(--shadow-soft)',
+  color: 'var(--text)',
+  inset: 'auto',
   margin: 0,
+  opacity: 0,
+  outline: 'none',
+  padding: theme.space.sm,
+  position: 'fixed',
+  transform: 'translateY(-4px)',
+  transition:
+    'opacity 160ms ease-out, transform 160ms cubic-bezier(0.19, 1, 0.22, 1), overlay 160ms ease-out, display 160ms ease-out',
+  transitionBehavior: 'allow-discrete',
+  width: 'min(18rem, calc(100vw - 32px))',
+}),
+
+ titleStyle = css({
   fontSize: theme.fontSize.small,
   fontWeight: theme.fontWeight.semibold,
-})
-
-const mutedStyle = css({
   margin: 0,
-  fontSize: theme.fontSize.small,
-  color: 'var(--text-muted)',
-})
+}),
 
-const listStyle = css({
+ mutedStyle = css({
+  color: 'var(--text-muted)',
+  fontSize: theme.fontSize.small,
+  margin: 0,
+}),
+
+ listStyle = css({
   display: 'flex',
   flexDirection: 'column',
   gap: theme.space['3xs'],
+  listStyle: 'none',
   margin: 0,
   padding: 0,
-  listStyle: 'none',
-})
+}),
 
-const rowStyle = css({
-  display: 'flex',
+ rowStyle = css({
   alignItems: 'center',
-  justifyContent: 'space-between',
+  display: 'flex',
   gap: theme.space.xs,
-})
+  justifyContent: 'space-between',
+}),
 
-const rowTextStyle = css({
+ rowTextStyle = css({
   display: 'flex',
   flexDirection: 'column',
   minWidth: 0,
-})
+}),
 
-const valueStyle = css({
+ valueStyle = css({
   fontWeight: theme.fontWeight.semibold,
   overflowWrap: 'anywhere',
-})
+}),
 
-const addAllStyle = css({ width: '100%' })
+ addAllStyle = css({ width: '100%' }),
 
-const stackGapStyle = css({ marginTop: theme.space.xs })
+ stackGapStyle = css({ marginTop: theme.space.xs })

@@ -2,44 +2,43 @@
 import { createServer } from 'node:http'
 import { readFile, stat } from 'node:fs/promises'
 import { extname, join, normalize } from 'node:path'
-import { fileURLToPath } from 'node:url'
 
-const DIST = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist')
-const PORT = process.env.PORT ? Number.parseInt(process.env.PORT, 10) : 44100
+const DIST = join(dirname(import.meta.filename), '..', 'dist'),
+ PORT = process.env.PORT ? Number.parseInt(process.env.PORT, 10) : 44_100
 
 function dirname(p) {
   return p.slice(0, p.lastIndexOf('/'))
 }
 
 const TYPES = {
+  '.css': 'text/css; charset=utf-8',
   '.html': 'text/html; charset=utf-8',
+  '.ico': 'image/x-icon',
   '.js': 'application/javascript; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.jsx': 'application/javascript; charset=utf-8',
+  '.map': 'application/json; charset=utf-8',
   '.mjs': 'application/javascript; charset=utf-8',
+  '.png': 'image/png',
+  '.svg': 'image/svg+xml',
   '.ts': 'application/javascript; charset=utf-8',
   '.tsx': 'application/javascript; charset=utf-8',
-  '.jsx': 'application/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
   '.webmanifest': 'application/manifest+json; charset=utf-8',
-  '.svg': 'image/svg+xml',
-  '.png': 'image/png',
-  '.ico': 'image/x-icon',
-  '.map': 'application/json; charset=utf-8',
 }
 
 async function tryFile(path) {
   try {
     const s = await stat(path)
-    if (s.isFile()) return path
+    if (s.isFile()) {return path}
   } catch {}
   return null
 }
 
 const server = createServer(async (req, res) => {
   try {
-    const url = new URL(req.url, 'http://localhost')
-    const rel = normalize(decodeURIComponent(url.pathname)).replace(/^(\.\.(\/|\\|$))+/, '')
-    let filePath = join(DIST, rel)
+    const url = new URL(req.url, 'http://localhost'),
+     rel = normalize(decodeURIComponent(url.pathname)).replace(/^(\.\.(\/|\\|$))+/, '')
+    const filePath = join(DIST, rel)
 
     let resolved = await tryFile(filePath)
     if (!resolved && (rel === '/' || rel.endsWith('/'))) {
@@ -56,8 +55,8 @@ const server = createServer(async (req, res) => {
 
     const body = await readFile(resolved)
     res.writeHead(200, {
-      'content-type': TYPES[extname(resolved)] ?? 'application/octet-stream',
       'cache-control': 'no-cache',
+      'content-type': TYPES[extname(resolved)] ?? 'application/octet-stream',
     })
     res.end(body)
   } catch (error) {

@@ -1,10 +1,10 @@
-import { createRouter, type MiddlewareContext } from 'remix/router'
+import { type MiddlewareContext, createRouter } from 'remix/router'
 import { render } from 'remix/spa'
 
 import { AppFrame } from '../ui/app-frame.tsx'
 import { NotFoundScreen } from './screens/not-found.tsx'
 import controller from './controller.tsx'
-import { deviceStore, type DeviceStore } from './device-store.ts'
+import { type DeviceStore, deviceStore } from './device-store.ts'
 import { routes } from '../routes.ts'
 
 export type BrowserContext = MiddlewareContext<
@@ -12,7 +12,7 @@ export type BrowserContext = MiddlewareContext<
 >
 
 // The app's screen actions all run here, so the browser context is the default
-// for controllers. It is a superset of the server router's context.
+// For controllers. It is a superset of the server router's context.
 declare module 'remix/router' {
   interface RouterTypes {
     context: BrowserContext
@@ -28,10 +28,10 @@ declare module 'remix/router' {
  * sync.
  */
 export function createBrowserRouter(store?: DeviceStore) {
-  let router = createRouter<BrowserContext>({
+  const router = createRouter<BrowserContext>({
     middleware: [render((content) => <AppFrame>{content}</AppFrame>), deviceStore(store)],
-    defaultHandler({ render }) {
-      return render(<NotFoundScreen />, { status: 404 })
+    defaultHandler({ render: renderScreen }) {
+      return renderScreen(<NotFoundScreen />, { status: 404 })
     },
   })
 

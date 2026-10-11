@@ -1,4 +1,14 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["unicorn", "typescript", "oxc", "jsx-a11y"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "perf": "error",
+    "style": "warn",
+    "pedantic": "warn",
+    "restriction": "warn",
+    "nursery": "warn"
+  },
   "ignorePatterns": ["dist", "node_modules"]
 }

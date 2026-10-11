@@ -1,11 +1,11 @@
 // Critical PWA plumbing — inlined, dependency-free, ES5-safe.
 
 // The app is installable from the manifest alone and always loads from the
-// network, so it carries no service worker. Older builds shipped a caching
-// worker whose cache-first navigation handler could pin a device to a stale
-// release; `dist/sw.js` is now a one-shot cleanup worker that unregisters
-// itself. This script must never register it, or that worker would reinstall
-// on every load and its client reload would loop.
+// Network, so it carries no service worker. Older builds shipped a caching
+// Worker whose cache-first navigation handler could pin a device to a stale
+// Release; `dist/sw.js` is now a one-shot cleanup worker that unregisters
+// Itself. This script must never register it, or that worker would reinstall
+// On every load and its client reload would loop.
 const CLEANUP = `  if ('serviceWorker' in navigator) {
     navigator.serviceWorker.getRegistrations().then(function (registrations) {
       return Promise.all(registrations.map(function (registration) {
@@ -21,18 +21,18 @@ const CLEANUP = `  if ('serviceWorker' in navigator) {
         }));
       });
     })['catch'](function () {});
-  }`
+  }`,
 
 // Update detection without a service worker: remember the build id seen when
 // this document loaded, then re-read it while the app stays open. Comparing
 // against the first-seen value rather than a compile-time constant keeps the
 // browser bundle free of build metadata.
-const VERSION_CHECK = `  var loadedBuildId = null;
+ VERSION_CHECK = `  var loadedBuildId = null;
   var updateNotified = false;
   function notifyUpdate() {
     if (updateNotified) return;
     updateNotified = true;
-    window.__tdlUpdateAvailable = true;
+    window.tdlUpdateAvailable = true;
     window.dispatchEvent(new Event('tdl:update-available'));
   }
   function checkForUpdate() {
@@ -52,9 +52,9 @@ const VERSION_CHECK = `  var loadedBuildId = null;
   window.addEventListener('focus', checkForUpdate);
   document.addEventListener('visibilitychange', checkForUpdate);
   window.setInterval(checkForUpdate, 60000);
-  checkForUpdate();`
+  checkForUpdate();`,
 
-const PERSIST = `  if (navigator.storage && navigator.storage.persist) {
+ PERSIST = `  if (navigator.storage && navigator.storage.persist) {
     navigator.storage.persist()['catch'](function () {});
   }`
 
@@ -63,7 +63,7 @@ export function createSwBootScript(nodeEnv: string | undefined): string {
     return `(function () {\n${CLEANUP}\n})();`
   }
 
-  if (nodeEnv !== 'production') return ''
+  if (nodeEnv !== 'production') {return ''}
 
   return `(function () {\n${CLEANUP}\n${VERSION_CHECK}\n${PERSIST}\n})();`
 }

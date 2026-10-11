@@ -6,10 +6,10 @@ import type { NotesEdit } from './set-heading.ts'
  * their own; the cursor ends right after them.
  */
 export function insertLines({ text, start, end }: NotesEdit, lines: string): NotesEdit {
-  let before = text.slice(0, start)
-  let after = text.slice(end)
-  let lead = before && !before.endsWith('\n') ? '\n' : ''
-  let trail = after && !after.startsWith('\n') ? '\n' : ''
-  let cursor = before.length + lead.length + lines.length
-  return { text: before + lead + lines + trail + after, start: cursor, end: cursor }
+  const before = text.slice(0, start)
+  const after = text.slice(end)
+  const lead = before && !before.endsWith('\n') ? '\n' : ''
+  const trail = after && !after.startsWith('\n') ? '\n' : ''
+  const cursor = before.length + lead.length + lines.length
+  return { end: cursor, start: cursor, text: before + lead + lines + trail + after }
 }

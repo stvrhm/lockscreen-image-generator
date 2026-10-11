@@ -37,9 +37,9 @@ export const headerRowStyle = [
 export const actionsRowStyle = [
   cluster({ gutter: theme.space.sm }),
   css({
-    flexWrap: 'wrap',
     '@media (max-width: 560px)': {
       '& > :first-child': { flex: '1 1 100%' },
     },
+    flexWrap: 'wrap',
   }),
 ]

@@ -1,17 +1,17 @@
 import {
-  createId,
   type Device,
   type ExportEncoding,
   type ExportSizeMode,
   type Platform,
+  createId,
 } from './devices.ts'
-import { customDimensionIssue, type CustomDimensionIssue } from './device-dimensions.ts'
+import { type CustomDimensionIssue, customDimensionIssue } from './device-dimensions.ts'
 
-const FILE_TYPE = 'test-device-lockscreen'
-const FILE_VERSION = 1
+const FILE_TYPE = 'test-device-lockscreen',
+ FILE_VERSION = 1
 
 export function downloadDeviceFile(device: Device): void {
-  let payload = {
+  const payload = {
     type: FILE_TYPE,
     version: FILE_VERSION,
     device: {
@@ -24,12 +24,12 @@ export function downloadDeviceFile(device: Device): void {
       encoding: device.encoding,
     },
   }
-  let blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
-  let url = URL.createObjectURL(blob)
-  let link = document.createElement('a')
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
   link.href = url
   link.download = `${slug(device.label) || 'device'}-lockscreen-device.json`
-  document.body.appendChild(link)
+  document.body.append(link)
   link.click()
   link.remove()
   URL.revokeObjectURL(url)
@@ -45,7 +45,7 @@ export async function readDeviceFile(file: File): Promise<Device> {
   if (!isRecord(parsed) || parsed.type !== FILE_TYPE || parsed.version !== FILE_VERSION) {
     throw new Error('This is not a supported Lockscreens Device file.')
   }
-  let value = parsed.device
+  const value = parsed.device
   if (
     !isRecord(value) ||
     typeof value.label !== 'string' ||
@@ -58,19 +58,19 @@ export async function readDeviceFile(file: File): Promise<Device> {
   ) {
     throw new Error('The Device file is missing valid project details.')
   }
-  let dimensionIssue = customDimensionIssue(value.customWidth, value.customHeight)
-  if (dimensionIssue) throw new DeviceFileDimensionError(dimensionIssue)
-  let now = new Date().toISOString()
+  const dimensionIssue = customDimensionIssue(value.customWidth, value.customHeight)
+  if (dimensionIssue) {throw new DeviceFileDimensionError(dimensionIssue)}
+  const now = new Date().toISOString()
   return {
+    createdAt: now,
+    customHeight: value.customHeight,
+    customWidth: value.customWidth,
+    encoding: value.encoding,
+    exportSizeMode: value.exportSizeMode,
     id: createId(),
     label: value.label,
-    platform: value.platform,
     notes: value.notes,
-    exportSizeMode: value.exportSizeMode,
-    customWidth: value.customWidth,
-    customHeight: value.customHeight,
-    encoding: value.encoding,
-    createdAt: now,
+    platform: value.platform,
     updatedAt: now,
   }
 }
@@ -101,6 +101,6 @@ function isExportEncoding(value: unknown): value is ExportEncoding {
 function slug(value: string): string {
   return value
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')
+    .replaceAll(/[^a-z0-9]+/g, '-')
+    .replaceAll(/(^-|-$)/g, '')
 }

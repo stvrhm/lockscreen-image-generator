@@ -1,6 +1,6 @@
-import { css, type MixInput } from 'remix/component'
+import { type MixInput, css } from 'remix/component'
 
-import { cubeVars, dataAttrs, type CubeValue } from './helpers.ts'
+import { type CubeValue, cubeVars, dataAttrs } from './helpers.ts'
 
 type CubeMix = MixInput<Element>
 
@@ -47,17 +47,14 @@ const clusterStyle = css({
   flexWrap: 'wrap',
   gap: 'var(--gutter, var(--space-md))',
   justifyContent: 'var(--cluster-justification, flex-start)',
-})
-const gridStyle = css({
+}),
+ gridStyle = css({
+  '&[data-equal-height]': { gridAutoRows: '1fr' },
   display: 'grid',
   gap: 'var(--gutter, var(--space-xl))',
   gridTemplateColumns: 'repeat(auto-fit, minmax(var(--grid-min-item-size, 16rem), 1fr))',
-  '&[data-equal-height]': { gridAutoRows: '1fr' },
-})
-const sidebarStyle = css({
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: 'var(--gutter, var(--space-xl))',
+}),
+ sidebarStyle = css({
   '& > :first-child': { flexBasis: 'var(--sidebar-width, 20rem)', flexGrow: 1 },
   '& > :last-child': {
     flexBasis: 0,
@@ -65,32 +62,35 @@ const sidebarStyle = css({
     minInlineSize: 'var(--sidebar-content-min-width, 50%)',
   },
   '&[data-direction="stack-to-row"]': {
-    flexDirection: 'column',
     '& > :first-child': { flexBasis: 'auto', flexGrow: 0 },
     '& > :last-child': { flexBasis: 'auto', flexGrow: 0, minInlineSize: 'auto' },
     '@media (max-width: 560px)': {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
       '& > :first-child': { flexBasis: 'auto' },
       '& > :last-child': { flexBasis: 0, flexGrow: 1, minInlineSize: 0 },
+      alignItems: 'flex-start',
+      flexDirection: 'row',
     },
+    flexDirection: 'column',
   },
-})
-const switcherStyle = css({
   display: 'flex',
   flexWrap: 'wrap',
   gap: 'var(--gutter, var(--space-xl))',
+}),
+ switcherStyle = css({
   '& > *': { flexBasis: 'calc((var(--switcher-target-width, 40rem) - 100%) * 999)', flexGrow: 1 },
   '& > :nth-child(n + 3)': { flexBasis: '100%' },
-})
-const repelStyle = css({
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: 'var(--gutter, var(--space-xl))',
+}),
+ repelStyle = css({
   alignItems: 'var(--repel-alignment, center)',
   display: 'flex',
   flexWrap: 'wrap',
   gap: 'var(--gutter, var(--space-lg))',
   justifyContent: 'space-between',
-})
-const wrapperStyle = css({
+}),
+ wrapperStyle = css({
   marginInline: 'auto',
   maxInlineSize: 'var(--wrapper-max-width, 100%)',
   paddingInline: 'var(--gutter, var(--space-lg))',
@@ -109,9 +109,9 @@ export function cluster(options: ClusterOptions = {}): CubeMix {
   return [
     clusterStyle,
     cubeVars({
-      '--gutter': options.gutter,
       '--cluster-alignment': options.alignment,
       '--cluster-justification': options.justification,
+      '--gutter': options.gutter,
     }),
   ]
 }
@@ -119,7 +119,7 @@ export function cluster(options: ClusterOptions = {}): CubeMix {
 export function grid(options: GridOptions = {}): CubeMix {
   return [
     gridStyle,
-    cubeVars({ '--gutter': options.gutter, '--grid-min-item-size': options.minItemSize }),
+    cubeVars({ '--grid-min-item-size': options.minItemSize, '--gutter': options.gutter }),
     dataAttrs({ 'data-equal-height': options.equalHeight ? '' : undefined }),
   ]
 }
@@ -129,8 +129,8 @@ export function sidebar(options: SidebarOptions = {}): CubeMix {
     sidebarStyle,
     cubeVars({
       '--gutter': options.gutter,
-      '--sidebar-width': options.sidebarWidth,
       '--sidebar-content-min-width': options.contentMinWidth,
+      '--sidebar-width': options.sidebarWidth,
     }),
     dataAttrs({ 'data-direction': options.direction }),
   ]

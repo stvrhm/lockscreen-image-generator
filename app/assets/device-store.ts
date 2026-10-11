@@ -1,6 +1,6 @@
-import { createContextKey, type Middleware } from 'remix/router'
+import { type Middleware, createContextKey } from 'remix/router'
 
-import { findDevice, getLastDraft, listDevices, type Device } from '../data/devices.ts'
+import { type Device, findDevice, getLastDraft, listDevices } from '../data/devices.ts'
 
 /**
  * The reads the screen routes need before they can decide what to render.
@@ -17,10 +17,10 @@ export interface DeviceStore {
 }
 
 /** Host-local IndexedDB store used by the running app. */
-export const indexedDbDeviceStore: DeviceStore = { listDevices, findDevice, getLastDraft }
+export const indexedDbDeviceStore: DeviceStore = { findDevice, getLastDraft, listDevices }
 
 // Defaulted so actions read a store rather than an optional one. Tests pass a
-// replacement to `createBrowserRouter()`, which overrides it per request.
+// Replacement to `createBrowserRouter()`, which overrides it per request.
 export const DeviceStore = createContextKey<DeviceStore>(indexedDbDeviceStore)
 
 export function deviceStore(store: DeviceStore = indexedDbDeviceStore): Middleware {

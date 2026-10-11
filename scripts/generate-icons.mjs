@@ -1,26 +1,25 @@
 // Generates PWA icons: dark lockscreen phone silhouette on charcoal.
 import { deflateSync } from 'node:zlib'
 import { mkdirSync, writeFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
-import { dirname, join } from 'node:path'
+import { join } from 'node:path'
 
-const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', 'public', 'icons')
+const OUT = join(import.meta.dirname, '..', 'public', 'icons'),
 
-const BG = [0x15, 0x17, 0x1b]
-const PHONE = [0x5e, 0xb8, 0xff]
-const SCREEN = [0x2a, 0x30, 0x38]
+ BG = [0x15, 0x17, 0x1B],
+ PHONE = [0x5E, 0xB8, 0xFF],
+ SCREEN = [0x2A, 0x30, 0x38],
 
-const clamp01 = (x) => (x < 0 ? 0 : x > 1 ? 1 : x)
+ clamp01 = (x) => (x < 0 ? 0 : (x > 1 ? 1 : x))
 
 function roundedRectSD(px, py, x0, y0, x1, y1, r) {
-  const cx = (x0 + x1) / 2
-  const cy = (y0 + y1) / 2
-  const hx = (x1 - x0) / 2 - r
-  const hy = (y1 - y0) / 2 - r
-  const qx = Math.abs(px - cx) - hx
-  const qy = Math.abs(py - cy) - hy
-  const dx = Math.max(qx, 0)
-  const dy = Math.max(qy, 0)
+  const cx = (x0 + x1) / 2,
+   cy = (y0 + y1) / 2,
+   hx = (x1 - x0) / 2 - r,
+   hy = (y1 - y0) / 2 - r,
+   qx = Math.abs(px - cx) - hx,
+   qy = Math.abs(py - cy) - hy,
+   dx = Math.max(qx, 0),
+   dy = Math.max(qy, 0)
   return Math.hypot(dx, dy) + Math.min(Math.max(qx, qy), 0) - r
 }
 
@@ -30,23 +29,23 @@ function renderIcon(size, motifScale) {
     buf[i * 4] = BG[0]
     buf[i * 4 + 1] = BG[1]
     buf[i * 4 + 2] = BG[2]
-    buf[i * 4 + 3] = 0xff
+    buf[i * 4 + 3] = 0xFF
   }
 
-  const band = size * motifScale
-  const left = (size - band * 0.55) / 2
-  const right = left + band * 0.55
-  const top = (size - band) / 2
-  const bottom = top + band
-  const radius = band * 0.12
-  const inset = band * 0.06
+  const band = size * motifScale,
+   left = (size - band * 0.55) / 2,
+   right = left + band * 0.55,
+   top = (size - band) / 2,
+   bottom = top + band,
+   radius = band * 0.12,
+   inset = band * 0.06
 
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
-      const px = x + 0.5
-      const py = y + 0.5
-      const body = clamp01(0.5 - roundedRectSD(px, py, left, top, right, bottom, radius))
-      const screen = clamp01(
+      const px = x + 0.5,
+       py = y + 0.5,
+       body = clamp01(0.5 - roundedRectSD(px, py, left, top, right, bottom, radius)),
+       screen = clamp01(
         0.5 -
           roundedRectSD(
             px,
@@ -58,11 +57,11 @@ function renderIcon(size, motifScale) {
             radius * 0.7,
           ),
       )
-      if (body <= 0 && screen <= 0) continue
+      if (body <= 0 && screen <= 0) {continue}
       const i = (y * size + x) * 4
-      let r = BG[0]
-      let g = BG[1]
-      let b = BG[2]
+      let r = BG[0],
+       g = BG[1],
+       b = BG[2]
       if (body > 0) {
         r = Math.round(r + (PHONE[0] - r) * body)
         g = Math.round(g + (PHONE[1] - g) * body)
@@ -85,30 +84,30 @@ const CRC_TABLE = (() => {
   const t = new Uint32Array(256)
   for (let n = 0; n < 256; n++) {
     let c = n
-    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1
+    for (let k = 0; k < 8; k++) {c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1}
     t[n] = c >>> 0
   }
   return t
 })()
 
 function crc32(buf) {
-  let c = 0xffffffff
-  for (let i = 0; i < buf.length; i++) c = CRC_TABLE[(c ^ buf[i]) & 0xff] ^ (c >>> 8)
-  return (c ^ 0xffffffff) >>> 0
+  let c = 0xFFFFFFFF
+  for (let i = 0; i < buf.length; i++) {c = CRC_TABLE[(c ^ buf[i]) & 0xff] ^ (c >>> 8)}
+  return (c ^ 0xFFFFFFFF) >>> 0
 }
 
 function chunk(type, data) {
   const len = Buffer.alloc(4)
   len.writeUInt32BE(data.length, 0)
-  const typeBuf = Buffer.from(type, 'ascii')
-  const crc = Buffer.alloc(4)
+  const typeBuf = Buffer.from(type, 'ascii'),
+   crc = Buffer.alloc(4)
   crc.writeUInt32BE(crc32(Buffer.concat([typeBuf, data])), 0)
   return Buffer.concat([len, typeBuf, data, crc])
 }
 
 function encodePng(rgba, size) {
-  const sig = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
-  const ihdr = Buffer.alloc(13)
+  const sig = Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]),
+   ihdr = Buffer.alloc(13)
   ihdr.writeUInt32BE(size, 0)
   ihdr.writeUInt32BE(size, 4)
   ihdr[8] = 8
@@ -117,8 +116,8 @@ function encodePng(rgba, size) {
   ihdr[11] = 0
   ihdr[12] = 0
 
-  const stride = size * 4
-  const raw = Buffer.alloc((stride + 1) * size)
+  const stride = size * 4,
+   raw = Buffer.alloc((stride + 1) * size)
   for (let y = 0; y < size; y++) {
     raw[y * (stride + 1)] = 0
     rgba.copy(raw, y * (stride + 1) + 1, y * stride, y * stride + stride)
@@ -136,10 +135,10 @@ function encodePng(rgba, size) {
 mkdirSync(OUT, { recursive: true })
 
 const targets = [
-  { name: 'icon-192.png', size: 192, motif: 0.62 },
-  { name: 'icon-512.png', size: 512, motif: 0.62 },
-  { name: 'icon-maskable-512.png', size: 512, motif: 0.48 },
-  { name: 'apple-touch-icon.png', size: 180, motif: 0.62 },
+  { motif: 0.62, name: 'icon-192.png', size: 192 },
+  { motif: 0.62, name: 'icon-512.png', size: 512 },
+  { motif: 0.48, name: 'icon-maskable-512.png', size: 512 },
+  { motif: 0.62, name: 'apple-touch-icon.png', size: 180 },
 ]
 
 for (const t of targets) {

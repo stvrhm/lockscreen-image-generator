@@ -1,15 +1,15 @@
-import { css, type Handle } from 'remix/component'
+import { type Handle, css } from 'remix/component'
 
 import { flow, switcher } from '../../ui/cube/index.ts'
 import { Button } from '../../ui/button.tsx'
 import { theme } from '../../ui/theme.ts'
 import { strings } from '../../strings.ts'
 import { routes } from '../../routes.ts'
-import { mutedStyle, pageStyle, hintStyle } from '../../ui/screen-styles.ts'
+import { hintStyle, mutedStyle, pageStyle } from '../../ui/screen-styles.ts'
 
 export function Home(handle: Handle<{ hasDraft: boolean }>) {
   return () => {
-    let { hasDraft } = handle.props
+    const { hasDraft } = handle.props
 
     return (
       <div mix={pageStyle}>
@@ -53,26 +53,26 @@ export function Home(handle: Handle<{ hasDraft: boolean }>) {
   }
 }
 
-const startHeaderStyle = [flow({ flowSpace: theme.space['xs-sm'] }), css({ maxWidth: '42rem' })]
+const startHeaderStyle = [flow({ flowSpace: theme.space['xs-sm'] }), css({ maxWidth: '42rem' })],
 
-const eyebrowStyle = css({
+ eyebrowStyle = css({
+  color: 'var(--text-muted)',
   fontSize: '12px',
   fontWeight: 700,
   letterSpacing: '0.12em',
   textTransform: 'uppercase',
-  color: 'var(--text-muted)',
-})
+}),
 
-const titleStyle = css({
-  fontSize: 'clamp(34px, 7vw, 52px)',
+ titleStyle = css({
   fontFamily: 'var(--font-display)',
+  fontSize: 'clamp(34px, 7vw, 52px)',
   letterSpacing: '-0.045em',
   lineHeight: 1.04,
-})
+}),
 
-const startActionsStyle = [
+ startActionsStyle = [
   switcher({ gutter: theme.space.md, targetWidth: '32rem' }),
   css({ maxWidth: '42rem' }),
-]
+],
 
-const blockStyle = css({ width: '100%' })
+ blockStyle = css({ width: '100%' })

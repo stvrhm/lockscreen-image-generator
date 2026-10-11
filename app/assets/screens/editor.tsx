@@ -1,26 +1,26 @@
-import { css, navigate, on, ref, type Handle } from 'remix/component'
+import { type Handle, css, navigate, on, ref } from 'remix/component'
 
 import { cluster, flow, repel } from '../../ui/cube/index.ts'
 import { theme } from '../../ui/theme.ts'
 import {
-  saveDevice,
-  listDevices,
-  normalizeDeviceLabel,
-  subscribeToDeviceChanges,
-  DeviceLabelConflictError,
   type Device,
+  DeviceLabelConflictError,
   type ExportEncoding,
   type ExportSizeMode,
   type Platform,
+  listDevices,
+  normalizeDeviceLabel,
+  saveDevice,
+  subscribeToDeviceChanges,
 } from '../../data/devices.ts'
 import {
+  type CustomDimensionIssue,
   MAX_CUSTOM_DIMENSION,
   customDimensionIssue,
   safePreviewDimensions,
-  type CustomDimensionIssue,
 } from '../../data/device-dimensions.ts'
 import { measureHostExportSize } from '../../data/host.ts'
-import { downloadWallpaper, shareWallpaper, type WallpaperOptions } from '../../data/wallpaper.ts'
+import { type WallpaperOptions, downloadWallpaper, shareWallpaper } from '../../data/wallpaper.ts'
 import { strings } from '../../strings.ts'
 import { routes } from '../../routes.ts'
 import { Badge } from '../../ui/badge.tsx'
@@ -28,28 +28,40 @@ import { Button } from '../../ui/button.tsx'
 import { toast } from '../../ui/toast.tsx'
 import { ConfirmationDialog } from '../../ui/confirmation-dialog.tsx'
 import {
+  type InlineFormat,
   inlineFormatActive,
   toggleInlineFormat,
-  type InlineFormat,
 } from '../editor/format-notes.ts'
 import { headingPressed, setHeading } from '../editor/set-heading.ts'
 import { ExportSummary } from '../editor/export-summary.tsx'
 import { FormatButton } from '../editor/format-button.tsx'
 import { FormattingHelpButton } from '../editor/formatting-help-button.tsx'
 import { insertLines } from '../editor/insert-lines.ts'
-import { guardEditorNavigation, type PendingNavigation } from '../editor/navigation-guard.ts'
+import { type PendingNavigation, guardEditorNavigation } from '../editor/navigation-guard.ts'
 import { PhoneInfoButton } from '../editor/phone-info-button.tsx'
 import { PhonePreview } from '../editor/phone-preview.tsx'
 import { SegmentButton } from '../editor/segment-button.tsx'
 import {
-  mutedStyle,
-  pageStyle,
+  actionsRowStyle,
   headingStyle,
   hintStyle,
-  actionsRowStyle,
+  mutedStyle,
+  pageStyle,
 } from '../../ui/screen-styles.ts'
 
 const NOTES_MAX_HEIGHT = 260
+
+function hostSize() {
+  return measureHostExportSize()
+}
+
+function dimensionIssueMessage(issue: CustomDimensionIssue): string {
+  return strings.editor.dimensionIssues[issue]
+}
+
+function dimensionInputValue(value: string) {
+  return value === '' ? Number.NaN : Number(value)
+}
 
 export function Editor(
   handle: Handle<{
@@ -58,25 +70,25 @@ export function Editor(
     editingNew: boolean
   }>,
 ) {
-  let draft = handle.props.draft
-  let savedDevices = handle.props.devices
-  let editingNew = handle.props.editingNew
-  let baseline: Device = { ...draft }
-  let labelError = ''
-  let leaveDialogOpen = false
-  let pendingNavigation: PendingNavigation | null = null
-  let dialogReturnFocus: HTMLElement | null = null
-  let navigationGuard: ReturnType<typeof guardEditorNavigation> | null = null
-  let headingRef: HTMLHeadingElement | null = null
-  let labelRef: HTMLInputElement | null = null
-  let selectLabelOnPointerFocus = false
-  let platformOverride = false
-  let notesRef: HTMLTextAreaElement | null = null
-  let notesFocused = false
+  let {draft} = handle.props
+  let savedDevices = handle.props.devices,
+   {editingNew} = handle.props
+  let baseline: Device = { ...draft },
+   labelError = '',
+   leaveDialogOpen = false,
+   pendingNavigation: PendingNavigation | null = null,
+   dialogReturnFocus: HTMLElement | null = null,
+   navigationGuard: ReturnType<typeof guardEditorNavigation> | null = null,
+   headingRef: HTMLHeadingElement | null = null,
+   labelRef: HTMLInputElement | null = null,
+   selectLabelOnPointerFocus = false,
+   platformOverride = false,
+   notesRef: HTMLTextAreaElement | null = null,
+   notesFocused = false,
   // Until Notes has been focused or edited, there is no meaningful cursor to
   // reflect in the formatting toolbar. Starting at 0 made a prefilled H1 look
   // pressed as soon as the new-device screen opened.
-  let notesSelection: { start: number; end: number } | null = null
+   notesSelection: { start: number; end: number } | null = null
 
   function isDirty() {
     return (
@@ -96,7 +108,7 @@ export function Editor(
       return
     }
     dialogReturnFocus = document.activeElement as HTMLElement | null
-    pendingNavigation = { url: routes.screens.home.href(), key: '', type: 'push' }
+    pendingNavigation = { key: '', type: 'push', url: routes.screens.home.href() }
     leaveDialogOpen = true
     handle.update()
   }
@@ -113,12 +125,12 @@ export function Editor(
       },
     })
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (!isDirty()) return
+      if (!isDirty()) {return}
       event.preventDefault()
       event.returnValue = ''
     }
     window.addEventListener('beforeunload', onBeforeUnload)
-    let unsubscribeDeviceChanges = subscribeToDeviceChanges(() => {
+    const unsubscribeDeviceChanges = subscribeToDeviceChanges(() => {
       void listDevices().then((devices) => {
         savedDevices = devices
         handle.update()
@@ -135,39 +147,27 @@ export function Editor(
     document.addEventListener(
       'selectionchange',
       () => {
-        if (!notesRef || document.activeElement !== notesRef) return
-        let start = notesRef.selectionStart
-        let end = notesRef.selectionEnd
-        if (notesSelection && start === notesSelection.start && end === notesSelection.end) return
-        notesSelection = { start, end }
+        if (!notesRef || document.activeElement !== notesRef) {return}
+        const start = notesRef.selectionStart
+        const end = notesRef.selectionEnd
+        if (notesSelection && start === notesSelection.start && end === notesSelection.end) {return}
+        notesSelection = { end, start }
         handle.update()
       },
       { signal: handle.signal },
     )
   })
-  function hostSize() {
-    return measureHostExportSize()
-  }
-
   function resolvedSize(device: Device) {
     if (device.exportSizeMode === 'custom') {
       if (customDimensionIssue(device.customWidth, device.customHeight)) {
         return safePreviewDimensions(hostSize())
       }
       return {
-        width: device.customWidth,
         height: device.customHeight,
+        width: device.customWidth,
       }
     }
     return hostSize()
-  }
-
-  function dimensionIssueMessage(issue: CustomDimensionIssue): string {
-    return strings.editor.dimensionIssues[issue]
-  }
-
-  function dimensionInputValue(value: string) {
-    return value === '' ? Number.NaN : Number(value)
   }
 
   function customDimensionsValid() {
@@ -176,52 +176,52 @@ export function Editor(
 
   function patchDraft(patch: Partial<Device>) {
     draft = { ...draft, ...patch }
-    if (patch.label !== undefined) labelError = ''
+    if (patch.label !== undefined) {labelError = ''}
     handle.update()
   }
 
   /** Inserts whole Notes lines at the cursor, then returns focus to Notes. */
   function insertAtCursor(lines: string) {
-    let end = draft.notes.length
-    let selection = notesRef
+    const end = draft.notes.length
+    const selection = notesRef
       ? { start: notesRef.selectionStart, end: notesRef.selectionEnd }
       : { start: end, end }
-    let next = insertLines({ text: draft.notes, ...selection }, lines)
+    const next = insertLines({ text: draft.notes, ...selection }, lines)
     draft = { ...draft, notes: next.text }
-    notesSelection = { start: next.start, end: next.end }
+    notesSelection = { end: next.end, start: next.start }
     handle.update()
     handle.queueTask(() => {
       resizeNotes()
-      if (!notesRef) return
+      if (!notesRef) {return}
       notesRef.focus()
       notesRef.setSelectionRange(next.start, next.end)
     })
   }
 
   function armNotesSelection() {
-    if (!notesRef) return
-    notesSelection = { start: notesRef.selectionStart, end: notesRef.selectionEnd }
+    if (!notesRef) {return}
+    notesSelection = { end: notesRef.selectionEnd, start: notesRef.selectionStart }
   }
 
   function notesEdit() {
     if (notesRef && document.activeElement === notesRef) {
       return {
-        text: draft.notes,
-        start: notesRef.selectionStart,
         end: notesRef.selectionEnd,
+        start: notesRef.selectionStart,
+        text: draft.notes,
       }
     }
-    let selection = notesSelection ?? { start: 0, end: 0 }
+    const selection = notesSelection ?? { start: 0, end: 0 }
     return { text: draft.notes, ...selection }
   }
 
   function applyNotesEdit(next: { text: string; start: number; end: number }) {
     draft = { ...draft, notes: next.text }
-    notesSelection = { start: next.start, end: next.end }
+    notesSelection = { end: next.end, start: next.start }
     notesFocused = true
     handle.update()
     handle.queueTask(() => {
-      if (!notesRef) return
+      if (!notesRef) {return}
       notesRef.focus()
       notesRef.setSelectionRange(next.start, next.end)
     })
@@ -252,33 +252,33 @@ export function Editor(
   }
 
   function resizeNotes() {
-    if (!notesRef) return
+    if (!notesRef) {return}
     notesRef.style.height = 'auto'
     notesRef.style.height = `${Math.min(notesRef.scrollHeight, NOTES_MAX_HEIGHT)}px`
     notesRef.style.overflowY = notesRef.scrollHeight > NOTES_MAX_HEIGHT ? 'auto' : 'hidden'
   }
 
   function validateLabel() {
-    let label = draft.label.trim()
-    let normalized = normalizeDeviceLabel(label)
-    if (!normalized) {
-      labelError = strings.editor.labelRequired
-    } else {
+    const label = draft.label.trim()
+    const normalized = normalizeDeviceLabel(label)
+    if (normalized) {
       let conflict = savedDevices.some(
         (device) => device.id !== draft.id && normalizeDeviceLabel(device.label) === normalized,
       )
       let unchangedLegacyDuplicate = !editingNew && draft.label === baseline.label
       labelError = conflict && !unchangedLegacyDuplicate ? strings.editor.labelConflict : ''
+    } else {
+      labelError = strings.editor.labelRequired
     }
-    if (!labelError) return true
+    if (!labelError) {return true}
     handle.update()
     handle.queueTask(() => labelRef?.focus())
     return false
   }
 
   async function storeDevice() {
-    let wasNew = editingNew
-    let savedLabel =
+    const wasNew = editingNew
+    const savedLabel =
       !editingNew && draft.label === baseline.label ? draft.label : draft.label.trim()
     try {
       draft = await saveDevice(
@@ -286,7 +286,7 @@ export function Editor(
         { allowUnchangedDuplicate: !editingNew && draft.label === baseline.label },
       )
     } catch (error) {
-      if (!(error instanceof DeviceLabelConflictError)) throw error
+      if (!(error instanceof DeviceLabelConflictError)) {throw error}
       labelError = strings.editor.labelConflict
       handle.update()
       handle.queueTask(() => labelRef?.focus())
@@ -300,7 +300,7 @@ export function Editor(
     // A new Device only gets its id once saved, so move to its canonical URL.
     // It is still the same screen to the user, so keep their scroll position.
     if (wasNew) {
-      let href = routes.screens.editDevice.href({ id: draft.id })
+      const href = routes.screens.editDevice.href({ id: draft.id })
       navigationGuard?.updateCurrentUrl(href)
       navigate(href, {
         history: 'replace',
@@ -311,39 +311,39 @@ export function Editor(
   }
 
   function wallpaperOptions(): WallpaperOptions {
-    let size = resolvedSize(draft)
+    const size = resolvedSize(draft)
     return {
+      encoding: draft.encoding,
+      height: size.height,
       label: draft.label,
       notes: draft.notes,
       width: size.width,
-      height: size.height,
-      encoding: draft.encoding,
     }
   }
 
   async function onSaveDevice() {
-    if (!customDimensionsValid()) return
-    if (!validateLabel()) return
-    if (!(await storeDevice())) return
+    if (!customDimensionsValid()) {return}
+    if (!validateLabel()) {return}
+    if (!(await storeDevice())) {return}
     toast({ title: strings.editor.deviceSaved, variant: 'success' })
   }
 
   async function onSaveToPhotos() {
-    if (!customDimensionsValid()) return
-    if (!validateLabel()) return
-    let options = wallpaperOptions()
+    if (!customDimensionsValid()) {return}
+    if (!validateLabel()) {return}
+    const options = wallpaperOptions()
     // Share before touching IndexedDB: the share sheet needs the tap's user
-    // activation, and Safari drops it if other async work runs first.
-    let result = await shareWallpaper(options)
+    // Activation, and Safari drops it if other async work runs first.
+    const result = await shareWallpaper(options)
     // Dismissing the share sheet backs out of the whole action.
-    if (result === 'cancelled') return
-    let downloaded = result === 'unsupported' && (await downloadWallpaper(options))
-    if (!(await storeDevice())) return
+    if (result === 'cancelled') {return}
+    const downloaded = result === 'unsupported' && (await downloadWallpaper(options))
+    if (!(await storeDevice())) {return}
 
     if (downloaded) {
       toast({
-        title: strings.editor.imageDownloaded,
         description: strings.editor.imageDownloadedHint,
+        title: strings.editor.imageDownloaded,
         variant: 'success',
       })
     } else if (result === 'failed' || result === 'unsupported') {
@@ -354,9 +354,9 @@ export function Editor(
   }
 
   async function onDownload() {
-    if (!customDimensionsValid()) return
-    let downloaded = await downloadWallpaper(wallpaperOptions())
-    if (!downloaded) toast({ title: strings.editor.imageFailed, variant: 'error' })
+    if (!customDimensionsValid()) {return}
+    const downloaded = await downloadWallpaper(wallpaperOptions())
+    if (!downloaded) {toast({ title: strings.editor.imageFailed, variant: 'error' })}
   }
 
   async function resolveLeave(decision: 'stay' | 'discard' | 'save') {
@@ -378,12 +378,12 @@ export function Editor(
       pendingNavigation = null
       handle.update()
       return
-    } else baseline = { ...draft }
-    let destination = pendingNavigation
+    }baseline = { ...draft }
+    const destination = pendingNavigation
     leaveDialogOpen = false
     pendingNavigation = null
     handle.update()
-    if (!destination) return
+    if (!destination) {return}
     if (destination.type === 'traverse' && destination.key && window.navigation) {
       window.navigation.traverseTo(destination.key)
     } else if (destination.type === 'fallback-back') {
@@ -394,10 +394,10 @@ export function Editor(
   }
 
   return () => {
-    let device = draft
-    let dimensionIssue = customDimensionIssue(device.customWidth, device.customHeight)
-    let size = resolvedSize(device)
-    let previewText = device.notes.trim() || device.label.trim() || 'Notes preview'
+    const device = draft
+    const dimensionIssue = customDimensionIssue(device.customWidth, device.customHeight)
+    const size = resolvedSize(device)
+    const previewText = device.notes.trim() || device.label.trim() || 'Notes preview'
 
     return (
       <div mix={pageStyle}>
@@ -430,16 +430,16 @@ export function Editor(
               autoComplete="off"
               style={{
                 appearance: 'none',
-                width: '100%',
-                minWidth: '10ch',
-                padding: 0,
+                background: 'transparent',
                 border: 0,
                 borderRadius: 0,
-                background: 'transparent',
+                boxShadow: 'none',
                 color: 'inherit',
                 font: 'inherit',
                 lineHeight: 'inherit',
-                boxShadow: 'none',
+                minWidth: '10ch',
+                padding: 0,
+                width: '100%',
               }}
               mix={[
                 ref((node) => {
@@ -450,7 +450,7 @@ export function Editor(
                   selectLabelOnPointerFocus = document.activeElement !== event.currentTarget
                 }),
                 on('focus', (event) => {
-                  if (!selectLabelOnPointerFocus) return
+                  if (!selectLabelOnPointerFocus) {return}
                   selectLabelOnPointerFocus = false
                   event.currentTarget.select()
                 }),
@@ -587,7 +587,7 @@ export function Editor(
 
                 <div mix={fieldStyle}>
                   <span mix={fieldLabelStyle}>{strings.editor.exportSize}</span>
-                  <div mix={segmentStyle} role="group" aria-label={strings.editor.exportSize}>
+                  <fieldset mix={segmentStyle} aria-label={strings.editor.exportSize}>
                     <SegmentButton
                       active={device.exportSizeMode === 'auto'}
                       label={strings.editor.exportSizeAuto}
@@ -597,15 +597,15 @@ export function Editor(
                       active={device.exportSizeMode === 'custom'}
                       label={strings.editor.exportSizeCustom}
                       onSelect={() => {
-                        let auto = hostSize()
+                        const auto = hostSize()
                         patchDraft({
-                          exportSizeMode: 'custom',
-                          customWidth: device.customWidth || auto.width,
                           customHeight: device.customHeight || auto.height,
+                          customWidth: device.customWidth || auto.width,
+                          exportSizeMode: 'custom',
                         })
                       }}
                     />
-                  </div>
+                  </fieldset>
                   {device.exportSizeMode === 'auto' && (
                     <p mix={mutedStyle}>
                       {size.width} × {size.height}px
@@ -660,7 +660,7 @@ export function Editor(
 
                 <div mix={fieldStyle}>
                   <span mix={fieldLabelStyle}>{strings.editor.encoding}</span>
-                  <div mix={segmentStyle} role="group" aria-label={strings.editor.encoding}>
+                  <fieldset mix={segmentStyle} aria-label={strings.editor.encoding}>
                     <SegmentButton
                       active={device.encoding === 'quality'}
                       label={strings.editor.encodingQuality}
@@ -671,7 +671,7 @@ export function Editor(
                       label={strings.editor.encodingSize}
                       onSelect={() => patchDraft({ encoding: 'size' as ExportEncoding })}
                     />
-                  </div>
+                  </fieldset>
                   <p mix={mutedStyle}>
                     {device.encoding === 'quality'
                       ? strings.editor.encodingQualityHint
@@ -743,150 +743,150 @@ export function Editor(
   }
 }
 
-const headerRowStyle = repel({ gutter: theme.space.xs, alignment: 'center' })
+const headerRowStyle = repel({ alignment: 'center', gutter: theme.space.xs }),
 
-const editableHeadlineStyle = css({
-  outline: 'none',
+ editableHeadlineStyle = css({
   ':focus-visible': {
     outline: '2px solid var(--accent-strong)',
     outlineOffset: '4px',
   },
-})
+  outline: 'none',
+}),
 
-const labelErrorStyle = css({ color: 'var(--danger)', margin: 0 })
+ labelErrorStyle = css({ color: 'var(--danger)', margin: 0 }),
 
-const editorLayoutStyle = css({
-  display: 'grid',
-  gridTemplateColumns: 'minmax(0, 1fr)',
-  gap: theme.space.xl,
+ editorLayoutStyle = css({
   '& > *': { minWidth: 0 },
   '@media (min-width: 68rem)': {
-    gridTemplateColumns: 'minmax(0, 1.15fr) minmax(22rem, 0.85fr)',
     alignItems: 'start',
+    gridTemplateColumns: 'minmax(0, 1.15fr) minmax(22rem, 0.85fr)',
   },
-})
+  display: 'grid',
+  gap: theme.space.xl,
+  gridTemplateColumns: 'minmax(0, 1fr)',
+}),
 
-const fieldStyle = [flow({ flowSpace: theme.space.xs })]
+ fieldStyle = [flow({ flowSpace: theme.space.xs })],
 
-const notesFieldStyle = [flow({ flowSpace: theme.space.xs })]
+ notesFieldStyle = [flow({ flowSpace: theme.space.xs })],
 
-const notesLabelStyle = cluster({ gutter: theme.space['2xs'], alignment: 'center' })
+ notesLabelStyle = cluster({ alignment: 'center', gutter: theme.space['2xs'] }),
 
-const fieldLabelStyle = css({
+ fieldLabelStyle = css({
+  color: 'var(--text)',
   fontWeight: theme.fontWeight.semibold,
-  color: 'var(--text)',
-})
+}),
 
-const inputStyle = css({
-  padding: `${theme.space.xs} ${theme.space.xs}`,
-  borderRadius: theme.radius.sm,
-  border: '1px solid var(--border)',
-  color: 'var(--text)',
-  transition: 'border-color 140ms ease, box-shadow 140ms ease',
+ inputStyle = css({
   ':focus-visible': {
     borderColor: 'var(--accent-strong)',
     boxShadow: '0 0 0 3px rgba(56, 189, 248, 0.14)',
   },
-})
-
-const platformSelectStyle = css({
-  width: '100%',
-  minHeight: '2.75rem',
-  justifyContent: 'space-between',
-  padding: `${theme.space.xs} ${theme.space.xs}`,
-  borderRadius: theme.radius.sm,
   border: '1px solid var(--border)',
+  borderRadius: theme.radius.sm,
+  color: 'var(--text)',
+  padding: `${theme.space.xs} ${theme.space.xs}`,
+  transition: 'border-color 140ms ease, box-shadow 140ms ease',
+}),
+
+ platformSelectStyle = css({
+  border: '1px solid var(--border)',
+  borderRadius: theme.radius.sm,
   color: 'var(--text)',
   fontWeight: theme.fontWeight.medium,
-  textAlign: 'start',
-})
-
-const textareaStyle = css({
-  display: 'block',
-  resize: 'vertical',
-  minHeight: '5.75rem',
-  maxHeight: `${NOTES_MAX_HEIGHT}px`,
-  width: '100%',
+  justifyContent: 'space-between',
+  minHeight: '2.75rem',
   padding: `${theme.space.xs} ${theme.space.xs}`,
-  border: 0,
-  borderTop: '1px solid var(--border)',
-  borderRadius: `0 0 calc(${theme.radius.md} - 1px) calc(${theme.radius.md} - 1px)`,
-  background: 'transparent',
-  color: 'var(--text)',
-  lineHeight: 1.55,
-})
+  textAlign: 'start',
+  width: '100%',
+}),
 
-const composerStyle = css({
-  border: '1px solid var(--border)',
-  borderRadius: theme.radius.md,
+ textareaStyle = css({
+  background: 'transparent',
+  border: 0,
+  borderRadius: `0 0 calc(${theme.radius.md} - 1px) calc(${theme.radius.md} - 1px)`,
+  borderTop: '1px solid var(--border)',
+  color: 'var(--text)',
+  display: 'block',
+  lineHeight: 1.55,
+  maxHeight: `${NOTES_MAX_HEIGHT}px`,
+  minHeight: '5.75rem',
+  padding: `${theme.space.xs} ${theme.space.xs}`,
+  resize: 'vertical',
+  width: '100%',
+}),
+
+ composerStyle = css({
   ':focus-within': {
     borderColor: 'var(--accent-strong)',
     boxShadow: '0 0 0 3px rgba(56, 189, 248, 0.14)',
   },
-})
+  border: '1px solid var(--border)',
+  borderRadius: theme.radius.md,
+}),
 
-const toolbarStyle = [
-  cluster({ gutter: '2px', alignment: 'center' }),
+ toolbarStyle = [
+  cluster({ alignment: 'center', gutter: '2px' }),
   // One row even on narrow phones: the buttons shrink instead of wrapping.
   css({
     flexWrap: 'nowrap',
     padding: '6px',
   }),
-]
+],
 
-const segmentStyle = css({
-  display: 'flex',
-  gap: '0',
-  border: '1px solid var(--border)',
-  borderRadius: '10px',
-  width: 'fit-content',
+ segmentStyle = css({
   '& > :first-child': {
-    borderTopLeftRadius: '9px',
     borderBottomLeftRadius: '9px',
+    borderTopLeftRadius: '9px',
   },
   '& > :last-child': {
-    borderTopRightRadius: '9px',
     borderBottomRightRadius: '9px',
+    borderTopRightRadius: '9px',
   },
-})
+  border: '1px solid var(--border)',
+  borderRadius: '10px',
+  display: 'flex',
+  gap: '0',
+  margin: 0,
+  minInlineSize: 0,
+  padding: 0,
+  width: 'fit-content',
+}),
 
-const sizeInputsStyle = cluster({ gutter: '12px', alignment: 'stretch' })
+ sizeInputsStyle = cluster({ alignment: 'stretch', gutter: '12px' }),
 
-const inlineFieldStyle = [
+ inlineFieldStyle = [
   flow({ flowSpace: theme.space['3xs'] }),
   css({
+    color: 'var(--text-muted)',
     display: 'flex',
+    flex: '1 1 120px',
     flexDirection: 'column',
     fontSize: theme.fontSize.small,
-    color: 'var(--text-muted)',
-    flex: '1 1 120px',
   }),
-]
+],
 
-const previewColumnStyle = [
+ previewColumnStyle = [
   css({
+    '@media (min-width: 68rem) and (min-height: 42rem)': {
+      alignSelf: 'start',
+      position: 'sticky',
+      top: '24px',
+    },
+    alignItems: 'center',
     display: 'flex',
     flexDirection: 'column',
-    alignItems: 'center',
     gap: '16px',
     minWidth: 0,
     padding: '8px 0 0',
-    '@media (min-width: 68rem) and (min-height: 42rem)': {
-      position: 'sticky',
-      alignSelf: 'start',
-      top: '24px',
-    },
   }),
-]
+],
 
-const advancedStyle = css({
-  borderBlock: '1px solid var(--border)',
-  paddingBlock: theme.space.xs,
+ advancedStyle = css({
   '& summary': {
     marginBlockEnd: 0,
     transition: 'margin-block-end 180ms cubic-bezier(0.19, 1, 0.22, 1)',
   },
-  '&[open] summary': { marginBlockEnd: theme.space.sm },
   '&::details-content': {
     display: 'grid',
     gridTemplateRows: '0fr',
@@ -901,6 +901,7 @@ const advancedStyle = css({
     minHeight: 0,
     overflow: 'hidden',
   },
+  '&[open] summary': { marginBlockEnd: theme.space.sm },
   '&[open]::details-content': {
     gridTemplateRows: '1fr',
     opacity: 1,
@@ -910,14 +911,16 @@ const advancedStyle = css({
     '&::details-content': { transform: 'none' },
     '&[open]::details-content': { transform: 'none' },
   },
-})
+  borderBlock: '1px solid var(--border)',
+  paddingBlock: theme.space.xs,
+}),
 
-const advancedContentStyle = [flow({ flowSpace: theme.space.lg }), css({ paddingInline: '2px' })]
+ advancedContentStyle = [flow({ flowSpace: theme.space.lg }), css({ paddingInline: '2px' })],
 
-const previewLabelStyle = css({
+ previewLabelStyle = css({
+  color: 'var(--text-muted)',
   fontSize: '12px',
   fontWeight: 700,
-  textTransform: 'uppercase',
   letterSpacing: '0.08em',
-  color: 'var(--text-muted)',
+  textTransform: 'uppercase',
 })
