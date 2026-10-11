@@ -14,6 +14,14 @@ test('sprite symbols use stable source filename IDs', async () => {
   assert.ok(sprite.indexOf('id="information-circle"') < sprite.indexOf('id="question-mark-circle"'))
 })
 
+test('sprite symbols preserve inherited source fill', async () => {
+  const sprite = await buildSprite({
+    'plus': '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 1h1"/></svg>',
+  })
+
+  assert.match(sprite, /<symbol id="plus" viewBox="0 0 24 24" fill="currentColor">/)
+})
+
 test('generated TypeScript names mirror source filenames', () => {
   assert.equal(
     buildNames(['plus', 'information-circle']),

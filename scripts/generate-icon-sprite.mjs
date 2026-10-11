@@ -17,7 +17,8 @@ export async function buildSprite(sources) {
       if (!match) throw new Error(`Could not parse SVG source for ${name}`)
       const viewBox = match[1].match(/\bviewBox="([^"]+)"/)?.[1]
       if (!viewBox) throw new Error(`SVG source for ${name} must have a viewBox`)
-      return `<symbol id="${name}" viewBox="${viewBox}">${match[2]}</symbol>`
+      const fill = match[1].match(/\bfill="([^"]+)"/)?.[1]
+      return `<symbol id="${name}" viewBox="${viewBox}"${fill ? ` fill="${fill}"` : ''}>${match[2]}</symbol>`
     }),
   )
   return `<svg xmlns="http://www.w3.org/2000/svg">${symbols.join('')}</svg>\n`
